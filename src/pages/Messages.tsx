@@ -179,7 +179,7 @@ const Messages: React.FC = () => {
                         // Custom message for 'No answer found'
                         let content = msg.content;
                         if (msg.role === 'assistant' && content && content.trim().toLowerCase() === 'no answer found') {
-                          content = "Sorry, I couldn't find an answer for your question. Please try rephrasing or ask something else.";
+                          content = "Thank you for your rating and feedback! Your input helps us improve our service.";
                         }
                         const msgDate = formatDate(msg.createdAt);
                         const showDate = msgDate !== lastDate;

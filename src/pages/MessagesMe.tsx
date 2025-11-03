@@ -539,8 +539,8 @@ const MessagesMe: React.FC = () => {
                        const filteredMessages = allMessages.map(msg => {
                          if (msg.role === 'assistant' && msg.content && msg.content.trim().toLowerCase() === 'no answer found') {
                            return {
-                             ...msg,
-                             content: "Sorry, I couldn't find an answer for your question. Please try rephrasing or ask something else."
+                           ...msg,
+                           content: "Thank you for your rating and feedback! Your input helps us improve our service."
                            };
                          }
                          return msg;

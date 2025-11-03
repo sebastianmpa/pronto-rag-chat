@@ -57,26 +57,39 @@ const ECommerce: React.FC = () => {
             Select date range to view analytics data
           </p>
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-boxdark rounded-lg px-4 py-2 shadow-sm border border-slate-200 dark:border-strokedark">
-            <label className="font-medium text-black dark:text-white mr-2">Start date:</label>
-            <input
-              type="date"
-              name="fechaIni"
-              value={dates.fechaIni.slice(0, 10)}
-              onChange={handleDateChange}
-              className="border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-base font-semibold bg-white dark:bg-boxdark text-blue-900 dark:text-blue-200 shadow-sm"
-            />
-            <label className="font-medium text-black dark:text-white mx-2">End date:</label>
-            <input
-              type="date"
-              name="fechaFin"
-              value={dates.fechaFin.slice(0, 10)}
-              onChange={handleDateChange}
-              className="border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-base font-semibold bg-white dark:bg-boxdark text-blue-900 dark:text-blue-200 shadow-sm"
-            />
+          <label className="font-medium text-black dark:text-white mr-2">Start date:</label>
+          <input
+            type="date"
+            name="fechaIni"
+            value={dates.fechaIni.slice(0, 10)}
+            onChange={handleDateChange}
+            className="border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-base font-semibold bg-white dark:bg-boxdark text-blue-900 dark:text-blue-200 shadow-sm"
+          />
+          <label className="font-medium text-black dark:text-white mx-2">End date:</label>
+          <input
+            type="date"
+            name="fechaFin"
+            value={dates.fechaFin.slice(0, 10)}
+            onChange={handleDateChange}
+            className="border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-base font-semibold bg-white dark:bg-boxdark text-blue-900 dark:text-blue-200 shadow-sm"
+          />
           </div>
         </div>
       </div>
-      {/* Filtrados arriba del dashboard principal */}
+
+      <DataStatsThree fechaIni={dates.fechaIni} fechaFin={dates.fechaFin} />
+      <div className="mt-7.5 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
+        <div className="col-span-12 xl:col-span-7">
+          <ChartSeven fechaIni={dates.fechaIni} fechaFin={dates.fechaFin} />
+        </div>
+
+        <div className="col-span-12 xl:col-span-5">
+          <ChartEight fechaIni={dates.fechaIni} fechaFin={dates.fechaFin} />
+        </div>
+       
+      </div>
+      {/* Aquí podrías agregar gráficos y tablas usando los datos de stats, eventStats y foundStats */}
+      
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-2">
         {/* Top Models Bar Chart filtrado */}
         {stats?.stats.topModels && stats.stats.topModels.filter((m) => m.model && m.model.trim() !== '').length > 0 && (
@@ -100,38 +113,12 @@ const ECommerce: React.FC = () => {
             endDate={dates.fechaFin}
           />
         )}
-      </div>
-      {/* Aquí podrías agregar gráficos y tablas usando los datos de stats, eventStats y foundStats */}
-      
-      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-2">
-        {/* Top Models Bar Chart */}
-        {stats?.stats.topModels && stats.stats.topModels.length > 0 && (
-          <StatsBarChart
-            title="Most Frequent Models"
-            categories={stats.stats.topModels.map((m) => m.model || 'N/A')}
-            data={stats.stats.topModels.map((m) => Number(m.total))}
-            color="#3C50E0"
-            startDate={dates.fechaIni}
-            endDate={dates.fechaFin}
-          />
-        )}
-        {/* Top Part Types Bar Chart */}  
-        {stats?.stats.topPartTypes && stats.stats.topPartTypes.length > 0 && (
-          <StatsBarChart
-            title="Most Frequent Part Types"
-            categories={stats.stats.topPartTypes.map((p) => p.part_type || 'N/A')}
-            data={stats.stats.topPartTypes.map((p) => Number(p.total))}
-            color="#10B981"
-            startDate={dates.fechaIni}
-            endDate={dates.fechaFin}
-          />
-        )}
         {/* Eventos por tipo Bar Chart */}
-        {eventStats?.stats && eventStats.stats.length > 0 && (
+        {eventStats?.stats && eventStats.stats.filter((e) => e.event && e.event.trim() !== '').length > 0 && (
           <StatsBarChart
             title="Events by Type"
-            categories={eventStats.stats.map((e) => e.event || 'N/A')}
-            data={eventStats.stats.map((e) => Number(e.total))}
+            categories={eventStats.stats.filter((e) => e.event && e.event.trim() !== '').map((e) => e.event)}
+            data={eventStats.stats.filter((e) => e.event && e.event.trim() !== '').map((e) => Number(e.total))}
             color="#6366F1"
             startDate={dates.fechaIni}
             endDate={dates.fechaFin}

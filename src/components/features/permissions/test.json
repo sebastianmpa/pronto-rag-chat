@@ -1,0 +1,108 @@
+{
+    "stats": [
+        {
+            "event": "conversation_start",
+            "total": "39"
+        },
+        {
+            "event": "query_purchase_link",
+            "total": "21"
+        },
+        {
+            "event": "has_purchase",
+            "total": "20"
+        },
+        {
+            "event": "query_part",
+            "total": "12"
+        },
+        {
+            "event": "query_manual",
+            "total": "12"
+        },
+        {
+            "event": "has_part",
+            "total": "10"
+        },
+        {
+            "event": "query_model",
+            "total": "9"
+        },
+        {
+            "event": "has_manual",
+            "total": "8"
+        },
+        {
+            "event": "has_model",
+            "total": "8"
+        },
+        {
+            "event": "query_other",
+            "total": "8"
+        },
+        {
+            "event": "has_no_other",
+            "total": "6"
+        },
+        {
+            "event": "web_query_has_no_other",
+            "total": "6"
+        },
+        {
+            "event": "web_query_has_no_manual",
+            "total": "4"
+        },
+        {
+            "event": "has_no_manual",
+            "total": "4"
+        },
+        {
+            "event": "query_serial",
+            "total": "3"
+        },
+        {
+            "event": "has_no_model",
+            "total": "3"
+        },
+        {
+            "event": "has_serial",
+            "total": "2"
+        },
+        {
+            "event": "has_no_part",
+            "total": "2"
+        },
+        {
+            "event": "has_other",
+            "total": "2"
+        },
+        {
+            "event": "web_query_has_part",
+            "total": "2"
+        },
+        {
+            "event": "has_no_purchase",
+            "total": "1"
+        },
+        {
+            "event": "web_query_other",
+            "total": "1"
+        },
+        {
+            "event": "web_query_has_no_model",
+            "total": "1"
+        },
+        {
+            "event": "web_query_has_purchase",
+            "total": "1"
+        },
+        {
+            "event": "has_no_serial",
+            "total": "1"
+        },
+        {
+            "event": "web_query_has_serial",
+            "total": "1"
+        }
+    ]
+}

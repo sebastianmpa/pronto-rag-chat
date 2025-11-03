@@ -458,7 +458,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               (isActive && '!text-white')
                             }
                           >
-                            Mis Mensajes
+                            My Messages
                           </NavLink>
                         </li>
                         {/* Opción Todos los Mensajes - solo para admin y supervisor */}
@@ -471,7 +471,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 (isActive && '!text-white')
                               }
                             >
-                              Todos los Mensajes
+                              All Messages
                             </NavLink>
                           </li>
                         )}

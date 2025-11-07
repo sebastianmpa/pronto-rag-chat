@@ -19,17 +19,58 @@ const formatDate = (date: string) => {
 // Formatea los mensajes del assistant para saltos de línea y URLs
 const renderMessageContent = (content: string, role?: string) => {
   if (role === 'assistant') {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    // Regex for Markdown links: [text](url)
+    const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+[\w/])\)/g;
+    // Regex for plain URLs
+    const urlRegex = /(https?:\/\/[^\s)]+[\w/])/g;
     // Split by line breaks first
-    return content.split(/\n|\r\n/).map((line, idx) => (
-      <React.Fragment key={idx}>
-        {line.split(urlRegex).map((part, i) => {
-          if (urlRegex.test(part)) {
-            const isPdf = part.trim().toLowerCase().endsWith('.pdf');
+    return content.split(/\n|\r\n/).map((line, idx) => {
+      // First, replace Markdown links with anchor tags
+      let parts: (string | JSX.Element)[] = [];
+      let lastIdx = 0;
+      let match;
+      while ((match = mdLinkRegex.exec(line)) !== null) {
+        if (match.index > lastIdx) {
+          parts.push(line.slice(lastIdx, match.index));
+        }
+        parts.push(
+          <a
+            key={match[2] + idx}
+            href={match[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline break-all"
+          >
+            {match[1]}
+          </a>
+        );
+        lastIdx = match.index + match[0].length;
+      }
+      if (lastIdx < line.length) {
+        parts.push(line.slice(lastIdx));
+      }
+      // Now, for any remaining plain URLs in the string parts, parse as before
+      parts = parts.flatMap((part, i) => {
+        if (typeof part !== 'string') return [part];
+        return part.split(urlRegex).map((sub, j) => {
+          let url = sub;
+          let isUrl = false;
+          if (/^https?:\/\//.test(sub)) {
+            isUrl = true;
+            if (url.endsWith(')')) {
+              const open = url.slice(0, -1).split('(').length - 1;
+              const close = url.slice(0, -1).split(')').length - 1;
+              if (open > close) {
+                url = url.slice(0, -1);
+              }
+            }
+          }
+          if (isUrl) {
+            const isPdf = url.trim().toLowerCase().endsWith('.pdf');
             return (
               <a
-                key={i}
-                href={part}
+                key={url + '-' + i + '-' + j}
+                href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline break-all"
@@ -38,11 +79,11 @@ const renderMessageContent = (content: string, role?: string) => {
               </a>
             );
           }
-          return part;
-        })}
-        <br />
-      </React.Fragment>
-    ));
+          return sub;
+        });
+      });
+      return <React.Fragment key={idx}>{parts}<br /></React.Fragment>;
+    });
   }
   // Usuario: solo texto plano
   return content;

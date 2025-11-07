@@ -45,10 +45,51 @@ const Messages: React.FC = () => {
     }
   }, [chatDetail?.conversation_message]);
 
+  // Regex para links tipo Markdown [texto](url)
+  const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+  // Regex para URLs sueltas
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   function renderMessageContent(content: string, isUser: boolean) {
-    return content.split(urlRegex).map((part, i) => {
+    // Primero parsea los links tipo Markdown
+    let elements: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = markdownLinkRegex.exec(content)) !== null) {
+      // Texto antes del link
+      if (match.index > lastIndex) {
+        const before = content.slice(lastIndex, match.index);
+        // Parsear URLs sueltas en el texto antes del link Markdown
+        elements = elements.concat(parseUrls(before, isUser));
+      }
+      // El link Markdown
+      const text = match[1];
+      const url = match[2];
+      const isPdf = url.trim().toLowerCase().endsWith('.pdf');
+      elements.push(
+        <a
+          key={elements.length}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={isUser ? "underline break-all" : "text-blue-700 dark:text-blue-300 underline break-all"}
+        >
+          {text || (isPdf ? 'Download file' : 'Open link')}
+        </a>
+      );
+      lastIndex = markdownLinkRegex.lastIndex;
+    }
+    // Resto del texto después del último link Markdown
+    if (lastIndex < content.length) {
+      elements = elements.concat(parseUrls(content.slice(lastIndex), isUser));
+    }
+    return elements;
+  }
+
+  // Helper para parsear URLs sueltas y renderizarlas como links
+  function parseUrls(text: string, isUser: boolean) {
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) => {
       if (urlRegex.test(part)) {
         const isPdf = part.trim().toLowerCase().endsWith('.pdf');
         return (
@@ -57,7 +98,7 @@ const Messages: React.FC = () => {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className={isUser ? "underline break-all" : "text-white underline break-all"}
+            className={isUser ? "underline break-all" : "text-blue-700 dark:text-blue-300 underline break-all"}
           >
             {isPdf ? 'Download file' : 'Open link'}
           </a>

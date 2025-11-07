@@ -173,30 +173,34 @@ const Messages: React.FC = () => {
                     Loading chats...
                   </div>
                 )}
-                {(pollChats?.items || chats?.items || []).map((chat) => (
-                  <div
-                    key={chat.id}
-                    className={`flex cursor-pointer items-center border-b border-stroke dark:border-strokedark py-3 px-6 hover:bg-gray-2 dark:hover:bg-boxdark-2 transition-colors ${
-                      selectedChat?.id === chat.id ? 'bg-gray-2 dark:bg-boxdark-2' : ''
-                    }`}
-                    onClick={() => setSelectedChat(chat)}
-                  >
-                    <div className="relative mr-3.5 h-11 w-11 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
-                      <span className="text-sm font-medium text-black dark:text-white">
-                        {chat.store_domain?.charAt(0)?.toUpperCase()}
-                      </span>
-                      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-success"></span>
+                {(pollChats?.items || chats?.items || []).map((chat) => {
+                  // El título será el abstract, si no existe, fallback a los otros campos
+                  const chatTitle = chat.abstract || chat.last_detected_model || chat.last_detected_part || chat.lang || chat.store_domain;
+                  return (
+                    <div
+                      key={chat.id}
+                      className={`flex cursor-pointer items-center border-b border-stroke dark:border-strokedark py-3 px-6 hover:bg-gray-2 dark:hover:bg-boxdark-2 transition-colors ${
+                        selectedChat?.id === chat.id ? 'bg-gray-2 dark:bg-boxdark-2' : ''
+                      }`}
+                      onClick={() => setSelectedChat(chat)}
+                    >
+                      <div className="relative mr-3.5 h-11 w-11 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
+                        <span className="text-sm font-medium text-black dark:text-white">
+                          {chat.store_domain?.charAt(0)?.toUpperCase()}
+                        </span>
+                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-success"></span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="text-sm font-medium text-black dark:text-white truncate">
+                          {chatTitle}
+                        </h5>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {chat.store_domain}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h5 className="text-sm font-medium text-black dark:text-white truncate">
-                        {chat.store_domain}
-                      </h5>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {chat.last_detected_model || chat.last_detected_part || chat.lang}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

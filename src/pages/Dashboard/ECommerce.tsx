@@ -1,11 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import CardDataStats from '../../components/CardDataStats';
-import ChartOne from '../../components/Charts/ChartOne';
-import ChartThree from '../../components/Charts/ChartThree';
-import ChartTwo from '../../components/Charts/ChartTwo';
-import ChatCard from '../../components/Chat/ChatCard';
-import MapOne from '../../components/Maps/MapOne';
-import TableOne from '../../components/Tables/TableOne';
 import ChartEight from '../../components/Charts/ChartEight';
 
 import ChartSeven from '../../components/Charts/ChartSeven';
@@ -113,12 +106,12 @@ const ECommerce: React.FC = () => {
             endDate={dates.fechaFin}
           />
         )}
-        {/* Eventos por tipo Bar Chart */}
-        {eventStats?.stats && eventStats.stats.filter((e) => e.event && e.event.trim() !== '').length > 0 && (
+        {/* Eventos por tipo Bar Chart usando event_friendly_name */}
+        {eventStats?.stats && eventStats.stats.filter((e) => e.event_friendly_name && e.event_friendly_name.trim() !== '').length > 0 && (
           <StatsBarChart
             title="Events by Type"
-            categories={eventStats.stats.filter((e) => e.event && e.event.trim() !== '').map((e) => e.event)}
-            data={eventStats.stats.filter((e) => e.event && e.event.trim() !== '').map((e) => Number(e.total))}
+            categories={eventStats.stats.filter((e) => e.event_friendly_name && e.event_friendly_name.trim() !== '').map((e) => e.event_friendly_name)}
+            data={eventStats.stats.filter((e) => e.event_friendly_name && e.event_friendly_name.trim() !== '').map((e) => Number(e.total))}
             color="#6366F1"
             startDate={dates.fechaIni}
             endDate={dates.fechaFin}

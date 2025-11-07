@@ -3,6 +3,7 @@ import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
 import DefaultLayout from '../layout/DefaultLayout';
 import { useMyConversationsPaginated, useMyConversationById } from '../hooks/useConversation';
+import { getMyConversationsPaginated } from '../libs/ConversationService';
 import { format } from 'date-fns';
 // import { es } from 'date-fns/locale/es'; // Unused
 import { useUserProfile } from '../hooks/useUser';
@@ -90,8 +91,28 @@ const MessagesMe: React.FC = () => {
 
   // Hooks para mis conversaciones
   const { data: chats, loading: loadingChats } = useMyConversationsPaginated({ page, limit });
+  const [pollChats, setPollChats] = useState<any>(null);
+
+  // Polling: refresh chats every 5 seconds
+  useEffect(() => {
+    let ignore = false;
+    const poll = async () => {
+      try {
+        const result = await getMyConversationsPaginated(page, limit);
+        if (!ignore) setPollChats(result);
+      } catch (e) {
+        // ignore polling errors
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => { ignore = true; clearInterval(interval); };
+  }, [page, limit]);
+
+  // Polling: refresh chats every 5 seconds
+  // (Obsolete polling code removed)
   // Filtered chats based on search
-  const filteredChats = chats?.items?.filter(chat => {
+  const filteredChats = (pollChats?.items || chats?.items || []).filter(chat => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return true;
     return (

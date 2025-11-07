@@ -480,6 +480,31 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </React.Fragment>
                 )}
               </SidebarLinkGroup>
+              {/* Parts Table (visible para todos los roles) - moved below messages */}
+              <li>
+                <NavLink
+                  to="/parts"
+                  className={({ isActive }) =>
+                    'group relative flex items-center gap-2.5 rounded-md px-4 py-2 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
+                    (isActive && '!text-white')
+                  }
+                >
+                  <svg
+                    className="fill-current"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect x="2" y="4" width="14" height="10" rx="2" stroke="#E5E7EB" strokeWidth="1.5" fill="none" />
+                    <path d="M2 8H16" stroke="#E5E7EB" strokeWidth="1.5" />
+                    <path d="M6 12V8" stroke="#E5E7EB" strokeWidth="1.5" />
+                    <path d="M12 12V8" stroke="#E5E7EB" strokeWidth="1.5" />
+                  </svg>
+                  Parts
+                </NavLink>
+              </li>
             </ul>
           </div>
         </nav>

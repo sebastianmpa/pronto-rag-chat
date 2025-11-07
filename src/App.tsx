@@ -8,11 +8,13 @@ import Profile from './pages/Profile';
 import Roles from './pages/Pages/Roles';
 import Permissions from './pages/Pages/Permissions';
 import UsersPage from './pages/Pages/UsersPage';
+
 import Loader from './common/Loader';
 import PageTitle from './components/PageTitle';
 import PrivateRoute from './components/PrivateRoute';
 import { useUserProfile } from './hooks/useUser';
 import SignIn from './pages/Authentication/SignIn';
+import PartsPage from './pages/Pages/PartsPage';
 
 
 function App() {
@@ -88,6 +90,13 @@ function App() {
                   <Messages />
                 </>
               }
+            />
+          )}
+          {/* Ruta para la tabla de partes - SOLO admin y supervisor */}
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor') && (
+            <Route
+              path="/parts"
+              element={<PartsPage />}
             />
           )}
           

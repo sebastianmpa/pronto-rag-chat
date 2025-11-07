@@ -3,6 +3,7 @@ import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
 import DefaultLayout from '../layout/DefaultLayout';
 import { useConversationsPaginated, useConversationById } from '../hooks/useConversation';
+import { getConversationsPaginated } from '../libs/ConversationService';
 import { useCustomerById } from '../hooks/useCustomer';
 
 const Messages: React.FC = () => {
@@ -12,6 +13,23 @@ const Messages: React.FC = () => {
 
   // Hooks para todas las conversaciones
   const { data: chats, loading: loadingChats } = useConversationsPaginated({ page, limit });
+  const [pollChats, setPollChats] = useState<any>(null);
+
+  // Polling: refresh chats every 5 seconds
+  useEffect(() => {
+    let ignore = false;
+    const poll = async () => {
+      try {
+        const result = await getConversationsPaginated(page, limit);
+        if (!ignore) setPollChats(result);
+      } catch (e) {
+        // ignore polling errors
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => { ignore = true; clearInterval(interval); };
+  }, [page, limit]);
   const { data: chatDetail, loading: loadingDetail } = useConversationById(selectedChat?.id ?? '');
 
   // Customer del chat seleccionado
@@ -114,7 +132,7 @@ const Messages: React.FC = () => {
                     Loading chats...
                   </div>
                 )}
-                {chats?.items?.map((chat) => (
+                {(pollChats?.items || chats?.items || []).map((chat) => (
                   <div
                     key={chat.id}
                     className={`flex cursor-pointer items-center border-b border-stroke dark:border-strokedark py-3 px-6 hover:bg-gray-2 dark:hover:bg-boxdark-2 transition-colors ${

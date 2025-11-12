@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Permission } from '../../../types/Permission';
 import { usePermissions } from '../../../hooks/usePermission';
 
@@ -17,6 +18,7 @@ const DeletePermissionModal: React.FC<DeletePermissionModalProps> = ({
   trigger,
   permission,
 }) => {
+  const { t } = useTranslation();
   const modal = useRef<HTMLDivElement>(null);
   const { remove } = usePermissions();
   const [loading, setLoading] = useState(false);
@@ -119,15 +121,14 @@ const DeletePermissionModal: React.FC<DeletePermissionModalProps> = ({
         </span>
         {/* Title */}
         <h3 className="mt-5.5 pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-          Delete Permission
+          {t('permissions.modal.delete_title')}
         </h3>
         {/* Message */}
         <p className="mb-10 px-4">
-          Are you sure you want to delete the permission{' '}
-          <span className="font-semibold text-danger">"{permission.name}"</span>?
+          {t('permissions.modal.delete_confirm', { name: permission.name })}
           <br />
           <span className="mt-2 block text-sm text-bodydark">
-            This action cannot be undone.
+            {t('permissions.modal.delete_warning')}
           </span>
         </p>
         {/* Buttons */}
@@ -138,7 +139,7 @@ const DeletePermissionModal: React.FC<DeletePermissionModalProps> = ({
               disabled={loading}
               className="block w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-meta-1 hover:bg-meta-1 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-meta-1 dark:hover:bg-meta-1"
             >
-              Cancel
+              {t('permissions.modal.cancel')}
             </button>
           </div>
           <div className="w-full px-3 2xsm:w-1/2">
@@ -150,10 +151,10 @@ const DeletePermissionModal: React.FC<DeletePermissionModalProps> = ({
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                  Deleting...
+                  {t('permissions.modal.deleting')}
                 </div>
               ) : (
-                'Delete'
+                t('permissions.modal.delete')
               )}
             </button>
           </div>

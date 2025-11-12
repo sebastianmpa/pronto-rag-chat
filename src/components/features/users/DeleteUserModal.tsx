@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useUsers } from '../../../hooks/useUser';
 import { User } from '../../../types/User';
+import { useTranslation } from 'react-i18next';
 
 interface DeleteUserModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
   trigger,
   user,
 }) => {
+  const { t } = useTranslation();
   const { remove, loading, error } = useUsers();
   const modal = useRef<HTMLDivElement>(null);
 
@@ -72,7 +74,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
       >
         <div className="mb-8 text-center">
           <h3 className="pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-            Are you sure you want to delete this user?
+            {t('users.modal.delete_confirm')}
           </h3>
           <span className="mx-auto inline-block h-1 w-22.5 rounded bg-danger"></span>
         </div>
@@ -97,7 +99,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
                 fill=""
               />
             </svg>
-            <p className="text-sm font-medium text-danger">{error}</p>
+            <p className="text-sm font-medium text-danger">{t('users.modal.error')}</p>
           </div>
         )}
         <div className="flex gap-4 mt-8">
@@ -107,7 +109,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
             disabled={loading}
             className="w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-danger hover:bg-danger hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-danger dark:hover:bg-danger"
           >
-            Cancel
+            {t('users.modal.cancel')}
           </button>
           <button
             type="button"
@@ -118,10 +120,10 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                Deleting...
+                {t('users.modal.deleting')}
               </div>
             ) : (
-              'Delete'
+              t('users.modal.delete')
             )}
           </button>
         </div>

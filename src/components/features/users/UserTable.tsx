@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useTable,
   useSortBy,
@@ -69,28 +70,29 @@ const UserTable = () => {
     }
   }, [usersData]);
 
+  const { t } = useTranslation();
   const columns: Column<User>[] = useMemo(
     () => [
       {
-        Header: 'Name',
+        Header: t('users.table.name'),
         accessor: 'firstName',
         Cell: ({ row }: any) => (
           <span>{row.original.firstName} {row.original.lastName}</span>
         ),
       },
       {
-        Header: 'Email',
+        Header: t('users.table.email'),
         accessor: 'email',
       },
       {
-        Header: 'Role',
+        Header: t('users.table.role'),
         accessor: 'roleId',
         Cell: ({ value }: { value: string }) => (
           <span>{roleNames[value] || value}</span>
         ),
       },
       {
-        Header: 'Created At',
+        Header: t('users.table.created_at'),
         accessor: 'createdAt',
         Cell: ({ value }: { value: string }) => (
           <span>
@@ -103,7 +105,7 @@ const UserTable = () => {
         ),
       },
       {
-        Header: 'Actions',
+        Header: t('users.table.actions'),
         accessor: 'id',
         Cell: ({ value }: { value: string }) => (
           <div className="flex items-center space-x-3.5">
@@ -114,7 +116,7 @@ const UserTable = () => {
                 }
               }}
               className="hover:text-primary"
-              title="Edit"
+              title={t('users.table.edit')}
               onClick={() => handleEdit(value)}
             >
               {/* Pencil icon SVG (with shadow) - same as PermissionsTable and RoleTable */}
@@ -131,7 +133,7 @@ const UserTable = () => {
             </button>
             <button
               className="hover:text-danger"
-              title="Delete"
+              title={t('users.table.delete')}
               onClick={() => handleDelete(value)}
             >
               {/* SVG icon */}
@@ -141,7 +143,7 @@ const UserTable = () => {
         ),
       },
     ],
-    [roleNames]
+    [roleNames, t]
   );
 
   const data = useMemo(() => usersData, [usersData]);
@@ -240,7 +242,7 @@ const UserTable = () => {
               value={globalFilter || ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="w-full rounded-md border border-stroke px-5 py-2.5 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
-              placeholder="Search users..."
+              placeholder={t('users.table.search_placeholder')}
             />
           </div>
 
@@ -257,7 +259,7 @@ const UserTable = () => {
                   </option>
                 ))}
               </select>
-              <p className="pl-2 text-black dark:text-white">Records per page</p>
+              <p className="pl-2 text-black dark:text-white">{t('users.table.records_per_page')}</p>
             </div>
 
             <button
@@ -278,7 +280,7 @@ const UserTable = () => {
                   fill=""
                 />
               </svg>
-              Create User
+              {t('users.table.create_user')}
             </button>
           </div>
         </div>
@@ -299,7 +301,7 @@ const UserTable = () => {
                 fill=""
               />
             </svg>
-            <p className="text-sm font-medium text-danger">{error}</p>
+            <p className="text-sm font-medium text-danger">{t('users.modal.error')}</p>
           </div>
         )}
 
@@ -358,7 +360,7 @@ const UserTable = () => {
               ) : (
                 <tr>
                   <td colSpan={columns.length} className="py-8 text-center">
-                    <p className="text-sm text-bodydark">No users to display</p>
+                    <p className="text-sm text-bodydark">{t('users.table.no_users')}</p>
                   </td>
                 </tr>
               )}
@@ -369,7 +371,7 @@ const UserTable = () => {
         {/* Footer con paginación */}
         <div className="flex flex-col justify-between gap-4 border-t border-stroke px-8 pt-5 dark:border-strokedark sm:flex-row sm:items-center">
           <p className="font-medium">
-            Showing page {currentPage} of {totalPages} ({totalItems} total records)
+            {t('users.table.pagination', { currentPage, totalPages, totalItems })}
           </p>
           <div className="flex gap-2">
             <button

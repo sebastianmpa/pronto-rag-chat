@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
 import DefaultLayout from '../layout/DefaultLayout';
@@ -8,6 +9,7 @@ import { useCustomerById } from '../hooks/useCustomer';
 
 const Messages: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const { t } = useTranslation();
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -115,7 +117,7 @@ const Messages: React.FC = () => {
 
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="All Messages" />
+  <Breadcrumb pageName={t('all_messages')} />
       <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)]">
         <div className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
           {/* Chat List */}
@@ -124,7 +126,7 @@ const Messages: React.FC = () => {
             <div className="border-b border-stroke dark:border-strokedark px-6 py-4">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-sm font-medium text-black dark:text-white whitespace-nowrap">
-                  All messages <span className="text-xs ml-1">{chats?.totalItems ?? 0}</span>
+                  {t('all_messages')} <span className="text-xs ml-1">{chats?.totalItems ?? 0}</span>
                 </h4>
                 {/* You can add a new chat button here if you want */}
               </div>
@@ -133,7 +135,7 @@ const Messages: React.FC = () => {
             {/* Chats per page selector */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-stroke dark:border-strokedark">
               <label htmlFor="limit" className="text-sm font-medium text-black dark:text-white">
-                Show last:
+                {t('show_last')}
               </label>
               <select
                 id="limit"
@@ -153,7 +155,7 @@ const Messages: React.FC = () => {
                 <input
                   type="text"
                   className="w-full rounded border border-stroke bg-gray-2 dark:bg-boxdark-2 py-2.5 pl-5 pr-10 text-sm outline-none focus:border-primary dark:border-strokedark dark:text-white"
-                  placeholder="Search..."
+                  placeholder={t('search')}
                   disabled={loadingChats}
                 />
                 <button type="button" className="absolute top-1/2 right-4 -translate-y-1/2">
@@ -170,7 +172,7 @@ const Messages: React.FC = () => {
               <div className="space-y-0">
                 {loadingChats && (
                   <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-                    Loading chats...
+                    {t('loading_chats')}
                   </div>
                 )}
                 {(pollChats?.items || chats?.items || []).map((chat) => {
@@ -218,7 +220,7 @@ const Messages: React.FC = () => {
                     </div>
                     <div>
                       <h5 className="font-medium text-black dark:text-white">
-                        {customerData?.name || 'No name'}
+                        {customerData?.name || t('user_no_name')}
                       </h5>
                       <p className="text-sm text-gray-200 dark:text-gray-300">{chatDetail?.store_domain || ''}</p>
                     </div>
@@ -260,12 +262,12 @@ const Messages: React.FC = () => {
                               <div className={msg.role === 'user' ? 'max-w-xs' : 'max-w-xs'}>
                                 {msg.role === 'user' && (
                                   <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
-                                    {customer?.name || 'User'}
+                                    {customer?.name || t('user')}
                                   </p>
                                 )}
                                 {msg.role === 'assistant' && (
                                   <p className="mb-2 text-xs font-medium text-blue-700 dark:text-blue-300">
-                                    Assistant
+                                    {t('assistant')}
                                   </p>
                                 )}
                                 <div className={`rounded-2xl py-3 px-4 border shadow-md ${
@@ -295,7 +297,7 @@ const Messages: React.FC = () => {
                       <div className="relative flex-1">
                         <input
                           type="text"
-                          placeholder="Type a message..."
+                          placeholder={t('type_message')}
                           className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary cursor-not-allowed"
                           disabled
                         />
@@ -317,7 +319,7 @@ const Messages: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Select a chat to view the conversation
+                    {t('select_chat')}
                   </p>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePermissions } from '../../../hooks/usePermission';
 import { CreatePermissionDto } from '../../../types/Permission';
 
@@ -15,6 +16,7 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
   onSuccess,
   trigger,
 }) => {
+  const { t } = useTranslation();
   const { create, loading, error } = usePermissions();
   const modal = useRef<HTMLDivElement>(null);
 
@@ -90,21 +92,21 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
   const validateForm = (): boolean => {
     const errors: typeof formErrors = {};
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
+      errors.name = t('permissions.modal.validation.name_required');
     } else if (formData.name.length < 3) {
-      errors.name = 'Name must be at least 3 characters';
+      errors.name = t('permissions.modal.validation.name_min');
     }
     if (!formData.internalName.trim()) {
-      errors.internalName = 'Internal name is required';
+      errors.internalName = t('permissions.modal.validation.internal_name_required');
     } else if (formData.internalName.length < 3) {
-      errors.internalName = 'Internal name must be at least 3 characters';
+      errors.internalName = t('permissions.modal.validation.internal_name_min');
     } else if (!/^[a-z0-9_-]+$/.test(formData.internalName)) {
-      errors.internalName = 'Only lowercase letters, numbers, hyphens, and underscores are allowed';
+      errors.internalName = t('permissions.modal.validation.internal_name_pattern');
     }
     if (!formData.description.trim()) {
-      errors.description = 'Description is required';
+      errors.description = t('permissions.modal.validation.description_required');
     } else if (formData.description.length < 10) {
-      errors.description = 'Description must be at least 10 characters';
+      errors.description = t('permissions.modal.validation.description_min');
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -133,7 +135,7 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
         {/* Header */}
         <div className="mb-8">
           <h3 className="pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-            Create New Permission
+            {t('permissions.modal.create_title')}
           </h3>
           <span className="mx-auto inline-block h-1 w-22.5 rounded bg-primary"></span>
         </div>
@@ -162,14 +164,14 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
             {/* Permission Name */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Permission Name <span className="text-meta-1">*</span>
-              </label>
+                  {t('permissions.modal.permission_name')} <span className="text-meta-1">{t('permissions.modal.required')}</span>
+                </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="E.g.: user_read, my_profile_read"
+                placeholder={t('permissions.modal.placeholder_name')}
                 className={`w-full rounded-lg border-[1.5px] ${
                   formErrors.name ? 'border-danger' : 'border-stroke'
                 } bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
@@ -182,14 +184,14 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
             {/* Internal Name */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Internal Name <span className="text-meta-1">*</span>
-              </label>
+                  {t('permissions.modal.internal_name')} <span className="text-meta-1">{t('permissions.modal.required')}</span>
+                </label>
               <input
                 type="text"
                 name="internalName"
                 value={formData.internalName}
                 onChange={handleChange}
-                placeholder="E.g.: user_read, my_profile_read"
+                placeholder={t('permissions.modal.placeholder_name')}
                 className={`w-full rounded-lg border-[1.5px] ${
                   formErrors.internalName ? 'border-danger' : 'border-stroke'
                 } bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
@@ -201,20 +203,20 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
                 </p>
               )}
               <p className="mt-1 text-xs text-bodydark">
-                Only lowercase letters, numbers, hyphens, and underscores are allowed
+                {t('permissions.modal.validation.internal_name_pattern')}
               </p>
             </div>
             {/* Description */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Description <span className="text-meta-1">*</span>
-              </label>
+                  {t('permissions.modal.description')} <span className="text-meta-1">{t('permissions.modal.required')}</span>
+                </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Describe the permission and its function"
+                placeholder={t('permissions.modal.placeholder_description')}
                 className={`w-full rounded-lg border-[1.5px] ${
                   formErrors.description ? 'border-danger' : 'border-stroke'
                 } bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
@@ -236,7 +238,7 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
                 disabled={loading}
                 className="block w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-meta-1 hover:bg-meta-1 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-meta-1 dark:hover:bg-meta-1"
               >
-                Cancel
+                {t('permissions.modal.cancel')}
               </button>
             </div>
             <div className="w-full px-3 2xsm:w-1/2">
@@ -248,10 +250,10 @@ const CreatePermissionModal: React.FC<CreatePermissionModalProps> = ({
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                    Creating...
+                    {t('permissions.modal.creating')}
                   </div>
                 ) : (
-                  'Create Permission'
+                  t('permissions.modal.create')
                 )}
               </button>
             </div>

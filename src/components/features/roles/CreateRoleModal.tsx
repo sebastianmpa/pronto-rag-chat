@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRoles } from '../../../hooks/useRole';
 import { CreateRoleDto } from '../../../types/Role';
 
@@ -16,6 +17,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
   trigger,
 }) => {
   const { create, loading, error } = useRoles();
+  const { t } = useTranslation();
   const modal = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<CreateRoleDto>({
@@ -99,24 +101,23 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
     const errors: typeof formErrors = {};
 
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
+      errors.name = t('roles.modal.validation.name_required');
     } else if (formData.name.length < 3) {
-      errors.name = 'Name must be at least 3 characters';
+      errors.name = t('roles.modal.validation.name_min');
     }
 
     if (!formData.internalName.trim()) {
-      errors.internalName = 'Internal name is required';
+      errors.internalName = t('roles.modal.validation.internal_name_required');
     } else if (formData.internalName.length < 3) {
-      errors.internalName = 'Internal name must be at least 3 characters';
+      errors.internalName = t('roles.modal.validation.internal_name_min');
     } else if (!/^[a-z0-9_-]+$/.test(formData.internalName)) {
-      errors.internalName =
-        'Only lowercase letters, numbers, hyphens, and underscores are allowed';
+      errors.internalName = t('roles.modal.validation.internal_name_pattern');
     }
 
     if (!formData.description.trim()) {
-      errors.description = 'Description is required';
+      errors.description = t('roles.modal.validation.description_required');
     } else if (formData.description.length < 10) {
-      errors.description = 'Description must be at least 10 characters';
+      errors.description = t('roles.modal.validation.description_min');
     }
 
     setFormErrors(errors);
@@ -150,7 +151,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
         {/* Header */}
         <div className="mb-8">
           <h3 className="pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-            Create New Role
+            {t('roles.modal.create_title')}
           </h3>
           <span className="mx-auto inline-block h-1 w-22.5 rounded bg-primary"></span>
         </div>
@@ -171,7 +172,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
                 fill=""
               />
             </svg>
-            <p className="text-sm font-medium text-danger">{error}</p>
+            <p className="text-sm font-medium text-danger">{t('roles.modal.error')}</p>
           </div>
         )}
 
@@ -181,14 +182,14 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
             {/* Role Name */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Role Name <span className="text-meta-1">*</span>
+                {t('roles.modal.name_label')} <span className="text-meta-1">*</span>
               </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="E.g.: Administrator, Editor, Viewer"
+                placeholder={t('roles.modal.placeholder_name')}
                 className={`w-full rounded-lg border-[1.5px] ${
                   formErrors.name ? 'border-danger' : 'border-stroke'
                 } bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
@@ -202,14 +203,14 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
             {/* Internal Name */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Internal Name <span className="text-meta-1">*</span>
+                {t('roles.modal.internal_name_label')} <span className="text-meta-1">*</span>
               </label>
               <input
                 type="text"
                 name="internalName"
                 value={formData.internalName}
                 onChange={handleChange}
-                placeholder="E.g.: admin, editor, viewer"
+                placeholder={t('roles.modal.placeholder_internal_name')}
                 className={`w-full rounded-lg border-[1.5px] ${
                   formErrors.internalName ? 'border-danger' : 'border-stroke'
                 } bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
@@ -221,21 +222,21 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
                 </p>
               )}
               <p className="mt-1 text-xs text-bodydark">
-                Only lowercase letters, numbers, hyphens, and underscores are allowed
+                {t('roles.modal.internal_name_helper')}
               </p>
             </div>
 
             {/* Description */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Description <span className="text-meta-1">*</span>
+                {t('roles.modal.description_label')} <span className="text-meta-1">*</span>
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Describe the responsibilities and permissions of this role"
+                placeholder={t('roles.modal.placeholder_description')}
                 className={`w-full rounded-lg border-[1.5px] ${
                   formErrors.description ? 'border-danger' : 'border-stroke'
                 } bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
@@ -258,7 +259,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
                 disabled={loading}
                 className="block w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-meta-1 hover:bg-meta-1 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-meta-1 dark:hover:bg-meta-1"
               >
-                Cancel
+                {t('roles.modal.cancel')}
               </button>
             </div>
             <div className="w-full px-3 2xsm:w-1/2">
@@ -270,10 +271,10 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                    Creating...
+                    {t('roles.modal.creating')}
                   </div>
                 ) : (
-                  'Create Role'
+                  t('roles.modal.create')
                 )}
               </button>
             </div>

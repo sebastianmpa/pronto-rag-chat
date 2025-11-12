@@ -1,6 +1,7 @@
 import { ApexOptions } from 'apexcharts';
 import React, { useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import { useTranslation } from 'react-i18next';
 import { useEventCountByDay } from '../../hooks/useEventCountByDay';
 
 function formatDayMonth(dateStr: string) {
@@ -15,6 +16,7 @@ interface ChartSevenProps {
 }
 
 const ChartSeven: React.FC<ChartSevenProps> = ({ fechaIni, fechaFin }) => {
+  const { t } = useTranslation();
   const { data, loading, error } = useEventCountByDay({
     fechaIni,
     fechaFin,
@@ -143,20 +145,20 @@ const ChartSeven: React.FC<ChartSevenProps> = ({ fechaIni, fechaFin }) => {
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h4 className="text-title-sm2 font-bold text-black dark:text-white">
-            Conversations started per day
+            {t('charts.conversationsStartedPerDay')}
           </h4>
         </div>
       </div>
       <div>
         <div id="chartSeven" className="-ml-5">
           {loading ? (
-            <div className="text-center py-10">Loading...</div>
+            <div className="text-center py-10">{t('charts.loading')}</div>
           ) : error ? (
-            <div className="text-center text-red-500 py-10">Error loading data</div>
+            <div className="text-center text-red-500 py-10">{t('charts.errorLoadingData')}</div>
           ) : (
             <ReactApexChart
               options={options}
-              series={[{ name: 'Conversations', data: chartData.counts }]}
+              series={[{ name: t('charts.conversations'), data: chartData.counts }]}
               type="area"
               height={310}
             />

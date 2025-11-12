@@ -1,6 +1,7 @@
 import { ApexOptions } from 'apexcharts';
 import React, { useEffect, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import { useTranslation } from 'react-i18next';
 import { useFoundStats } from '../../hooks/useFoundStats';
 
 interface ChartEightProps {
@@ -9,6 +10,7 @@ interface ChartEightProps {
 }
 
 const ChartEight: React.FC<ChartEightProps> = ({ fechaIni, fechaFin }) => {
+  const { t } = useTranslation();
   const { foundStats, fetchFoundStats, loading } = useFoundStats();
   const [series, setSeries] = useState<number[]>([0, 0]);
 
@@ -31,7 +33,7 @@ const ChartEight: React.FC<ChartEightProps> = ({ fechaIni, fechaFin }) => {
       type: 'donut',
     },
     colors: ['#0FADCF', '#3C50E0'],
-    labels: ['Found', 'Not Found'],
+    labels: [t('charts.found'), t('charts.notFound')],
     legend: {
       show: false,
       position: 'bottom',
@@ -72,11 +74,10 @@ const ChartEight: React.FC<ChartEightProps> = ({ fechaIni, fechaFin }) => {
       <div className="mb-3 justify-between gap-4 sm:flex">
         <div>
           <h4 className="text-title-sm2 font-bold text-black dark:text-white">
-            Found vs Not Found
+            {t('charts.foundVsNotFound')}
           </h4>
         </div>
         <div className="mt-2 flex items-center sm:mt-0">
-    
           <div className="relative z-20 inline-block">
             <select
               name="#"
@@ -85,7 +86,7 @@ const ChartEight: React.FC<ChartEightProps> = ({ fechaIni, fechaFin }) => {
               disabled={loading}
             >
               <option value="" className="dark:bg-boxdark">
-                Fixed range
+                {t('charts.fixedRange')}
               </option>
             </select>
             <span className="absolute right-1 top-1/2 z-10 -translate-y-1/2">
@@ -119,7 +120,7 @@ const ChartEight: React.FC<ChartEightProps> = ({ fechaIni, fechaFin }) => {
           <div className="flex items-center gap-2">
             <span className="block h-4 w-4 rounded-full border-4 border-primary"></span>
             <span className="font-medium text-black-2 dark:text-white">
-              Found
+              {t('charts.found')}
             </span>
           </div>
           <span className="inline-block rounded-md bg-primary px-1.5 py-0.5 text-xs font-medium text-white">
@@ -130,7 +131,7 @@ const ChartEight: React.FC<ChartEightProps> = ({ fechaIni, fechaFin }) => {
           <div className="flex items-center gap-2">
             <span className="block h-4 w-4 rounded-full border-4 border-meta-10"></span>
             <span className="font-medium text-black-2 dark:text-white">
-              Not Found
+              {t('charts.notFound')}
             </span>
           </div>
           <span className="inline-block rounded-md bg-meta-10 px-1.5 py-0.5 text-xs font-medium text-white">

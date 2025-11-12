@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import LogoDark from '../../images/logo/logo-dark.svg';
 import Logo from '../../images/logo/logo.svg';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 const SignIn: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ const SignIn: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Validar email
   const validateEmail = (email: string): boolean => {
@@ -28,7 +30,7 @@ const SignIn: React.FC = () => {
     setSuccess('');
     
     if (newEmail && !validateEmail(newEmail)) {
-      setEmailError('Por favor, ingresa un email válido');
+      setEmailError(t('auth.invalidEmail'));
     }
   };
 
@@ -40,40 +42,38 @@ const SignIn: React.FC = () => {
 
     // Validar email antes de enviar
     if (!validateEmail(email)) {
-      setEmailError('Por favor, ingresa un email válido');
+      setEmailError(t('auth.invalidEmail'));
       return;
     }
 
     if (!password || password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError(t('auth.passwordMinLength'));
       return;
     }
 
     try {
       await login(email, password);
-      setSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
+      setSuccess(t('auth.loginSuccess'));
       // Esperar un momento para que el usuario vea el mensaje de éxito
       setTimeout(() => {
         navigate('/', { replace: true });
       }, 1500);
     } catch (err: any) {
       console.error('Error en login:', err);
-      
       // Manejar diferentes códigos de estado HTTP
       const status = err?.status;
-      
       if (status === 400) {
-        setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
+        setError(t('auth.error400'));
       } else if (status === 401) {
-        setError('Email o contraseña incorrectos. Por favor, intenta de nuevo.');
+        setError(t('auth.error401'));
       } else if (status === 500) {
-        setError('Error en el servidor. Las credenciales son incorrectas o el servicio no está disponible.');
+        setError(t('auth.error500'));
       } else if (status === 404) {
-        setError('Servicio de autenticación no encontrado. Contacta al administrador.');
+        setError(t('auth.error404'));
       } else if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-        setError('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+        setError(t('auth.errorNetwork'));
       } else {
-        setError('Error al iniciar sesión. Por favor, intenta de nuevo más tarde.');
+        setError(t('auth.errorGeneric'));
       }
     }
   };
@@ -222,7 +222,7 @@ const SignIn: React.FC = () => {
           <div className="w-full xl:w-1/2 p-10 flex items-center justify-center">
             <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8 border border-gray-200 dark:bg-boxdark dark:border-strokedark">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <h2 className="text-2xl font-bold mb-4 text-center dark:text-white">Sign In to TailAdmin</h2>
+                <h2 className="text-2xl font-bold mb-4 text-center dark:text-white">{t('auth.title')}</h2>
                 
                 {/* Alerta de Error */}
                 {error && (
@@ -244,7 +244,7 @@ const SignIn: React.FC = () => {
                     </div>
                     <div className="w-full">
                       <h5 className="mb-1 font-semibold text-[#B45454]">
-                        Error de autenticación
+                        {t('auth.errorTitle')}
                       </h5>
                       <p className="text-sm leading-relaxed text-[#CD5D5D]">
                         {error}
@@ -273,7 +273,7 @@ const SignIn: React.FC = () => {
                     </div>
                     <div className="w-full">
                       <h5 className="mb-1 font-semibold text-black dark:text-[#34D399]">
-                        ¡Éxito!
+                        {t('auth.successTitle')}
                       </h5>
                       <p className="text-sm leading-relaxed text-body">
                         {success}
@@ -284,14 +284,14 @@ const SignIn: React.FC = () => {
 
                 <div>
                   <label className="block mb-2 text-sm font-medium text-black dark:text-white">
-                    Email
+                    {t('auth.email')}
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={handleEmailChange}
                     className={`w-full border ${emailError ? 'border-red-500' : 'border-stroke'} px-4 py-3 rounded-lg focus:outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white transition`}
-                    placeholder="Ingresa tu email"
+                    placeholder={t('auth.emailPlaceholder')}
                     required
                   />
                   {emailError && (
@@ -301,7 +301,7 @@ const SignIn: React.FC = () => {
                 
                 <div>
                   <label className="block mb-2 text-sm font-medium text-black dark:text-white">
-                    Contraseña
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
                     <input
@@ -313,7 +313,7 @@ const SignIn: React.FC = () => {
                         setSuccess('');
                       }}
                       className="w-full border border-stroke px-4 py-3 pr-12 rounded-lg focus:outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white transition"
-                      placeholder="Ingresa tu contraseña"
+                      placeholder={t('auth.passwordPlaceholder')}
                       required
                       minLength={6}
                     />
@@ -321,7 +321,7 @@ const SignIn: React.FC = () => {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary focus:outline-none transition"
-                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                     >
                       {showPassword ? (
                         <svg
@@ -367,14 +367,14 @@ const SignIn: React.FC = () => {
                   className="w-full bg-primary text-white py-3 rounded-lg hover:bg-opacity-90 transition duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!!emailError || !email || !password}
                 >
-                  Iniciar Sesión
+                  {t('auth.signIn')}
                 </button>
                 
                 <div className="mt-6 text-center">
                   <p className="text-sm text-body dark:text-bodydark">
-                    ¿No tienes una cuenta?{' '}
+                    {t('auth.noAccount')}{' '}
                     <Link to="/auth/signup" className="text-primary hover:underline font-medium">
-                      Regístrate
+                      {t('auth.signUp')}
                     </Link>
                   </p>
                 </div>

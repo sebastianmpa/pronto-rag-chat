@@ -3,6 +3,7 @@ import { useUsers } from '../../../hooks/useUser';
 import { getAllRoles } from '../../../libs/RoleService';
 import { CreateUserDto } from '../../../types/User';
 import { Role } from '../../../types/Role';
+import { useTranslation } from 'react-i18next';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
   onSuccess,
   trigger,
 }) => {
+  const { t } = useTranslation();
   const { create, loading, error } = useUsers();
   const modal = useRef<HTMLDivElement>(null);
 
@@ -119,27 +121,27 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const validateForm = (): boolean => {
     const errors: typeof formErrors = {};
     if (!formData.firstName.trim()) {
-      errors.firstName = 'First name is required';
+      errors.firstName = t('users.modal.validation.first_name_required');
     } else if (formData.firstName.length < 2) {
-      errors.firstName = 'First name must be at least 2 characters';
+      errors.firstName = t('users.modal.validation.first_name_min');
     }
     if (!formData.lastName.trim()) {
-      errors.lastName = 'Last name is required';
+      errors.lastName = t('users.modal.validation.last_name_required');
     } else if (formData.lastName.length < 2) {
-      errors.lastName = 'Last name must be at least 2 characters';
+      errors.lastName = t('users.modal.validation.last_name_min');
     }
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = t('users.modal.validation.email_required');
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      errors.email = 'Email is not valid';
+      errors.email = t('users.modal.validation.email_invalid');
     }
     if (!formData.password.trim()) {
-      errors.password = 'Password is required';
+      errors.password = t('users.modal.validation.password_required');
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = t('users.modal.validation.password_min');
     }
     if (!formData.roleId) {
-      errors.roleId = 'You must select a role';
+      errors.roleId = t('users.modal.validation.role_required');
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -168,7 +170,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
         {/* Header */}
         <div className="mb-8">
           <h3 className="pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-            Create New User
+            {t('users.modal.create_title')}
           </h3>
           <span className="mx-auto inline-block h-1 w-22.5 rounded bg-primary"></span>
         </div>
@@ -188,7 +190,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 fill=""
               />
             </svg>
-            <p className="text-sm font-medium text-danger">{error}</p>
+            <p className="text-sm font-medium text-danger">{t('users.modal.error')}</p>
           </div>
         )}
         {/* Form */}
@@ -197,14 +199,14 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
             {/* First Name */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                First Name <span className="text-meta-1">*</span>
+                {t('users.modal.first_name_label')} <span className="text-meta-1">*</span>
               </label>
               <input
                 type="text"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                placeholder="E.g.: John"
+                placeholder={t('users.modal.placeholder_first_name')}
                 className={`w-full rounded-lg border-[1.5px] ${formErrors.firstName ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                 disabled={loading}
               />
@@ -215,14 +217,14 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
             {/* Last Name */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Last Name <span className="text-meta-1">*</span>
+                {t('users.modal.last_name_label')} <span className="text-meta-1">*</span>
               </label>
               <input
                 type="text"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                placeholder="E.g.: Smith"
+                placeholder={t('users.modal.placeholder_last_name')}
                 className={`w-full rounded-lg border-[1.5px] ${formErrors.lastName ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                 disabled={loading}
               />
@@ -233,14 +235,14 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
             {/* Email */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Email <span className="text-meta-1">*</span>
+                {t('users.modal.email_label')} <span className="text-meta-1">*</span>
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="E.g.: john.smith@email.com"
+                placeholder={t('users.modal.placeholder_email')}
                 className={`w-full rounded-lg border-[1.5px] ${formErrors.email ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                 disabled={loading}
               />
@@ -251,14 +253,14 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
             {/* Password */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Password <span className="text-meta-1">*</span>
+                {t('users.modal.password_label')} <span className="text-meta-1">*</span>
               </label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Minimum 6 characters"
+                placeholder={t('users.modal.placeholder_password')}
                 className={`w-full rounded-lg border-[1.5px] ${formErrors.password ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                 disabled={loading}
               />
@@ -269,7 +271,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
             {/* Role */}
             <div>
               <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                Role <span className="text-meta-1">*</span>
+                {t('users.modal.role_label')} <span className="text-meta-1">*</span>
               </label>
               <select
                 name="roleId"
@@ -278,7 +280,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 className={`w-full rounded-lg border-[1.5px] ${formErrors.roleId ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                 disabled={loading || loadingRoles}
               >
-                <option value="">Select a role</option>
+                <option value="">{t('users.modal.placeholder_role')}</option>
                 {roles.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.name}
@@ -299,7 +301,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 disabled={loading}
                 className="block w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-meta-1 hover:bg-meta-1 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-meta-1 dark:hover:bg-meta-1"
               >
-                Cancel
+                {t('users.modal.cancel')}
               </button>
             </div>
             <div className="w-full px-3 2xsm:w-1/2">
@@ -311,10 +313,10 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                    Creating...
+                    {t('users.modal.creating')}
                   </div>
                 ) : (
-                  'Create User'
+                  t('users.modal.create')
                 )}
               </button>
             </div>

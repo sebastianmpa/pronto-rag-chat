@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
 import DefaultLayout from '../layout/DefaultLayout';
@@ -90,6 +91,7 @@ const renderMessageContent = (content: string, role?: string) => {
 };
 
 const MessagesMe: React.FC = () => {
+  const { t } = useTranslation();
   // Search state for chat list
   const [searchTerm, setSearchTerm] = useState('');
   // Animación CSS para los puntos de typing
@@ -209,7 +211,7 @@ const MessagesMe: React.FC = () => {
         {
           id: `welcome-${Date.now()}`,
           role: 'assistant',
-          content: `Hi${userName ? ' ' + userName : ''}! I can help identify compatible parts, download manuals and add products to your cart.`,
+          content: t('welcome', { userName }),
           createdAt: new Date().toISOString(),
         }
       ]);
@@ -420,7 +422,7 @@ const MessagesMe: React.FC = () => {
 
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="My Messages" />
+  <Breadcrumb pageName={t('my_chats')} />
       {/* Mostrar error si existe */}
       {error && (
         <div className="p-4 bg-red-100 text-red-700 rounded mb-2 text-center">
@@ -435,7 +437,7 @@ const MessagesMe: React.FC = () => {
             <div className="border-b border-stroke dark:border-strokedark px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-sm font-medium text-black dark:text-white whitespace-nowrap">
-                  My Chats <span className="text-xs ml-1">{chats?.totalItems ?? 0}</span>
+                  {t('my_chats')} <span className="text-xs ml-1">{chats?.totalItems ?? 0}</span>
                 </h4>
                 <button
                   onClick={handleNewChat}
@@ -444,15 +446,15 @@ const MessagesMe: React.FC = () => {
                   <svg className="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="hidden sm:inline whitespace-nowrap">New Chat</span>
-                  <span className="inline sm:hidden">New</span>
+                  <span className="hidden sm:inline whitespace-nowrap">{t('new_chat')}</span>
+                  <span className="inline sm:hidden">{t('new_chat')}</span>
                 </button>
               </div>
             </div>
             {/* Chats per page selector */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-2 sm:py-3 border-b border-stroke dark:border-strokedark">
               <label htmlFor="limit" className="text-sm font-medium text-black dark:text-white whitespace-nowrap">
-                Show last:
+                {t('show_last')}
               </label>
               <select
                 id="limit"
@@ -473,7 +475,7 @@ const MessagesMe: React.FC = () => {
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="w-full rounded border border-stroke bg-gray-2 dark:bg-boxdark-2 py-2 sm:py-2.5 pl-4 sm:pl-5 pr-10 text-sm outline-none focus:border-primary dark:border-strokedark dark:text-white"
-                  placeholder="Search..."
+                  placeholder={t('search')}
                   disabled={loadingChats}
                 />
                 <button type="submit" className="absolute top-1/2 right-4 -translate-y-1/2">
@@ -489,7 +491,7 @@ const MessagesMe: React.FC = () => {
               <div className="space-y-0">
                 {loadingChats && (
                   <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-                    Loading chats...
+                    {t('loading_chats')}
                   </div>
                 )}
                 {filteredChats.map((chat) => {
@@ -505,7 +507,7 @@ const MessagesMe: React.FC = () => {
                     >
                       <div className="relative mr-3.5 h-11 w-11 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
                         <span className="text-sm font-medium text-black dark:text-white">
-                          {chat.store_domain?.charAt(0)?.toUpperCase()}
+                          A
                         </span>
                         <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-success"></span>
                       </div>
@@ -533,9 +535,9 @@ const MessagesMe: React.FC = () => {
                       <span className="text-lg font-medium text-black dark:text-white">A</span>
                     </div>
                     <div>
-                      <h5 className="font-medium text-black dark:text-white">Assistant</h5>
+                      <h5 className="font-medium text-black dark:text-white">{t('assistant')}</h5>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {selectedChat.isNew ? 'New Chat' : chatDetail?.store_domain || ''}
+                        {selectedChat.isNew ? t('new_chat') : chatDetail?.store_domain || ''}
                       </p>
                     </div>
                   </div>
@@ -556,7 +558,7 @@ const MessagesMe: React.FC = () => {
                         <div className="flex justify-start">
                           <div className="max-w-xs">
                             <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
-                              Assistant
+                              {t('assistant')}
                             </p>
                             <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-3 px-4">
                               <p className="text-sm break-words">
@@ -584,7 +586,7 @@ const MessagesMe: React.FC = () => {
                         {assistantTyping && (
                           <div className="flex justify-start">
                             <div className="max-w-xs">
-                              <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">Assistant</p>
+                              <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">{t('assistant')}</p>
                               <div className="rounded-2xl rounded-tl-none bg-gray-2 dark:bg-boxdark-2 text-black dark:text-white py-3 px-4 flex items-center">
                                 <span className="chat-typing-dots">
                                   <span className="chat-typing-dot"></span>
@@ -630,7 +632,7 @@ const MessagesMe: React.FC = () => {
                                  <div className={msg.role === 'user' ? 'max-w-xs' : 'max-w-xs'}>
                                    {msg.role !== 'user' && (
                                      <p className="mb-2 text-xs font-medium text-blue-700 dark:text-blue-300">
-                                       Assistant
+                                       {t('assistant')}
                                      </p>
                                    )}
                                    <div className={`rounded-2xl py-3 px-4 border shadow-md ${
@@ -655,7 +657,7 @@ const MessagesMe: React.FC = () => {
                         {assistantTyping && (
                           <div className="flex justify-start">
                             <div className="max-w-xs">
-                              <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">Assistant</p>
+                              <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">{t('assistant')}</p>
                               <div className="rounded-2xl rounded-tl-none bg-gray-2 dark:bg-boxdark-2 text-black dark:text-white py-3 px-4 flex items-center">
                                 <span className="chat-typing-dots">
                                   <span className="chat-typing-dot"></span>
@@ -694,7 +696,7 @@ const MessagesMe: React.FC = () => {
                            type="text"
                            value={inputValue}
                            onChange={e => setInputValue(e.target.value)}
-                           placeholder="Type a message..."
+                           placeholder={t('type_message')}
                            className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary"
                            onKeyDown={handleTyping}
                          />
@@ -707,7 +709,7 @@ const MessagesMe: React.FC = () => {
                        </button>
                      </form>
                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-left">
-                       Disclaimer: This AI Assistant may make mistakes. Check important information.
+                       {t('disclaimer')}
                      </div>
                   </div>
                 </div>
@@ -719,7 +721,7 @@ const MessagesMe: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Select a chat to view the conversation
+                    {t('select_chat')}
                   </p>
                 </div>
               </div>

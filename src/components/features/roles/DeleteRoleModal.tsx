@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Role } from '../../../types/Role';
 import { useRoles } from '../../../hooks/useRole';
 
@@ -20,6 +21,7 @@ const DeleteRoleModal: React.FC<DeleteRoleModalProps> = ({
   const modal = useRef<HTMLDivElement>(null);
   const { remove } = useRoles();
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   // close if the esc key is pressed
   useEffect(() => {
@@ -113,16 +115,15 @@ const DeleteRoleModal: React.FC<DeleteRoleModalProps> = ({
 
         {/* Title */}
         <h3 className="mt-5.5 pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-          Delete Role
+          {t('roles.modal.delete_title')}
         </h3>
 
         {/* Message */}
         <p className="mb-10 px-4">
-          Are you sure you want to delete the role{' '}
-          <span className="font-semibold text-danger">"{role.name}"</span>?
+          {t('roles.modal.delete_confirm', { name: role.name })}
           <br />
           <span className="mt-2 block text-sm text-bodydark">
-            This action cannot be undone.
+            {t('roles.modal.delete_warning')}
           </span>
         </p>
 
@@ -134,7 +135,7 @@ const DeleteRoleModal: React.FC<DeleteRoleModalProps> = ({
               disabled={loading}
               className="block w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-meta-1 hover:bg-meta-1 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-meta-1 dark:hover:bg-meta-1"
             >
-              Cancel
+              {t('roles.modal.cancel')}
             </button>
           </div>
           <div className="w-full px-3 2xsm:w-1/2">
@@ -146,10 +147,10 @@ const DeleteRoleModal: React.FC<DeleteRoleModalProps> = ({
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                  Deleting...
+                  {t('roles.modal.deleting')}
                 </div>
               ) : (
-                'Delete'
+                t('roles.modal.delete')
               )}
             </button>
           </div>

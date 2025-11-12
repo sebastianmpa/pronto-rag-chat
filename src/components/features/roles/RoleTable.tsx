@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useTable,
   useSortBy,
@@ -7,7 +8,7 @@ import {
   usePagination,
   Column,
 } from 'react-table';
-import { useRolesPaginated, useRoles } from '../../../hooks/useRole';
+import { useRolesPaginated } from '../../../hooks/useRole';
 import { Role } from '../../../types/Role';
 import CreateRoleModal from './CreateRoleModal';
 import EditRoleModal from './EditRoleModal';
@@ -30,7 +31,7 @@ const RoleTable = () => {
     limit,
   } = useRolesPaginated(1, 10);
 
-  const { remove } = useRoles();
+  // const { remove } = useRoles();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -45,19 +46,20 @@ const RoleTable = () => {
     loadPage(1);
   }, []);
 
+  const { t } = useTranslation();
   // Define table columns
   const columns: Column<Role>[] = useMemo(
     () => [
       {
-        Header: 'Name',
+        Header: t('roles.table.name'),
         accessor: 'name',
       },
       {
-        Header: 'Internal Name',
+        Header: t('roles.table.internal_name'),
         accessor: 'internalName',
       },
       {
-        Header: 'Description',
+        Header: t('roles.table.description'),
         accessor: 'description',
         Cell: ({ value }: { value: string }) => (
           <div className="max-w-xs truncate" title={value}>
@@ -66,11 +68,11 @@ const RoleTable = () => {
         ),
       },
       {
-        Header: 'Created At',
+        Header: t('roles.table.created_at'),
         accessor: 'createdAt',
         Cell: ({ value }: { value: string }) => (
           <span>
-            {new Date(value).toLocaleDateString('en-US', {
+            {new Date(value).toLocaleDateString(undefined, {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
@@ -79,7 +81,7 @@ const RoleTable = () => {
         ),
       },
       {
-        Header: 'Actions',
+        Header: t('roles.table.actions'),
         accessor: 'id',
         Cell: ({ value }: { value: string }) => (
           <div className="flex items-center space-x-3.5">
@@ -91,7 +93,7 @@ const RoleTable = () => {
                 }
               }}
               className="hover:text-primary"
-              title="Edit"
+              title={t('roles.table.edit')}
               onClick={() => handleEdit(value)}
             >
               {/* Pencil icon SVG (with shadow) - same as PermissionsTable */}
@@ -111,7 +113,7 @@ const RoleTable = () => {
             <button
               ref={deleteButtonRef}
               className="hover:text-danger"
-              title="Delete"
+              title={t('roles.table.delete')}
               onClick={() => handleDelete(value)}
             >
               <svg
@@ -144,7 +146,7 @@ const RoleTable = () => {
         ),
       },
     ],
-    []
+    [t, selectedRoleId]
   );
 
   const data = useMemo(() => rolesData, [rolesData]);
@@ -175,10 +177,10 @@ const RoleTable = () => {
   const { globalFilter } = state;
 
   // Handlers
-  const handleView = (id: string) => {
-    console.log('View role:', id);
-    // TODO: Implementar vista de detalles
-  };
+  // const handleView = (id: string) => {
+  //   console.log('View role:', id);
+  //   // TODO: Implementar vista de detalles
+  // };
 
   const handleEdit = (id: string) => {
     console.log('🔵 Edit button clicked, ID:', id);
@@ -244,7 +246,7 @@ const RoleTable = () => {
               value={globalFilter || ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="w-full rounded-md border border-stroke px-5 py-2.5 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
-              placeholder="Search roles..."
+              placeholder={t('roles.table.search_placeholder')}
             />
           </div>
 
@@ -261,7 +263,7 @@ const RoleTable = () => {
                   </option>
                 ))}
               </select>
-              <p className="pl-2 text-black dark:text-white">Records per page</p>
+              <p className="pl-2 text-black dark:text-white">{t('roles.table.records_per_page')}</p>
             </div>
 
             <button
@@ -282,7 +284,7 @@ const RoleTable = () => {
                   fill=""
                 />
               </svg>
-              Create Role
+              {t('roles.table.create_role')}
             </button>
           </div>
         </div>
@@ -384,7 +386,7 @@ const RoleTable = () => {
               ) : (
                 <tr>
                   <td colSpan={columns.length} className="py-8 text-center">
-                    <p className="text-sm text-bodydark">No roles to display</p>
+                    <p className="text-sm text-bodydark">{t('roles.table.no_roles')}</p>
                   </td>
                 </tr>
               )}
@@ -395,7 +397,7 @@ const RoleTable = () => {
         {/* Footer con paginación */}
         <div className="flex flex-col justify-between gap-4 border-t border-stroke px-8 pt-5 dark:border-strokedark sm:flex-row sm:items-center">
           <p className="font-medium">
-            Showing page {currentPage} of {totalPages} ({totalItems} total records)
+            {t('roles.table.pagination', { currentPage, totalPages, totalItems })}
           </p>
           <div className="flex gap-2">
             <button
@@ -419,7 +421,7 @@ const RoleTable = () => {
             </button>
 
             <span className="flex items-center px-2 font-medium">
-              Página {currentPage}
+              {t('roles.table.page')} {currentPage}
             </span>
 
             <button

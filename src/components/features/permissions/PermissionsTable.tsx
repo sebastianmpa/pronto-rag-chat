@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useTable,
   useSortBy,
@@ -45,19 +46,20 @@ const PermissionsTable = () => {
     loadPage(1);
   }, []);
 
+  const { t } = useTranslation();
   // Definir columnas de la tabla
   const columns: Column<Permission>[] = useMemo(
     () => [
       {
-        Header: 'Name',
+        Header: t('permissions.table.name'),
         accessor: 'name',
       },
       {
-        Header: 'Internal Name',
+        Header: t('permissions.table.internal_name'),
         accessor: 'internalName',
       },
       {
-        Header: 'Description',
+        Header: t('permissions.table.description'),
         accessor: 'description',
         Cell: ({ value }: { value: string }) => (
           <div className="max-w-xs truncate" title={value}>
@@ -66,11 +68,11 @@ const PermissionsTable = () => {
         ),
       },
       {
-        Header: 'Created At',
+        Header: t('permissions.table.created_at'),
         accessor: 'createdAt',
         Cell: ({ value }: { value: string }) => (
           <span>
-            {new Date(value).toLocaleDateString('en-US', {
+            {new Date(value).toLocaleDateString(undefined, {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
@@ -79,7 +81,7 @@ const PermissionsTable = () => {
         ),
       },
       {
-        Header: 'Actions',
+        Header: t('permissions.table.actions'),
         accessor: 'id',
         Cell: ({ value }: { value: string }) => (
           <div className="flex items-center space-x-3.5">
@@ -91,7 +93,7 @@ const PermissionsTable = () => {
                 }
               }}
               className="hover:text-primary"
-              title="Edit"
+              title={t('permissions.table.edit')}
               onClick={() => handleEdit(value)}
             >
               {/* Pencil icon SVG (with shadow) */}
@@ -115,7 +117,7 @@ const PermissionsTable = () => {
                 }
               }}
               className="hover:text-danger"
-              title="Delete"
+              title={t('permissions.table.delete')}
               onClick={() => handleDelete(value)}
             >
               <svg
@@ -148,7 +150,7 @@ const PermissionsTable = () => {
         ),
       },
     ],
-    []
+    [t, selectedPermissionId]
   );
 
   const data = useMemo(() => permissionsData, [permissionsData]);
@@ -241,7 +243,7 @@ const PermissionsTable = () => {
               value={globalFilter || ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="w-full rounded-md border border-stroke px-5 py-2.5 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
-              placeholder="Search permissions..."
+              placeholder={t('permissions.table.search_placeholder')}
             />
           </div>
 
@@ -258,7 +260,7 @@ const PermissionsTable = () => {
                   </option>
                 ))}
               </select>
-              <p className="pl-2 text-black dark:text-white">Records per page</p>
+              <p className="pl-2 text-black dark:text-white">{t('permissions.table.records_per_page')}</p>
             </div>
 
             <button
@@ -279,7 +281,7 @@ const PermissionsTable = () => {
                   fill=""
                 />
               </svg>
-              Create Permission
+              {t('permissions.table.create_permission')}
             </button>
           </div>
         </div>
@@ -381,7 +383,7 @@ const PermissionsTable = () => {
               ) : (
                 <tr>
                   <td colSpan={columns.length} className="py-8 text-center">
-                    <p className="text-sm text-bodydark">No permissions to display</p>
+                    <p className="text-sm text-bodydark">{t('permissions.table.no_permissions')}</p>
                   </td>
                 </tr>
               )}
@@ -392,7 +394,7 @@ const PermissionsTable = () => {
         {/* Footer con paginación */}
         <div className="flex flex-col justify-between gap-4 border-t border-stroke px-8 pt-5 dark:border-strokedark sm:flex-row sm:items-center">
           <p className="font-medium">
-            Showing page {currentPage} of {totalPages} ({totalItems} total records)
+            {t('permissions.table.pagination', { currentPage, totalPages, totalItems })}
           </p>
           <div className="flex gap-2">
             <button
@@ -416,7 +418,7 @@ const PermissionsTable = () => {
             </button>
 
             <span className="flex items-center px-2 font-medium">
-              Page {currentPage}
+              {t('permissions.table.page')} {currentPage}
             </span>
 
             <button

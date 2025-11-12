@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 import SidebarLinkGroup from './SidebarLinkGroup';
 import Logo from '../../images/logo/logo.svg';
@@ -65,10 +66,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   }, [sidebarExpanded]);
 
   // Loader while fetching profile
+  const { t } = useTranslation();
   if (loading) {
     return (
       <aside className="flex h-screen w-72.5 items-center justify-center bg-black">
-        <span className="text-white">Cargando...</span>
+        <span className="text-white">{t('sidebar.loading')}</span>
       </aside>
     );
   }
@@ -114,7 +116,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         <nav className="mt-5 py-4 px-4 lg:mt-9 lg:px-6">
           <div>
             <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-              MENU
+              {t('sidebar.menu')}
             </h3>
               <ul className="mb-6 flex flex-col gap-1.5">
                 {/* Dashboard/Statistics solo para admin y supervisor */}
@@ -167,7 +169,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 fill=""
                               />
                             </svg>
-                            Dashboard
+                            {t('sidebar.dashboard')}
                             <svg
                               className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
                                 open && 'rotate-180'
@@ -200,7 +202,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                     (isActive && '!text-white')
                                   }
                                 >
-                                  Statistics
+                                  {t('sidebar.statistics')}
                                 </NavLink>
                               </li>
                             </ul>
@@ -237,7 +239,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               <circle cx="9" cy="11" r="2" stroke="#E5E7EB" strokeWidth="1.5" fill="none" />
                               <rect x="7" y="3" width="4" height="4" rx="2" stroke="#E5E7EB" strokeWidth="1.5" fill="none" />
                             </svg>
-                            Access Control
+                            {t('sidebar.accessControl')}
                             <svg
                               className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${open && 'rotate-180'}`}
                               width="20"
@@ -264,7 +266,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                     (isActive && '!text-white')
                                   }
                                 >
-                                  Users
+                                  {t('sidebar.users')}
                                 </NavLink>
                               </li>
                               <li>
@@ -275,7 +277,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                     (isActive && '!text-white')
                                   }
                                 >
-                                  Roles
+                                  {t('sidebar.roles')}
                                 </NavLink>
                               </li>
                               <li>
@@ -286,7 +288,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                     (isActive && '!text-white')
                                   }
                                 >
-                                  Permissions
+                                  {t('sidebar.permissions')}
                                 </NavLink>
                               </li>
                             </ul>
@@ -344,7 +346,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             fill=""
                           />
                         </svg>
-                        Dashboard
+                        {t('sidebar.dashboard')}
                         <svg
                           className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
                             open && 'rotate-180'
@@ -377,7 +379,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 (isActive && '!text-white')
                               }
                             >
-                              Statistics
+                              {t('sidebar.statistics')}
                             </NavLink>
                           </li>
                         </ul>
@@ -421,7 +423,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                           fill=""
                         />
                       </svg>
-                      Chats
+                      {t('sidebar.chats')}
                       <svg
                         className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
                           open && 'rotate-180'
@@ -458,7 +460,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               (isActive && '!text-white')
                             }
                           >
-                            My Messages
+                            {t('sidebar.myMessages')}
                           </NavLink>
                         </li>
                         {/* Opción Todos los Mensajes - solo para admin y supervisor */}
@@ -471,7 +473,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 (isActive && '!text-white')
                               }
                             >
-                              All Messages
+                              {t('sidebar.allMessages')}
                             </NavLink>
                           </li>
                         )}
@@ -502,7 +504,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     <path d="M6 12V8" stroke="#E5E7EB" strokeWidth="1.5" />
                     <path d="M12 12V8" stroke="#E5E7EB" strokeWidth="1.5" />
                   </svg>
-                  Parts
+                  {t('sidebar.parts')}
                 </NavLink>
               </li>
             </ul>

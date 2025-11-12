@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRoles } from '../../../hooks/useRole';
 import { getAllPermissions } from '../../../libs/PermissionService';
 import { UpdateRoleDto } from '../../../types/Role';
@@ -21,8 +22,9 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
 }) => {
   console.log('🟣 EditRoleModal renderizado, isOpen:', isOpen, 'roleId:', roleId);
   const { getById, update, assignPermissions, fetchPermissions, loading, error } = useRoles();
+  const { t } = useTranslation();
   const modal = useRef<HTMLDivElement>(null);
-  const [loadingRole, setLoadingRole] = useState(false);
+  // const [loadingRole, setLoadingRole] = useState(false);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -43,7 +45,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
   useEffect(() => {
     const loadRole = async () => {
       if (isOpen && roleId) {
-        setLoadingRole(true);
         try {
           const role = await getById(roleId);
           if (role) {
@@ -55,8 +56,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
           }
         } catch (err) {
           console.error('Error loading role:', err);
-        } finally {
-          setLoadingRole(false);
         }
       }
     };
@@ -154,24 +153,23 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
     const errors: typeof formErrors = {};
 
     if (!formData.name?.trim()) {
-      errors.name = 'Name is required';
+      errors.name = t('roles.modal.validation.name_required');
     } else if (formData.name.length < 3) {
-      errors.name = 'Name must be at least 3 characters';
+      errors.name = t('roles.modal.validation.name_min');
     }
 
     if (!formData.internalName?.trim()) {
-      errors.internalName = 'Internal name is required';
+      errors.internalName = t('roles.modal.validation.internal_name_required');
     } else if (formData.internalName.length < 3) {
-      errors.internalName = 'Internal name must be at least 3 characters';
+      errors.internalName = t('roles.modal.validation.internal_name_min');
     } else if (!/^[a-z0-9_-]+$/.test(formData.internalName)) {
-      errors.internalName =
-        'Only lowercase letters, numbers, hyphens, and underscores are allowed';
+      errors.internalName = t('roles.modal.validation.internal_name_pattern');
     }
 
     if (!formData.description?.trim()) {
-      errors.description = 'Description is required';
+      errors.description = t('roles.modal.validation.description_required');
     } else if (formData.description.length < 10) {
-      errors.description = 'Description must be at least 10 characters';
+      errors.description = t('roles.modal.validation.description_min');
     }
 
     setFormErrors(errors);
@@ -215,7 +213,7 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
           {/* Header */}
           <div className="mb-8">
             <h3 className="pb-2 text-xl font-bold text-black dark:text-white sm:text-2xl">
-              Edit Role
+              {t('roles.modal.edit_title')}
             </h3>
             <span className="mx-auto inline-block h-1 w-22.5 rounded bg-primary"></span>
           </div>
@@ -223,7 +221,7 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
           {error && (
             <div className="mb-6 flex items-center gap-3 rounded-md border border-danger bg-danger bg-opacity-10 p-4">
               <svg className="fill-current text-danger" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 0C4.92487 0 0 4.92487 0 11C0 17.0751 4.92487 22 11 22C17.0751 22 22 17.0751 22 11C22 4.92487 17.0751 0 11 0ZM11 16.5C10.4477 16.5 10 16.0523 10 15.5C10 14.9477 10.4477 14.5 11 14.5C11.5523 14.5 12 14.9477 12 15.5C12 16.0523 11.5523 16.5 11 16.5ZM12 12.5C12 13.0523 11.5523 13.5 11 13.5C10.4477 13.5 10 13.0523 10 12.5V6.5C10 5.94772 10.4477 5.5 11 5.5C11.5523 5.5 12 5.94772 12 6.5V12.5Z" fill=""/></svg>
-              <p className="text-sm font-medium text-danger">{error}</p>
+              <p className="text-sm font-medium text-danger">{t('roles.modal.error')}</p>
             </div>
           )}
           {/* Form */}
@@ -232,14 +230,14 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
               {/* Role Name */}
               <div>
                 <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                  Role Name <span className="text-meta-1">*</span>
+                  {t('roles.modal.name_label')} <span className="text-meta-1">*</span>
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name || ''}
                   onChange={handleChange}
-                  placeholder="E.g.: Administrator, Editor, Viewer"
+                  placeholder={t('roles.modal.placeholder_name')}
                   className={`w-full rounded-lg border-[1.5px] ${formErrors.name ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                   disabled={loading}
                 />
@@ -250,33 +248,33 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
               {/* Internal Name */}
               <div>
                 <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                  Internal Name <span className="text-meta-1">*</span>
+                  {t('roles.modal.internal_name_label')} <span className="text-meta-1">*</span>
                 </label>
                 <input
                   type="text"
                   name="internalName"
                   value={formData.internalName || ''}
                   onChange={handleChange}
-                  placeholder="E.g.: admin, editor, viewer"
+                  placeholder={t('roles.modal.placeholder_internal_name')}
                   className={`w-full rounded-lg border-[1.5px] ${formErrors.internalName ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                   disabled={loading}
                 />
                 {formErrors.internalName && (
                   <p className="mt-1 text-xs text-danger">{formErrors.internalName}</p>
                 )}
-                <p className="mt-1 text-xs text-bodydark">Only lowercase letters, numbers, hyphens, and underscores are allowed</p>
+                <p className="mt-1 text-xs text-bodydark">{t('roles.modal.internal_name_helper')}</p>
               </div>
               {/* Description */}
               <div>
                 <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                  Description <span className="text-meta-1">*</span>
+                  {t('roles.modal.description_label')} <span className="text-meta-1">*</span>
                 </label>
                 <textarea
                   name="description"
                   value={formData.description || ''}
                   onChange={handleChange}
                   rows={4}
-                  placeholder="Describe the responsibilities and permissions of this role"
+                  placeholder={t('roles.modal.placeholder_description')}
                   className={`w-full rounded-lg border-[1.5px] ${formErrors.description ? 'border-danger' : 'border-stroke'} bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}
                   disabled={loading}
                 ></textarea>
@@ -294,7 +292,7 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                   disabled={loading}
                   className="block w-full rounded border border-stroke bg-gray p-3 text-center font-medium text-black transition hover:border-meta-1 hover:bg-meta-1 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-meta-1 dark:hover:bg-meta-1"
                 >
-                  Cancel
+                  {t('roles.modal.cancel')}
                 </button>
               </div>
               <div className="w-full px-3 2xsm:w-1/2">
@@ -306,10 +304,10 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
-                      Updating...
+                      {t('roles.modal.updating')}
                     </div>
                   ) : (
-                    'Update Role'
+                    t('roles.modal.edit')
                   )}
                 </button>
               </div>
@@ -319,7 +317,7 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
         {/* Right: Permissions */}
         <div className="w-96 px-8 py-12 border-l border-stroke dark:border-strokedark overflow-y-auto" style={{ maxHeight: '600px' }}>
           <label className="mb-3 block text-lg font-bold text-black dark:text-white">
-            Role Permissions
+            {t('roles.modal.role_permissions', 'Role Permissions')}
           </label>
           {loadingPermissions ? (
             <div className="flex items-center justify-center py-4">

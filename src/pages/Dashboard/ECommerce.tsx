@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ChartEight from '../../components/Charts/ChartEight';
 
 import ChartSeven from '../../components/Charts/ChartSeven';
@@ -21,6 +22,7 @@ function getDefaultDates() {
 
 const ECommerce: React.FC = () => {
   const [dates, setDates] = useState(getDefaultDates());
+  const { t } = useTranslation();
   const { stats, loading: loadingStats, fetchStatsTops } = useStatsTops();
   const { eventStats, loading: loadingEvents, fetchEventStats } = useEventStats();
   const { foundStats, loading: loadingFound, fetchFoundStats } = useFoundStats();
@@ -42,15 +44,15 @@ const ECommerce: React.FC = () => {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-title-md2 font-bold text-black dark:text-white">
-            Dashboard Analytics
+            {t('dashboard.analytics')}
           </h1>
         </div>
         <div className="flex flex-col items-end gap-1">
           <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-            Select date range to view analytics data
+            {t('dashboard.select_date_range')}
           </p>
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-boxdark rounded-lg px-4 py-2 shadow-sm border border-slate-200 dark:border-strokedark">
-          <label className="font-medium text-black dark:text-white mr-2">Start date:</label>
+          <label className="font-medium text-black dark:text-white mr-2">{t('dashboard.start_date')}</label>
           <input
             type="date"
             name="fechaIni"
@@ -58,7 +60,7 @@ const ECommerce: React.FC = () => {
             onChange={handleDateChange}
             className="border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-base font-semibold bg-white dark:bg-boxdark text-blue-900 dark:text-blue-200 shadow-sm"
           />
-          <label className="font-medium text-black dark:text-white mx-2">End date:</label>
+          <label className="font-medium text-black dark:text-white mx-2">{t('dashboard.end_date')}</label>
           <input
             type="date"
             name="fechaFin"
@@ -87,7 +89,7 @@ const ECommerce: React.FC = () => {
         {/* Top Models Bar Chart filtrado */}
         {stats?.stats.topModels && stats.stats.topModels.filter((m) => m.model && m.model.trim() !== '').length > 0 && (
           <StatsBarChart
-            title="Most Frequent Models"
+            title={t('dashboard.most_frequent_models')}
             categories={stats.stats.topModels.filter((m) => m.model && m.model.trim() !== '').map((m) => m.model)}
             data={stats.stats.topModels.filter((m) => m.model && m.model.trim() !== '').map((m) => Number(m.total))}
             color="#3C50E0"
@@ -98,7 +100,7 @@ const ECommerce: React.FC = () => {
         {/* Top Part Types Bar Chart filtrado */}
         {stats?.stats.topPartTypes && stats.stats.topPartTypes.filter((p) => p.part_type && p.part_type.trim() !== '').length > 0 && (
           <StatsBarChart
-            title="Most Frequent Part Types"
+            title={t('dashboard.most_frequent_part_types')}
             categories={stats.stats.topPartTypes.filter((p) => p.part_type && p.part_type.trim() !== '').map((p) => p.part_type)}
             data={stats.stats.topPartTypes.filter((p) => p.part_type && p.part_type.trim() !== '').map((p) => Number(p.total))}
             color="#10B981"
@@ -109,7 +111,7 @@ const ECommerce: React.FC = () => {
         {/* Eventos por tipo Bar Chart usando event_friendly_name */}
         {eventStats?.stats && eventStats.stats.filter((e) => e.event_friendly_name && e.event_friendly_name.trim() !== '').length > 0 && (
           <StatsBarChart
-            title="Events by Type"
+            title={t('dashboard.events_by_type')}
             categories={eventStats.stats.filter((e) => e.event_friendly_name && e.event_friendly_name.trim() !== '').map((e) => e.event_friendly_name)}
             data={eventStats.stats.filter((e) => e.event_friendly_name && e.event_friendly_name.trim() !== '').map((e) => Number(e.total))}
             color="#6366F1"

@@ -90,10 +90,129 @@ const renderMessageContent = (content: string, role?: string) => {
   return content;
 };
 
+// Componente para renderizar la tabla desplegable
+const TableCollapsible: React.FC<{ 
+  tableData: any; 
+  messageId: string; 
+  isExpanded: boolean; 
+  onToggle: () => void 
+}> = ({ tableData, isExpanded, onToggle }) => {
+  // Si table es false o "error", no mostrar nada
+  if (tableData === false || tableData === 'error' || !tableData) return null;
+
+  const { generalInfo, relatedParts } = tableData;
+
+  return (
+    <div className="mt-3 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark">
+      {/* Header clickeable */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark"
+      >
+        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+          📊 Parts Information
+        </span>
+        <svg
+          className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Tabla desplegable */}
+      {isExpanded && (
+        <div className="overflow-auto max-h-[500px]">
+          {/* General Info como tabla principal */}
+          {generalInfo && (
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border-collapse text-xs">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-boxdark-2 border-b border-stroke dark:border-strokedark">
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">MFR ID</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Part Number</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
+                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.MFRID || '-'}</td>
+                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.PARTNUMBER || '-'}</td>
+                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.DESCRIPTION || '-'}</td>
+                    <td className="px-2 py-2 text-right text-gray-900 dark:text-white">{generalInfo.QTY_LOC ?? '-'}</td>
+                  </tr>
+                  {/* Related Parts como filas expandidas */}
+                  {relatedParts && relatedParts.length > 0 && (
+                    <tr>
+                      <td colSpan={4} className="bg-gray-50 dark:bg-boxdark-2 px-3 py-3">
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                            Related Parts ({relatedParts.length})
+                          </span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs border border-stroke dark:border-strokedark">
+                            <thead className="bg-white dark:bg-boxdark">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  MFR ID
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  Part Number
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  Description
+                                </th>
+                                <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  Qty
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white dark:bg-boxdark">
+                              {relatedParts.map((part: any, idx: number) => (
+                                <tr
+                                  key={idx}
+                                  className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2"
+                                >
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                    {part.MFRID || '-'}
+                                  </td>
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                    {part.PARTNUMBER || '-'}
+                                  </td>
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                    {part.DESCRIPTION || '-'}
+                                  </td>
+                                  <td className="px-2 py-1 text-right text-gray-900 dark:text-white">
+                                    {part.QUANTITYLOC ?? '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MessagesMe: React.FC = () => {
   const { t } = useTranslation();
   // Search state for chat list
   const [searchTerm, setSearchTerm] = useState('');
+  // State para controlar qué tabla está abierta (por message id)
+  const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
   // Animación CSS para los puntos de typing
   const typingDotsStyle = `
     @keyframes chat-typing {
@@ -354,6 +473,7 @@ const MessagesMe: React.FC = () => {
             id: `assistant-${Date.now()}`,
             role: 'assistant',
             content: apiResponse.answer,
+            table: apiResponse.table || null, // Incluir el campo table
             createdAt: new Date().toISOString(),
           }
         ]);
@@ -629,7 +749,7 @@ const MessagesMe: React.FC = () => {
                                  </div>
                                )}
                                <div className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                                 <div className={msg.role === 'user' ? 'max-w-xs' : 'max-w-xs'}>
+                                 <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-2xl'}>
                                    {msg.role !== 'user' && (
                                      <p className="mb-2 text-xs font-medium text-blue-700 dark:text-blue-300">
                                        {t('assistant')}
@@ -644,6 +764,15 @@ const MessagesMe: React.FC = () => {
                                      <p className="text-sm break-words">
                                        {renderMessageContent(msg.content, msg.role)}
                                      </p>
+                                     {/* Mostrar tabla si existe */}
+                                     {msg.role === 'assistant' && msg.table && msg.table !== false && msg.table !== 'error' && (
+                                       <TableCollapsible
+                                         tableData={msg.table}
+                                         messageId={msg.id}
+                                         isExpanded={expandedTableId === msg.id}
+                                         onToggle={() => setExpandedTableId(expandedTableId === msg.id ? null : msg.id)}
+                                       />
+                                     )}
                                    </div>
                                    <p className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                                      {new Date(msg.createdAt).toLocaleTimeString()}

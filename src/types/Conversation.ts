@@ -63,6 +63,7 @@ export interface ConversationMessage {
   updatedAt: string;
   deletedAt: string | null;
   conversation_id: string;
+  table?: any; 
 }
 
 export interface ConversationDetailResponse {

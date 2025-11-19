@@ -412,7 +412,7 @@ const MessagesMe: React.FC = () => {
             customer_id: customerId,
             question: messageContent,
             lang,
-            store_domain: 'www.echopartsonline.com',
+            store_domain: 'www.smallenginesprodealer.com',
           };
           console.log('[DEBUG] Nuevo chat - payload:', payload);
           const result = await sendMessageToConversation(payload);
@@ -421,7 +421,7 @@ const MessagesMe: React.FC = () => {
           if (result && result.conversation_id) {
             setSelectedChat({
               id: result.conversation_id,
-              store_domain: result.store_domain || 'www.echopartsonline.com',
+              store_domain: result.store_domain || 'www.smallenginesprodealer.com',
             });
           }
         } catch (err) {
@@ -445,7 +445,7 @@ const MessagesMe: React.FC = () => {
             customer_id: chatDetail?.customer_id ?? '',
             question: messageContent,
             lang: chatDetail?.lang || navigator.language || 'en-US',
-            store_domain: chatDetail?.store_domain || 'www.echopartsonline.com',
+            store_domain: chatDetail?.store_domain || 'www.smallenginesprodealer.com',
             conversation_id: selectedChat.id,
           };
           apiResponse = await sendMessageToConversation(payload);

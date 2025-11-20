@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from 'react-i18next';
 
 const DropdownDefault = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { t } = useTranslation();
 
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
@@ -90,7 +92,7 @@ const DropdownDefault = () => {
               </clipPath>
             </defs>
           </svg>
-          Edit
+          {t('edit')}
         </button>
         <button className="flex w-full items-center gap-2 rounded-sm px-4 py-1.5 text-left text-sm hover:bg-gray dark:hover:bg-meta-4">
           <svg
@@ -118,7 +120,7 @@ const DropdownDefault = () => {
               fill=""
             />
           </svg>
-          Delete
+          {t('delete')}
         </button>
       </div>
     </div>

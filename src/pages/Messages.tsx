@@ -6,12 +6,99 @@ import DefaultLayout from '../layout/DefaultLayout';
 import { useConversationsPaginated, useConversationById } from '../hooks/useConversation';
 import { getConversationsPaginated } from '../libs/ConversationService';
 import { useCustomerById } from '../hooks/useCustomer';
+// TableCollapsible importado de MessagesMe
+// Copiado aquí para evitar dependencias cruzadas
+const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
+  if (tableData === false || tableData === 'error' || !tableData) return null;
+  const { generalInfo, relatedParts } = tableData;
+  return (
+    <div className="mt-3 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark"
+      >
+        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+          📊 Parts Information
+        </span>
+        <svg
+          className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isExpanded && (
+        <div className="overflow-auto max-h-[500px]">
+          {generalInfo && (
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border-collapse text-xs">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-boxdark-2 border-b border-stroke dark:border-strokedark">
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">MFR ID</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Part Number</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
+                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.MFRID || '-'}</td>
+                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.PARTNUMBER || '-'}</td>
+                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.DESCRIPTION || '-'}</td>
+                    <td className="px-2 py-2 text-right text-gray-900 dark:text-white">{generalInfo.QTY_LOC ?? '-'}</td>
+                  </tr>
+                  {relatedParts && relatedParts.length > 0 && (
+                    <tr>
+                      <td colSpan={4} className="bg-gray-50 dark:bg-boxdark-2 px-3 py-3">
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                            Related Parts ({relatedParts.length})
+                          </span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs border border-stroke dark:border-strokedark">
+                            <thead className="bg-white dark:bg-boxdark">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">MFR ID</th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Part Number</th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Description</th>
+                                <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Qty</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white dark:bg-boxdark">
+                              {relatedParts.map((part, idx) => (
+                                <tr key={idx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID || '-'}</td>
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">{part.PARTNUMBER || '-'}</td>
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION || '-'}</td>
+                                  <td className="px-2 py-1 text-right text-gray-900 dark:text-white">{part.QUANTITYLOC ?? '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Messages: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const { t } = useTranslation();
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
+  // Estado para controlar qué tabla está abierta (por message id)
+  const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
 
   // Hooks para todas las conversaciones
   const { data: chats, loading: loadingChats } = useConversationsPaginated({ page, limit });
@@ -32,11 +119,12 @@ const Messages: React.FC = () => {
     const interval = setInterval(poll, 5000);
     return () => { ignore = true; clearInterval(interval); };
   }, [page, limit]);
-  const { data: chatDetail, loading: loadingDetail } = useConversationById(selectedChat?.id ?? '');
+  
+  const conversationId = selectedChat?.id ?? '';
+  const { data: chatDetail, loading: loadingDetail } = useConversationById(conversationId);
 
   // Customer del chat seleccionado
-  const { data: customerData } = useCustomerById(selectedChat?.customer_id ?? '');
-  const customer = selectedChat?.conversation_customer;
+  const { data: customerData } = useCustomerById(chatDetail?.customer_id ?? '');
 
   // Ref para scroll automático
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -178,6 +266,16 @@ const Messages: React.FC = () => {
                 {(pollChats?.items || chats?.items || []).map((chat) => {
                   // El título será el abstract, si no existe, fallback a los otros campos
                   const chatTitle = chat.abstract || chat.last_detected_model || chat.last_detected_part || chat.lang || chat.store_domain;
+                  // Inicial del nombre del usuario que creó el chat
+                  // Primero intenta conversation_customer.name, si no existe, usa solo la primera letra del customer_id como fallback
+                  let userInitial = 'U'; // Default
+                  if (chat.conversation_customer && chat.conversation_customer.name) {
+                    userInitial = chat.conversation_customer.name.charAt(0).toUpperCase();
+                  } else if (chat.customer_id) {
+                    // Si no hay conversation_customer, usa la primera letra del customer_id
+                    userInitial = chat.customer_id.charAt(0).toUpperCase();
+                  }
+                  
                   return (
                     <div
                       key={chat.id}
@@ -188,7 +286,7 @@ const Messages: React.FC = () => {
                     >
                       <div className="relative mr-3.5 h-11 w-11 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
                         <span className="text-sm font-medium text-black dark:text-white">
-                          {chat.store_domain?.charAt(0)?.toUpperCase()}
+                          {userInitial}
                         </span>
                         <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-success"></span>
                       </div>
@@ -237,8 +335,7 @@ const Messages: React.FC = () => {
                         <span className="text-gray-500 dark:text-gray-400">Loading conversation...</span>
                       </div>
                     )}
-                    {(() => {
-                      if (!chatDetail?.conversation_message?.length) return null;
+                    {chatDetail?.conversation_message && chatDetail.conversation_message.length > 0 && (() => {
                       let lastDate = '';
                       return chatDetail.conversation_message.map((msg) => {
                         // Custom message for 'No answer found'
@@ -262,7 +359,7 @@ const Messages: React.FC = () => {
                               <div className={msg.role === 'user' ? 'max-w-xs' : 'max-w-xs'}>
                                 {msg.role === 'user' && (
                                   <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
-                                    {customer?.name || t('user')}
+                                    {customerData?.name || t('user')}
                                   </p>
                                 )}
                                 {msg.role === 'assistant' && (
@@ -278,6 +375,15 @@ const Messages: React.FC = () => {
                                   <p className="text-sm break-words">
                                     {renderMessageContent(content, msg.role === 'user')}
                                   </p>
+                                  {/* Mostrar tabla si existe en el mensaje del assistant */}
+                                  {msg.role === 'assistant' && msg.table && msg.table !== false && msg.table !== 'error' && (
+                                    <TableCollapsible
+                                      tableData={msg.table}
+                                      messageId={msg.id}
+                                      isExpanded={expandedTableId === msg.id}
+                                      onToggle={() => setExpandedTableId(expandedTableId === msg.id ? null : msg.id)}
+                                    />
+                                  )}
                                 </div>
                                 <p className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-left' : 'text-right'}`}>
                                   {new Date(msg.createdAt).toLocaleTimeString()}

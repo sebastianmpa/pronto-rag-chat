@@ -45,6 +45,8 @@
   "disclaimer": "Este Asistente de IA puede cometer errores. Verifica la información importante.",
   "select_chat": "Selecciona un chat para ver la conversación",
   "thank_you_feedback": "¡Gracias por tu opinión!",
+  "edit": "Editar",
+  "delete": "Eliminar",
   "parts_table": {
     "location": "Ubicación",
     "mfr_id": "ID Fabricante",
@@ -233,6 +235,11 @@
     "myMessages": "Mis Mensajes",
     "allMessages": "Todos los Mensajes",
     "parts": "Partes",
+    "loading": "Cargando..."
+  },
+  "header": {
+    "logout": "Cerrar sesión",
+    "profile": "Perfil",
     "loading": "Cargando..."
   }
 }

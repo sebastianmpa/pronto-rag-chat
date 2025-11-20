@@ -94,6 +94,8 @@
   "disclaimer": "This AI Assistant may make mistakes. Check important information.",
   "select_chat": "Select a chat to view the conversation",
   "thank_you_feedback": "Thank you for your feedback!",
+  "edit": "Edit",
+  "delete": "Delete",
   "parts_table": {
     "location": "Location",
     "mfr_id": "MFR ID",
@@ -238,6 +240,11 @@
     "myMessages": "My Messages",
     "allMessages": "All Messages",
     "parts": "Parts",
+    "loading": "Loading..."
+  },
+  "header": {
+    "logout": "Log Out",
+    "profile": "Profile",
     "loading": "Loading..."
   }
 }

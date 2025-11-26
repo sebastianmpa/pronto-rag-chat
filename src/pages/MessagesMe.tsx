@@ -17,6 +17,60 @@ const formatDate = (date: string) => {
   return format(new Date(date), 'MMMM d, yyyy');
 };
 
+// Helper para extraer texto y tabla del content
+const parseMessageContent = (content: string, hasTable: boolean) => {
+  if (!hasTable) {
+    return { text: content, tableData: null };
+  }
+  
+  try {
+    // Buscar el separador de 8 guiones que precede al JSON
+    const separatorIndex = content.indexOf('--------');
+    
+    if (separatorIndex !== -1) {
+      // Separar el texto del JSON
+      const text = content.substring(0, separatorIndex).trim();
+      const jsonPart = content.substring(separatorIndex + 8).trim(); // +8 para saltar los guiones
+      
+      try {
+        // Intentar parsear el JSON después de los guiones
+        // Reemplazar comillas simples por comillas dobles para que sea JSON válido
+        const jsonString = jsonPart.replace(/'/g, '"').replace(/None/g, 'null');
+        const tableData = JSON.parse(jsonString);
+        
+        console.log('[DEBUG] Parsed table data:', tableData);
+        return { text, tableData };
+      } catch (parseError) {
+        console.error('[DEBUG] Error parsing JSON after separator:', parseError);
+        console.error('[DEBUG] JSON string attempted:', jsonPart);
+        return { text: content, tableData: null };
+      }
+    }
+    
+    // Fallback: intentar parsear el JSON completo del content
+    const parsed = JSON.parse(content);
+    return {
+      text: parsed.answer || parsed.text || '',
+      tableData: parsed.table || parsed
+    };
+  } catch (e) {
+    // Si todo falla, buscar el JSON dentro del string con regex
+    const jsonMatch = content.match(/\{[\s\S]*"generalInfo"[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const jsonString = jsonMatch[0].replace(/'/g, '"').replace(/None/g, 'null');
+        const tableData = JSON.parse(jsonString);
+        const text = content.replace(jsonMatch[0], '').replace(/--------/g, '').trim();
+        return { text, tableData };
+      } catch (parseError) {
+        console.error('[DEBUG] Error parsing table JSON from regex:', parseError);
+        return { text: content, tableData: null };
+      }
+    }
+    return { text: content, tableData: null };
+  }
+};
+
 // Formatea los mensajes del assistant para saltos de línea y URLs
 const renderMessageContent = (content: string, role?: string) => {
   if (role === 'assistant') {
@@ -134,6 +188,9 @@ const TableCollapsible: React.FC<{
                     <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">MFR ID</th>
                     <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Part Number</th>
                     <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                    {generalInfo.SUPERCEDETO && (
+                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Superseded To</th>
+                    )}
                     <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">Qty</th>
                   </tr>
                 </thead>
@@ -142,6 +199,11 @@ const TableCollapsible: React.FC<{
                     <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.MFRID || '-'}</td>
                     <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.PARTNUMBER || '-'}</td>
                     <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.DESCRIPTION || '-'}</td>
+                    {generalInfo.SUPERCEDETO && (
+                      <td className="px-2 py-2 text-gray-900 dark:text-white font-medium text-blue-600 dark:text-blue-400">
+                        {generalInfo.SUPERCEDETO}
+                      </td>
+                    )}
                     <td className="px-2 py-2 text-right text-gray-900 dark:text-white">{generalInfo.QTY_LOC ?? '-'}</td>
                   </tr>
                   {/* Related Parts como filas expandidas */}
@@ -473,7 +535,7 @@ const MessagesMe: React.FC = () => {
             id: `assistant-${Date.now()}`,
             role: 'assistant',
             content: apiResponse.answer,
-            table: apiResponse.table || null, // Incluir el campo table
+            table: apiResponse.table || false, // Boolean que indica si hay tabla en el content
             createdAt: new Date().toISOString(),
           }
         ]);
@@ -739,6 +801,17 @@ const MessagesMe: React.FC = () => {
                            const msgDate = formatDate(msg.createdAt);
                            const showDate = msgDate !== lastDate;
                            lastDate = msgDate;
+                           
+                           // Detectar automáticamente si el mensaje tiene tabla
+                           // Buscar el separador "--------" que indica presencia de tabla
+                           const hasTable = msg.role === 'assistant' && 
+                                          (msg.table === true || msg.content?.includes('--------'));
+                           
+                           // Parsear el content si tiene tabla
+                           const { text, tableData } = hasTable
+                             ? parseMessageContent(msg.content, true)
+                             : { text: msg.content, tableData: null };
+                           
                            return (
                              <React.Fragment key={msg.id}>
                                {showDate && (
@@ -762,12 +835,12 @@ const MessagesMe: React.FC = () => {
                                    }`}
                                    >
                                      <p className="text-sm break-words">
-                                       {renderMessageContent(msg.content, msg.role)}
+                                       {renderMessageContent(text, msg.role)}
                                      </p>
                                      {/* Mostrar tabla si existe */}
-                                     {msg.role === 'assistant' && msg.table && msg.table !== false && msg.table !== 'error' && (
+                                     {msg.role === 'assistant' && tableData && (
                                        <TableCollapsible
-                                         tableData={msg.table}
+                                         tableData={tableData}
                                          messageId={msg.id}
                                          isExpanded={expandedTableId === msg.id}
                                          onToggle={() => setExpandedTableId(expandedTableId === msg.id ? null : msg.id)}

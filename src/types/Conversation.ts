@@ -54,6 +54,7 @@ export interface ConversationPaginatedResponse {
   items: ConversationItem[];
 }
 
+
 export interface ConversationMessage {
   id: string;
   conversationId: string;
@@ -63,7 +64,8 @@ export interface ConversationMessage {
   updatedAt: string;
   deletedAt: string | null;
   conversation_id: string;
-  table?: any; 
+  close_conversation?: boolean;
+  table?: boolean; 
 }
 
 export interface ConversationDetailResponse {

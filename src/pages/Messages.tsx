@@ -6,6 +6,61 @@ import DefaultLayout from '../layout/DefaultLayout';
 import { useConversationsPaginated, useConversationById } from '../hooks/useConversation';
 import { getConversationsPaginated } from '../libs/ConversationService';
 import { useCustomerById } from '../hooks/useCustomer';
+
+// Helper para extraer texto y tabla del content
+const parseMessageContent = (content: string, hasTable: boolean) => {
+  if (!hasTable) {
+    return { text: content, tableData: null };
+  }
+  
+  try {
+    // Buscar el separador de 8 guiones que precede al JSON
+    const separatorIndex = content.indexOf('--------');
+    
+    if (separatorIndex !== -1) {
+      // Separar el texto del JSON
+      const text = content.substring(0, separatorIndex).trim();
+      const jsonPart = content.substring(separatorIndex + 8).trim(); // +8 para saltar los guiones
+      
+      try {
+        // Intentar parsear el JSON después de los guiones
+        // Reemplazar comillas simples por comillas dobles para que sea JSON válido
+        const jsonString = jsonPart.replace(/'/g, '"').replace(/None/g, 'null');
+        const tableData = JSON.parse(jsonString);
+        
+        console.log('[DEBUG Messages] Parsed table data:', tableData);
+        return { text, tableData };
+      } catch (parseError) {
+        console.error('[DEBUG Messages] Error parsing JSON after separator:', parseError);
+        console.error('[DEBUG Messages] JSON string attempted:', jsonPart);
+        return { text: content, tableData: null };
+      }
+    }
+    
+    // Fallback: intentar parsear el JSON completo del content
+    const parsed = JSON.parse(content);
+    return {
+      text: parsed.answer || parsed.text || '',
+      tableData: parsed.table || parsed
+    };
+  } catch (e) {
+    // Si todo falla, buscar el JSON dentro del string con regex
+    const jsonMatch = content.match(/\{[\s\S]*"generalInfo"[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const jsonString = jsonMatch[0].replace(/'/g, '"').replace(/None/g, 'null');
+        const tableData = JSON.parse(jsonString);
+        const text = content.replace(jsonMatch[0], '').replace(/--------/g, '').trim();
+        return { text, tableData };
+      } catch (parseError) {
+        console.error('[DEBUG Messages] Error parsing table JSON from regex:', parseError);
+        return { text: content, tableData: null };
+      }
+    }
+    return { text: content, tableData: null };
+  }
+};
+
 // TableCollapsible importado de MessagesMe
 // Copiado aquí para evitar dependencias cruzadas
 const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
@@ -39,6 +94,9 @@ const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
                     <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">MFR ID</th>
                     <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Part Number</th>
                     <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                    {generalInfo.SUPERCEDETO && (
+                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Superseded To</th>
+                    )}
                     <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">Qty</th>
                   </tr>
                 </thead>
@@ -47,6 +105,11 @@ const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
                     <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.MFRID || '-'}</td>
                     <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.PARTNUMBER || '-'}</td>
                     <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.DESCRIPTION || '-'}</td>
+                    {generalInfo.SUPERCEDETO && (
+                      <td className="px-2 py-2 text-gray-900 dark:text-white font-medium text-blue-600 dark:text-blue-400">
+                        {generalInfo.SUPERCEDETO}
+                      </td>
+                    )}
                     <td className="px-2 py-2 text-right text-gray-900 dark:text-white">{generalInfo.QTY_LOC ?? '-'}</td>
                   </tr>
                   {relatedParts && relatedParts.length > 0 && (
@@ -338,11 +401,21 @@ const Messages: React.FC = () => {
                     {chatDetail?.conversation_message && chatDetail.conversation_message.length > 0 && (() => {
                       let lastDate = '';
                       return chatDetail.conversation_message.map((msg) => {
+                        // Detectar automáticamente si el mensaje tiene tabla
+                        const hasTable = msg.role === 'assistant' && 
+                                       (msg.table === true || msg.content?.includes('--------'));
+                        
+                        // Parsear el content si tiene tabla
+                        const { text, tableData } = hasTable
+                          ? parseMessageContent(msg.content, true)
+                          : { text: msg.content, tableData: null };
+                        
                         // Custom message for 'No answer found'
-                        let content = msg.content;
+                        let content = text;
                         if (msg.role === 'assistant' && content && content.trim().toLowerCase() === 'no answer found') {
                           content = "Thank you for your rating and feedback! Your input helps us improve our service.";
                         }
+                        
                         const msgDate = formatDate(msg.createdAt);
                         const showDate = msgDate !== lastDate;
                         lastDate = msgDate;
@@ -356,7 +429,7 @@ const Messages: React.FC = () => {
                               </div>
                             )}
                             <div className={msg.role === 'user' ? 'flex justify-start' : 'flex justify-end'}>
-                              <div className={msg.role === 'user' ? 'max-w-xs' : 'max-w-xs'}>
+                              <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-2xl'}>
                                 {msg.role === 'user' && (
                                   <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
                                     {customerData?.name || t('user')}
@@ -370,15 +443,15 @@ const Messages: React.FC = () => {
                                 <div className={`rounded-2xl py-3 px-4 border shadow-md ${
                                   msg.role === 'user'
                                     ? 'border-blue-700 bg-blue-600 text-white'
-                                    : 'border-blue-300 bg-gray-100 text-blue-900 dark:bg-gray-700 dark:text-white'
+                                    : 'border-blue-300 bg-white text-blue-900 dark:bg-boxdark-2 dark:text-white'
                                 }`}>
                                   <p className="text-sm break-words">
                                     {renderMessageContent(content, msg.role === 'user')}
                                   </p>
-                                  {/* Mostrar tabla si existe en el mensaje del assistant */}
-                                  {msg.role === 'assistant' && msg.table && msg.table !== false && msg.table !== 'error' && (
+                                  {/* Mostrar tabla si existe */}
+                                  {msg.role === 'assistant' && tableData && (
                                     <TableCollapsible
-                                      tableData={msg.table}
+                                      tableData={tableData}
                                       messageId={msg.id}
                                       isExpanded={expandedTableId === msg.id}
                                       onToggle={() => setExpandedTableId(expandedTableId === msg.id ? null : msg.id)}

@@ -241,5 +241,20 @@
     "logout": "Cerrar sesión",
     "profile": "Perfil",
     "loading": "Cargando..."
+  },
+  "parts_accordion": {
+    "location": "Ubicación",
+    "superseded": "Reemplazado",
+    "quantity": "Cantidad",
+    "copy_part_number": "Copiar Número de Parte",
+    "copied": "¡Copiado!",
+    "related_products": "Productos relacionados",
+    "superseded_list": "Lista de reemplazados",
+    "no_related_parts": "Sin partes relacionadas.",
+    "mfr_id": "MFR ID",
+    "part_number": "Número de Parte",
+    "description": "Descripción",
+    "qty": "Cantidad",
+    "parts_information": "Información de Partes"
   }
 }

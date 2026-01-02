@@ -12,33 +12,50 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
   if (!hasTable) {
     return { text: content, tableData: null };
   }
-  
+
+  // Nuevo formato: si el content es un JSON válido con un campo answer que es un array o un string que parece un array
   try {
+    let parsed: any = null;
+    if (typeof content === 'string') {
+      // Intenta parsear como JSON
+      try {
+        parsed = JSON.parse(content);
+      } catch (e) {
+        // Si falla, intenta reemplazar comillas simples por dobles y None por null
+        const fixed = content.replace(/'/g, '"').replace(/None/g, 'null');
+        parsed = JSON.parse(fixed);
+      }
+    } else {
+      parsed = content;
+    }
+
+    // Si tiene answer tipo array o string que parece array
+    if (parsed && parsed.answer && (Array.isArray(parsed.answer) || (typeof parsed.answer === 'string' && parsed.answer.trim().startsWith('[')))) {
+      let answerArr = parsed.answer;
+      if (typeof answerArr === 'string') {
+        // Normaliza el string a JSON válido
+        answerArr = answerArr.replace(/'/g, '"').replace(/None/g, 'null');
+        answerArr = JSON.parse(answerArr);
+      }
+      return { text: '', tableData: answerArr };
+    }
+
+    // Fallback: lógica anterior
     // Buscar el separador de 8 guiones que precede al JSON
     const separatorIndex = content.indexOf('--------');
-    
     if (separatorIndex !== -1) {
-      // Separar el texto del JSON
       const text = content.substring(0, separatorIndex).trim();
-      const jsonPart = content.substring(separatorIndex + 8).trim(); // +8 para saltar los guiones
-      
+      const jsonPart = content.substring(separatorIndex + 8).trim();
       try {
-        // Intentar parsear el JSON después de los guiones
-        // Reemplazar comillas simples por comillas dobles para que sea JSON válido
         const jsonString = jsonPart.replace(/'/g, '"').replace(/None/g, 'null');
         const tableData = JSON.parse(jsonString);
-        
-        console.log('[DEBUG Messages] Parsed table data:', tableData);
         return { text, tableData };
       } catch (parseError) {
-        console.error('[DEBUG Messages] Error parsing JSON after separator:', parseError);
-        console.error('[DEBUG Messages] JSON string attempted:', jsonPart);
         return { text: content, tableData: null };
       }
     }
-    
+
     // Fallback: intentar parsear el JSON completo del content
-    const parsed = JSON.parse(content);
     return {
       text: parsed.answer || parsed.text || '',
       tableData: parsed.table || parsed
@@ -53,7 +70,6 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         const text = content.replace(jsonMatch[0], '').replace(/--------/g, '').trim();
         return { text, tableData };
       } catch (parseError) {
-        console.error('[DEBUG Messages] Error parsing table JSON from regex:', parseError);
         return { text: content, tableData: null };
       }
     }
@@ -61,19 +77,168 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
   }
 };
 
-// TableCollapsible importado de MessagesMe
-// Copiado aquí para evitar dependencias cruzadas
-const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
-  if (tableData === false || tableData === 'error' || !tableData) return null;
-  const { generalInfo, relatedParts } = tableData;
+// PartsAccordion component - nuevo formato de visualización de partes
+const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, messageId }) => {
+  const { t } = useTranslation();
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  if (!Array.isArray(data)) return null;
+  // Helper to copy part number
+  const handleCopy = (partNumber: string, idx: number) => {
+    if (!partNumber) return;
+    navigator.clipboard.writeText(partNumber);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 1200);
+  };
   return (
-    <div className="mt-3 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark">
+    <div className="mt-3 max-w-4xl mx-auto">
+      {data.map((item, idx) => {
+        const general = item.general_info || {};
+        const relatedParts = item.related_parts || [];
+        const mfrId = general.MFRID || item.mfrId || '-';
+        const partNumber = general.PARTNUMBER || item.partNumber || '-';
+        const description = general.DESCRIPTION || '-';
+        const ubicacion = item.location || '-';
+        const superseded = item.superseded || general.SUPERCEDETO || '-';
+        const cantidad = item.qty_loc ?? general.QTY_LOC ?? '-';
+        return (
+          <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-4xl mx-auto">
+            {/* Header del acordeón */}
+            <div className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {item.productThumbnailImage && item.productThumbnailImage.startsWith('http') && (
+                  <img src={item.productThumbnailImage} alt="thumb" className="w-10 h-10 object-contain rounded border" />
+                )}
+                <div className="flex flex-col min-w-0 flex-1">
+                  {/* Primera línea: MFRID PARTNUMBER DESCRIPTION (sin separador) */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    <span className="truncate">{mfrId}</span>
+                    <span className="truncate">{partNumber}</span>
+                    <span className="truncate flex-1">{description}</span>
+                  </div>
+                  {/* Segunda línea: Location y Superseded a la izquierda */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <span className="truncate">{t('parts_accordion.location')}: {ubicacion ?? '-'}</span>
+                    <span className="truncate">{t('parts_accordion.superseded')}: {superseded && superseded !== '' ? superseded : '-'}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Quantity alineado a la derecha en su propia columna */}
+              <div className="flex flex-col items-end justify-center mr-2 ml-3">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
+              </div>
+              <div className="flex items-center gap-2 ml-2">
+                {/* Copy button */}
+                <button
+                  type="button"
+                  className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
+                  title={t('parts_accordion.copy_part_number')}
+                  onClick={() => handleCopy(partNumber, idx)}
+                >
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                    <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                  </svg>
+                </button>
+                {copiedIdx === idx && (
+                  <span className="text-xs text-green-600 dark:text-green-400 ml-1">{t('parts_accordion.copied')}</span>
+                )}
+                {/* Expand/collapse button */}
+                <button
+                  type="button"
+                  onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-meta-4 border border-transparent focus:outline-none"
+                  title={expandedIdx === idx ? 'Close' : 'Open'}
+                >
+                  <svg
+                    className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${expandedIdx === idx ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            {/* Contenido expandido */}
+            {expandedIdx === idx && (
+              <div className="p-4">
+                {item.productStandarImage && item.productStandarImage.startsWith('http') && (
+                  <div className="mb-3 flex justify-center">
+                    <img src={item.productStandarImage} alt="main" className="max-h-40 object-contain rounded border" />
+                  </div>
+                )}
+                {/* Mostrar superseded_list alineado a la izquierda, con título, si tiene valores válidos */}
+                {Array.isArray(item.superseded_list) && item.superseded_list.filter(x => x && x !== 'null' && x !== null).length > 0 && (
+                  <div className="mb-3 text-xs text-gray-700 dark:text-gray-300 text-left">
+                    <span className="font-semibold">{t('parts_accordion.superseded_list')}:</span> {item.superseded_list.filter(x => x && x !== 'null' && x !== null).join('  >>  ')}
+                  </div>
+                )}
+                {/* Título de la tabla */}
+                {relatedParts && relatedParts.length > 0 && (
+                  <div className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">{t('parts_accordion.related_products')}</div>
+                )}
+                {/* Tabla de partes relacionadas */}
+                {relatedParts && relatedParts.length > 0 && (
+                  <div className="overflow-x-auto min-w-[600px]">
+                    <table className="w-full text-xs border border-stroke dark:border-strokedark">
+                      <thead className="bg-white dark:bg-boxdark">
+                        <tr>
+                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.mfr_id')}</th>
+                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.part_number')}</th>
+                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.description')}</th>
+                          <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.qty')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-boxdark">
+                        {relatedParts.map((part: any, pidx: number) => (
+                          <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
+                            <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID || '-'}</td>
+                            <td className="px-2 py-1 text-gray-900 dark:text-white">{part.PARTNUMBER || '-'}</td>
+                            <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION || '-'}</td>
+                            <td className="px-2 py-1 text-right text-gray-900 dark:text-white min-w-[60px]">{part.QUANTITYLOC ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Si no hay partes relacionadas */}
+                {(!relatedParts || relatedParts.length === 0) && (
+                  <div className="text-xs text-gray-500 mt-2">{t('parts_accordion.no_related_parts')}</div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// TableCollapsible - formato antiguo para datos de objeto
+const TableCollapsible: React.FC<{ 
+  tableData: any; 
+  messageId: string; 
+  isExpanded: boolean; 
+  onToggle: () => void 
+}> = ({ tableData, isExpanded, onToggle }) => {
+  const { t } = useTranslation();
+  // Si table es false o "error", no mostrar nada
+  if (tableData === false || tableData === 'error' || !tableData) return null;
+
+  const { generalInfo, relatedParts } = tableData;
+
+  return (
+    <div className="mt-3 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-3xl mx-auto">
+      {/* Header clickeable */}
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark"
       >
         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-          📊 Parts Information
+          📊 {t('parts_accordion.parts_information')}
         </span>
         <svg
           className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -84,20 +249,23 @@ const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
+
+      {/* Tabla desplegable */}
       {isExpanded && (
         <div className="overflow-auto max-h-[500px]">
+          {/* General Info como tabla principal */}
           {generalInfo && (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-w-[600px]">
               <table className="w-full table-auto border-collapse text-xs">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-boxdark-2 border-b border-stroke dark:border-strokedark">
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">MFR ID</th>
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Part Number</th>
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.mfr_id')}</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.part_number')}</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.description')}</th>
                     {generalInfo.SUPERCEDETO && (
-                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Superseded To</th>
+                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.superseded')}</th>
                     )}
-                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">Qty</th>
+                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.qty')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,31 +280,51 @@ const TableCollapsible = ({ tableData, messageId, isExpanded, onToggle }) => {
                     )}
                     <td className="px-2 py-2 text-right text-gray-900 dark:text-white">{generalInfo.QTY_LOC ?? '-'}</td>
                   </tr>
+                  {/* Related Parts como filas expandidas */}
                   {relatedParts && relatedParts.length > 0 && (
                     <tr>
                       <td colSpan={4} className="bg-gray-50 dark:bg-boxdark-2 px-3 py-3">
                         <div className="mb-2">
                           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                            Related Parts ({relatedParts.length})
+                            {t('parts_accordion.related_products')} ({relatedParts.length})
                           </span>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs border border-stroke dark:border-strokedark">
                             <thead className="bg-white dark:bg-boxdark">
                               <tr>
-                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">MFR ID</th>
-                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Part Number</th>
-                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Description</th>
-                                <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Qty</th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  {t('parts_accordion.mfr_id')}
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  {t('parts_accordion.part_number')}
+                                </th>
+                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  {t('parts_accordion.description')}
+                                </th>
+                                <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                  {t('parts_accordion.qty')}
+                                </th>
                               </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-boxdark">
-                              {relatedParts.map((part, idx) => (
-                                <tr key={idx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
-                                  <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID || '-'}</td>
-                                  <td className="px-2 py-1 text-gray-900 dark:text-white">{part.PARTNUMBER || '-'}</td>
-                                  <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION || '-'}</td>
-                                  <td className="px-2 py-1 text-right text-gray-900 dark:text-white">{part.QUANTITYLOC ?? '-'}</td>
+                              {relatedParts.map((part: any, idx: number) => (
+                                <tr
+                                  key={idx}
+                                  className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2"
+                                >
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                    {part.MFRID || '-'}
+                                  </td>
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                    {part.PARTNUMBER || '-'}
+                                  </td>
+                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                    {part.DESCRIPTION || '-'}
+                                  </td>
+                                  <td className="px-2 py-1 text-right text-gray-900 dark:text-white">
+                                    {part.QUANTITYLOC ?? '-'}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -401,10 +589,31 @@ const Messages: React.FC = () => {
                     {chatDetail?.conversation_message && chatDetail.conversation_message.length > 0 && (() => {
                       let lastDate = '';
                       return chatDetail.conversation_message.map((msg) => {
-                        // Detectar automáticamente si el mensaje tiene tabla
-                        const hasTable = msg.role === 'assistant' && 
-                                       (msg.table === true || msg.content?.includes('--------'));
-                        
+                        // Detectar automáticamente si el mensaje tiene tabla/acordeón
+                        let hasTable = false;
+                        if (msg.role === 'assistant') {
+                          // 1. Si viene el flag table
+                          if (msg.table === true) {
+                            hasTable = true;
+                          } else if (typeof msg.content === 'string') {
+                            // 2. Si incluye el separador antiguo
+                            if (msg.content.includes('--------')) {
+                              hasTable = true;
+                            } else {
+                              // 3. Si el string parece un array de objetos o un JSON de partes
+                              const trimmed = msg.content.trim();
+                              // Si empieza con [ y termina con ] y contiene {, probablemente es un array de objetos
+                              if (/^\[.*\{.*\}.*\]$/.test(trimmed)) {
+                                hasTable = true;
+                              } else {
+                                // Si empieza con { y contiene campos típicos de partes
+                                if (/^\{.*(partNumber|related_parts|general_info|MFRID|PARTNUMBER).*\}$/.test(trimmed)) {
+                                  hasTable = true;
+                                }
+                              }
+                            }
+                          }
+                        }
                         // Parsear el content si tiene tabla
                         const { text, tableData } = hasTable
                           ? parseMessageContent(msg.content, true)
@@ -448,15 +657,17 @@ const Messages: React.FC = () => {
                                   <p className="text-sm break-words">
                                     {renderMessageContent(content, msg.role === 'user')}
                                   </p>
-                                  {/* Mostrar tabla si existe */}
-                                  {msg.role === 'assistant' && tableData && (
+                                  {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}
+                                  {msg.role === 'assistant' && tableData && Array.isArray(tableData) ? (
+                                    <PartsAccordion data={tableData} messageId={msg.id} />
+                                  ) : msg.role === 'assistant' && tableData ? (
                                     <TableCollapsible
                                       tableData={tableData}
                                       messageId={msg.id}
                                       isExpanded={expandedTableId === msg.id}
                                       onToggle={() => setExpandedTableId(expandedTableId === msg.id ? null : msg.id)}
                                     />
-                                  )}
+                                  ) : null}
                                 </div>
                                 <p className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-left' : 'text-right'}`}>
                                   {new Date(msg.createdAt).toLocaleTimeString()}

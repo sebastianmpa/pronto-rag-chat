@@ -163,6 +163,7 @@ const renderMessageContent = (content: string, role?: string) => {
 
 // Nuevo componente: PartsAccordion
 const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, messageId }) => {
+  const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   if (!Array.isArray(data)) return null;
@@ -192,27 +193,30 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                 {item.productThumbnailImage && item.productThumbnailImage.startsWith('http') && (
                   <img src={item.productThumbnailImage} alt="thumb" className="w-10 h-10 object-contain rounded border" />
                 )}
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                   {/* Primera línea: MFRID PARTNUMBER DESCRIPTION (sin separador) */}
                   <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
                     <span className="truncate">{mfrId}</span>
                     <span className="truncate">{partNumber}</span>
-                    <span className="truncate">{description}</span>
+                    <span className="truncate flex-1">{description}</span>
                   </div>
-                  {/* Segunda línea: Grid con columna Quantity fija y alineada */}
-                  <div className="grid grid-cols-[1fr_1fr_90px] gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1 items-center">
-                    <span className="truncate">Location: {ubicacion ?? '-'}</span>
-                    <span className="truncate">Superseded: {superseded && superseded !== '' ? superseded : '-'}</span>
-                    <span className="font-semibold text-right w-full">Quantity: {cantidad ?? '-'}</span>
+                  {/* Segunda línea: Location y Superseded a la izquierda */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <span className="truncate">{t('parts_accordion.location')}: {ubicacion ?? '-'}</span>
+                    <span className="truncate">{t('parts_accordion.superseded')}: {superseded && superseded !== '' ? superseded : '-'}</span>
                   </div>
                 </div>
+              </div>
+              {/* Quantity alineado a la derecha en su propia columna */}
+              <div className="flex flex-col items-end justify-center mr-2 ml-3">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
               </div>
               <div className="flex items-center gap-2 ml-2">
                 {/* Copy button */}
                 <button
                   type="button"
                   className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
-                  title="Copiar Part Number"
+                  title={t('parts_accordion.copy_part_number')}
                   onClick={() => handleCopy(partNumber, idx)}
                 >
                   <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,14 +225,14 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                   </svg>
                 </button>
                 {copiedIdx === idx && (
-                  <span className="text-xs text-green-600 dark:text-green-400 ml-1">Copiado!</span>
+                  <span className="text-xs text-green-600 dark:text-green-400 ml-1">{t('parts_accordion.copied')}</span>
                 )}
                 {/* Expand/collapse button */}
                 <button
                   type="button"
                   onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                   className="p-1 rounded hover:bg-gray-200 dark:hover:bg-meta-4 border border-transparent focus:outline-none"
-                  title={expandedIdx === idx ? 'Cerrar' : 'Abrir'}
+                  title={expandedIdx === idx ? 'Close' : 'Open'}
                 >
                   <svg
                     className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${expandedIdx === idx ? 'rotate-180' : ''}`}
@@ -252,12 +256,12 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                 {/* Mostrar superseded_list alineado a la izquierda, con título, si tiene valores válidos */}
                 {Array.isArray(item.superseded_list) && item.superseded_list.filter(x => x && x !== 'null' && x !== null).length > 0 && (
                   <div className="mb-3 text-xs text-gray-700 dark:text-gray-300 text-left">
-                    <span className="font-semibold">Superseded list:</span> {item.superseded_list.filter(x => x && x !== 'null' && x !== null).join('  >>  ')}
+                    <span className="font-semibold">{t('parts_accordion.superseded_list')}:</span> {item.superseded_list.filter(x => x && x !== 'null' && x !== null).join('  >>  ')}
                   </div>
                 )}
                 {/* Título de la tabla */}
                 {relatedParts && relatedParts.length > 0 && (
-                  <div className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">Related products</div>
+                  <div className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">{t('parts_accordion.related_products')}</div>
                 )}
                 {/* Tabla de partes relacionadas */}
                 {relatedParts && relatedParts.length > 0 && (
@@ -265,10 +269,10 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                     <table className="w-full text-xs border border-stroke dark:border-strokedark">
                       <thead className="bg-white dark:bg-boxdark">
                         <tr>
-                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">MFR ID</th>
-                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Part Number</th>
-                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Description</th>
-                          <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">Qty</th>
+                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.mfr_id')}</th>
+                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.part_number')}</th>
+                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.description')}</th>
+                          <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.qty')}</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-boxdark">
@@ -286,7 +290,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                 )}
                 {/* Si no hay partes relacionadas */}
                 {(!relatedParts || relatedParts.length === 0) && (
-                  <div className="text-xs text-gray-500 mt-2">No related parts.</div>
+                  <div className="text-xs text-gray-500 mt-2">{t('parts_accordion.no_related_parts')}</div>
                 )}
               </div>
             )}
@@ -304,6 +308,7 @@ const TableCollapsible: React.FC<{
   isExpanded: boolean; 
   onToggle: () => void 
 }> = ({ tableData, isExpanded, onToggle }) => {
+  const { t } = useTranslation();
   // Si table es false o "error", no mostrar nada
   if (tableData === false || tableData === 'error' || !tableData) return null;
 
@@ -317,7 +322,7 @@ const TableCollapsible: React.FC<{
         className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark"
       >
         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-          📊 Parts Information
+          📊 {t('parts_accordion.parts_information')}
         </span>
         <svg
           className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -338,13 +343,13 @@ const TableCollapsible: React.FC<{
               <table className="w-full table-auto border-collapse text-xs">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-boxdark-2 border-b border-stroke dark:border-strokedark">
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">MFR ID</th>
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Part Number</th>
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.mfr_id')}</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.part_number')}</th>
+                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.description')}</th>
                     {generalInfo.SUPERCEDETO && (
-                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">Superseded To</th>
+                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.superseded')}</th>
                     )}
-                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">Qty</th>
+                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.qty')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -365,7 +370,7 @@ const TableCollapsible: React.FC<{
                       <td colSpan={4} className="bg-gray-50 dark:bg-boxdark-2 px-3 py-3">
                         <div className="mb-2">
                           <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                            Related Parts ({relatedParts.length})
+                            {t('parts_accordion.related_products')} ({relatedParts.length})
                           </span>
                         </div>
                         <div className="overflow-x-auto">
@@ -373,16 +378,16 @@ const TableCollapsible: React.FC<{
                             <thead className="bg-white dark:bg-boxdark">
                               <tr>
                                 <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  MFR ID
+                                  {t('parts_accordion.mfr_id')}
                                 </th>
                                 <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  Part Number
+                                  {t('parts_accordion.part_number')}
                                 </th>
                                 <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  Description
+                                  {t('parts_accordion.description')}
                                 </th>
                                 <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  Qty
+                                  {t('parts_accordion.qty')}
                                 </th>
                               </tr>
                             </thead>

@@ -13,66 +13,124 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
     return { text: content, tableData: null };
   }
 
-  // Nuevo formato: si el content es un JSON válido con un campo answer que es un array o un string que parece un array
   try {
     let parsed: any = null;
     if (typeof content === 'string') {
-      // Intenta parsear como JSON
+      let normalized = content;
+      
+      // Paso 1: Reemplazar None, True, False
+      normalized = normalized.replace(/\bNone\b/g, 'null');
+      normalized = normalized.replace(/\bTrue\b/g, 'true');
+      normalized = normalized.replace(/\bFalse\b/g, 'false');
+      
+      console.log('[parseMessageContent] First 100 chars of normalized:', normalized.substring(0, 100));
+      
+      // Paso 2: Reparar comillas dobles sin escape dentro de valores
+      // Patrón: ": "valor" otro" -> ": "valor\" otro"
+      // Estrategia: buscar secuencias de caracteres entre comillas dobles que contengan comillas dobles sin escape
+      normalized = normalized.replace(/": "([^"]*)"/g, (match, value) => {
+        // Si el valor contiene caracteres que parecen parte de otro string (espacios después de comilla)
+        // intentar escapar las comillas internas
+        if (value.includes('"')) {
+          // Ya tiene comillas, simplemente escaparlas
+          const escapedValue = value.replace(/"/g, '\\"');
+          return `": "${escapedValue}"`;
+        }
+        return match;
+      });
+      
+      // Paso 3: Buscar patrones rotos como: "14" Chain FITS
+      // Reparar comillas que están dentro de valores JSON
+      normalized = normalized.replace(/": "([^"]*)"([^,}\]]*)(,|\}|\])/g, (match, start, middle, end) => {
+        // Si hay texto después de una comilla sin estar entre comillas, escapar la comilla
+        if (middle && middle.trim()) {
+          const escapedStart = start.replace(/"/g, '\\"');
+          const escapedMiddle = middle.replace(/"/g, '\\"');
+          return `": "${escapedStart}\\\"${escapedMiddle}"${end}`;
+        }
+        return match;
+      });
+      
+      console.log('[parseMessageContent] Chars 570-585:', normalized.substring(570, 585));
+      
       try {
-        parsed = JSON.parse(content);
+        parsed = JSON.parse(normalized);
+        console.log('[parseMessageContent] ✅ JSON parsed successfully:', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
       } catch (e) {
-        // Si falla, intenta reemplazar comillas simples por dobles y None por null
-        const fixed = content.replace(/'/g, '"').replace(/None/g, 'null');
-        parsed = JSON.parse(fixed);
+        console.log('[parseMessageContent] Parse error:', e.message);
+        
+        // Estrategia alternativa: reparación más agresiva
+        // Buscar el patrón específico de "14" y repararlo
+        let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
+        
+        try {
+          parsed = JSON.parse(aggressiveRepair);
+          console.log('[parseMessageContent] ✅ JSON parsed successfully (aggressive repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
+        } catch (e2) {
+          console.log('[parseMessageContent] Aggressive repair failed:', e2.message);
+          
+          // Último intento: usar eval (SOLO para data del backend)
+          // Convertir manualmente a JSON válido reemplazando comillas problemáticas
+          try {
+            // Estrategia nuclear: procesar carácter por carácter escapando comillas mal colocadas
+            let sanitized = '';
+            let inString = false;
+            let stringChar = '';
+            let prevChar = '';
+            
+            for (let i = 0; i < normalized.length; i++) {
+              const char = normalized[i];
+              const nextChar = normalized[i + 1] || '';
+              
+              if ((char === '"' || char === "'") && prevChar !== '\\') {
+                if (!inString) {
+                  inString = true;
+                  stringChar = char;
+                  sanitized += '"'; // Siempre usar doble comilla en output
+                } else if (char === stringChar) {
+                  inString = false;
+                  sanitized += '"'; // Cerrar con doble comilla
+                } else {
+                  // Comilla diferente dentro de string, escaparla
+                  sanitized += '\\' + char;
+                }
+              } else {
+                sanitized += char;
+              }
+              
+              prevChar = char;
+            }
+            
+            parsed = JSON.parse(sanitized);
+            console.log('[parseMessageContent] ✅ JSON parsed successfully (character-by-character repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
+          } catch (e3) {
+            console.log('[parseMessageContent] ❌ All parsing strategies failed:', e3.message);
+            return { text: content, tableData: null };
+          }
+        }
       }
     } else {
       parsed = content;
     }
 
-    // Si tiene answer tipo array o string que parece array
-    if (parsed && parsed.answer && (Array.isArray(parsed.answer) || (typeof parsed.answer === 'string' && parsed.answer.trim().startsWith('[')))) {
-      let answerArr = parsed.answer;
-      if (typeof answerArr === 'string') {
-        // Normaliza el string a JSON válido
-        answerArr = answerArr.replace(/'/g, '"').replace(/None/g, 'null');
-        answerArr = JSON.parse(answerArr);
-      }
-      return { text: '', tableData: answerArr };
+    // Si parsed ES un array directo, retorna como tableData inmediatamente
+    if (Array.isArray(parsed)) {
+      console.log('[parseMessageContent] 🎯 Array detected, returning tableData with', parsed.length, 'items');
+      return { text: '', tableData: parsed };
     }
 
-    // Fallback: lógica anterior
-    // Buscar el separador de 8 guiones que precede al JSON
-    const separatorIndex = content.indexOf('--------');
-    if (separatorIndex !== -1) {
-      const text = content.substring(0, separatorIndex).trim();
-      const jsonPart = content.substring(separatorIndex + 8).trim();
-      try {
-        const jsonString = jsonPart.replace(/'/g, '"').replace(/None/g, 'null');
-        const tableData = JSON.parse(jsonString);
-        return { text, tableData };
-      } catch (parseError) {
-        return { text: content, tableData: null };
-      }
+    // Si tiene answer tipo array
+    if (parsed && parsed.answer && Array.isArray(parsed.answer)) {
+      return { text: '', tableData: parsed.answer };
     }
 
-    // Fallback: intentar parsear el JSON completo del content
+    // Fallback
     return {
-      text: parsed.answer || parsed.text || '',
-      tableData: parsed.table || parsed
+      text: parsed?.answer || parsed?.text || '',
+      tableData: parsed?.table || parsed
     };
   } catch (e) {
-    // Si todo falla, buscar el JSON dentro del string con regex
-    const jsonMatch = content.match(/\{[\s\S]*"generalInfo"[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const jsonString = jsonMatch[0].replace(/'/g, '"').replace(/None/g, 'null');
-        const tableData = JSON.parse(jsonString);
-        const text = content.replace(jsonMatch[0], '').replace(/--------/g, '').trim();
-        return { text, tableData };
-      } catch (parseError) {
-        return { text: content, tableData: null };
-      }
-    }
+    console.log('[parseMessageContent] Final error:', e.message);
     return { text: content, tableData: null };
   }
 };
@@ -603,11 +661,11 @@ const Messages: React.FC = () => {
                               // 3. Si el string parece un array de objetos o un JSON de partes
                               const trimmed = msg.content.trim();
                               // Si empieza con [ y termina con ] y contiene {, probablemente es un array de objetos
-                              if (/^\[.*\{.*\}.*\]$/.test(trimmed)) {
+                              if (/^\[[\s\S]*\{[\s\S]*\}[\s\S]*\]$/.test(trimmed)) {
                                 hasTable = true;
                               } else {
                                 // Si empieza con { y contiene campos típicos de partes
-                                if (/^\{.*(partNumber|related_parts|general_info|MFRID|PARTNUMBER).*\}$/.test(trimmed)) {
+                                if (/^\{[\s\S]*(partNumber|related_parts|general_info|MFRID|PARTNUMBER)[\s\S]*\}$/.test(trimmed)) {
                                   hasTable = true;
                                 }
                               }

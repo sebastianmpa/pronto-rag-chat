@@ -255,7 +255,7 @@ const BrandsFooter: React.FC = () => {
 };
 
 // Nuevo componente: PartsAccordion
-const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, messageId }) => {
+const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededClick?: (superseded: string) => void }> = ({ data, messageId, onSupersededClick }) => {
   const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
@@ -277,6 +277,13 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
     navigator.clipboard.writeText(partNumber);
     setCopiedRelatedIdx({ itemIdx, partIdx });
     setTimeout(() => setCopiedRelatedIdx(null), 1200);
+  };
+
+  // Handler for superseded click
+  const handleSupersededClick = (superseded: string) => {
+    if (onSupersededClick && superseded && superseded !== '-') {
+      onSupersededClick(superseded);
+    }
   };
   
   return (
@@ -309,7 +316,20 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                   <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <span className="truncate">{t('parts_accordion.location')}: {ubicacion ?? '-'}</span>
                     <span className="flex items-center gap-1">
-                      <span className="truncate">{t('parts_accordion.superseded')}: {superseded && superseded !== '' && superseded !== '-' ? superseded : '-'}</span>
+                      <span className="truncate">{t('parts_accordion.superseded')}: 
+                        {superseded && superseded !== '' && superseded !== '-' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSupersededClick(superseded)}
+                            className="ml-1 text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
+                            title={`Click to search for stock ${superseded}`}
+                          >
+                            {superseded}
+                          </button>
+                        ) : (
+                          <span className="ml-1">-</span>
+                        )}
+                      </span>
                       {superseded && superseded !== '' && superseded !== '-' && (
                         <button
                           type="button"
@@ -705,6 +725,12 @@ const MessagesMe: React.FC = () => {
         handleSubmit(message);
       }
     }
+  };
+
+  // Handler para clic en superseded - envía mensaje "stock + superseded"
+  const handleSupersededClicked = (superseded: string) => {
+    const message = `stock ${superseded}`;
+    handleSubmit(message);
   };
 
   // Enviar mensaje o crear conversación
@@ -1165,7 +1191,7 @@ const MessagesMe: React.FC = () => {
                                      </p>
                                      {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}
                                      {msg.role === 'assistant' && tableData && Array.isArray(tableData) ? (
-                                       <PartsAccordion data={tableData} messageId={msg.id} />
+                                       <PartsAccordion data={tableData} messageId={msg.id} onSupersededClick={handleSupersededClicked} />
                                      ) : msg.role === 'assistant' && tableData ? (
                                        <TableCollapsible
                                          tableData={tableData}
@@ -1228,11 +1254,16 @@ const MessagesMe: React.FC = () => {
                              value={inputValue}
                              onChange={e => setInputValue(e.target.value)}
                              placeholder={t('type_message')}
-                             className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary"
+                             disabled={assistantTyping}
+                             className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                              onKeyDown={handleTyping}
                            />
                          </div>
-                         <button className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-primary text-white hover:bg-opacity-90 transition-all">
+                         <button 
+                           type="submit"
+                           disabled={assistantTyping}
+                           className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-primary text-white hover:bg-opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                              <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                              <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

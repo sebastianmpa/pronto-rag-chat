@@ -91,7 +91,7 @@
   "show_last": "Show last:",
   "assistant": "Assistant",
   "type_message": "Type a message...",
-  "disclaimer": "This AI Assistant may make mistakes. Check important information.",
+  "disclaimer": "This AI Assistant may make mistakes. Check important information. Not all models and part types are available.",
   "select_chat": "Select a chat to view the conversation",
   "thank_you_feedback": "Thank you for your feedback!",
   "edit": "Edit",

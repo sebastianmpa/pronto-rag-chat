@@ -219,19 +219,66 @@ const renderMessageContent = (content: string, role?: string) => {
 };
 
 
+// Footer component con marcas
+const BrandsFooter: React.FC = () => {
+  const brands = [
+    {
+      name: 'Echo',
+      logo: '/images/Echo - LogoColor__CuerpoVideo..png'
+    },
+    {
+      name: 'Husqvarna',
+      logo: '/images/Husqvarna - LogoColor_CuerpoVideo..png'
+    },
+    {
+      name: 'Scag Parts Online',
+      logo: '/images/ScagPartsOnline_LogoColor_CuerpoVideo..png'
+    }
+  ];
+
+  return (
+    <div className="bg-white dark:bg-boxdark border-t border-stroke dark:border-strokedark py-4 px-6">
+      <div className="flex items-center justify-center gap-8 flex-wrap">
+        {brands.map((brand) => (
+          <div key={brand.name} className="flex items-center justify-center h-12">
+            <img 
+              src={brand.logo} 
+              alt={brand.name}
+              className="max-h-12 max-w-32 object-contain opacity-80 hover:opacity-100 transition-opacity"
+              title={brand.name}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Nuevo componente: PartsAccordion
 const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, messageId }) => {
   const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
+  const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{ itemIdx: number; partIdx: number } | null>(null);
+  
   if (!Array.isArray(data)) return null;
+  
   // Helper to copy part number
-  const handleCopy = (partNumber: string, idx: number) => {
+  const handleCopy = (partNumber: string, idx: number | string) => {
     if (!partNumber) return;
     navigator.clipboard.writeText(partNumber);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 1200);
   };
+  
+  // Helper to copy related part number
+  const handleCopyRelated = (partNumber: string, itemIdx: number, partIdx: number) => {
+    if (!partNumber) return;
+    navigator.clipboard.writeText(partNumber);
+    setCopiedRelatedIdx({ itemIdx, partIdx });
+    setTimeout(() => setCopiedRelatedIdx(null), 1200);
+  };
+  
   return (
     <div className="mt-3 max-w-4xl mx-auto">
       {data.map((item, idx) => {
@@ -261,7 +308,22 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                   {/* Segunda línea: Location y Superseded a la izquierda */}
                   <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <span className="truncate">{t('parts_accordion.location')}: {ubicacion ?? '-'}</span>
-                    <span className="truncate">{t('parts_accordion.superseded')}: {superseded && superseded !== '' ? superseded : '-'}</span>
+                    <span className="flex items-center gap-1">
+                      <span className="truncate">{t('parts_accordion.superseded')}: {superseded && superseded !== '' && superseded !== '-' ? superseded : '-'}</span>
+                      {superseded && superseded !== '' && superseded !== '-' && (
+                        <button
+                          type="button"
+                          className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
+                          title={t('parts_accordion.copy_part_number')}
+                          onClick={() => handleCopy(superseded, `superseded-${idx}`)}
+                        >
+                          <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                            <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                          </svg>
+                        </button>
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -337,7 +399,27 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, me
                         {relatedParts.map((part: any, pidx: number) => (
                           <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
                             <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID || '-'}</td>
-                            <td className="px-2 py-1 text-gray-900 dark:text-white">{part.PARTNUMBER || '-'}</td>
+                            <td className="px-2 py-1 text-gray-900 dark:text-white">
+                              <div className="flex items-center gap-1">
+                                <span>{part.PARTNUMBER || '-'}</span>
+                                {part.PARTNUMBER && (
+                                  <button
+                                    type="button"
+                                    className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
+                                    title={t('parts_accordion.copy_part_number')}
+                                    onClick={() => handleCopyRelated(part.PARTNUMBER, idx, pidx)}
+                                  >
+                                    <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                      <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                    </svg>
+                                  </button>
+                                )}
+                                {copiedRelatedIdx?.itemIdx === idx && copiedRelatedIdx?.partIdx === pidx && (
+                                  <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION || '-'}</td>
                             <td className="px-2 py-1 text-right text-gray-900 dark:text-white min-w-[60px]">{part.QUANTITYLOC ?? '-'}</td>
                           </tr>
@@ -1137,28 +1219,31 @@ const MessagesMe: React.FC = () => {
                     <div ref={messagesEndRef} />
                   </div>
                   {/* Input fijo abajo */}
-                  <div className="border-t border-stroke bg-white py-5 px-6 dark:border-strokedark dark:bg-boxdark sticky bottom-0 z-10">
-                     <form className="flex items-center justify-between space-x-4" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
-                       <div className="relative flex-1">
-                         <input
-                           type="text"
-                           value={inputValue}
-                           onChange={e => setInputValue(e.target.value)}
-                           placeholder={t('type_message')}
-                           className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary"
-                           onKeyDown={handleTyping}
-                         />
+                  <div className="border-t border-stroke bg-white dark:border-strokedark dark:bg-boxdark sticky bottom-0 z-10">
+                     <div className="py-5 px-6">
+                       <form className="flex items-center justify-between space-x-4" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
+                         <div className="relative flex-1">
+                           <input
+                             type="text"
+                             value={inputValue}
+                             onChange={e => setInputValue(e.target.value)}
+                             placeholder={t('type_message')}
+                             className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary"
+                             onKeyDown={handleTyping}
+                           />
+                         </div>
+                         <button className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-primary text-white hover:bg-opacity-90 transition-all">
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                             <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                             <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                           </svg>
+                         </button>
+                       </form>
+                       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-left">
+                         {t('disclaimer')}
                        </div>
-                       <button className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-primary text-white hover:bg-opacity-90 transition-all">
-                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                           <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                           <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                         </svg>
-                       </button>
-                     </form>
-                     <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-left">
-                       {t('disclaimer')}
                      </div>
+                     <BrandsFooter />
                   </div>
                 </div>
               </>

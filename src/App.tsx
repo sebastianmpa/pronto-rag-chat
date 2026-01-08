@@ -44,7 +44,7 @@ function App() {
   // Redirección según rol (solo en rutas privadas)
   let defaultRoute;
   if (!isAuthRoute) {
-    if (roleInternalName === 'admin' || roleInternalName === 'supervisor') {
+    if (roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') {
       defaultRoute = <Navigate to="/messages/all" replace />;
     } else if (roleInternalName === 'user') {
       defaultRoute = <Navigate to="/messages/me" replace />;
@@ -58,7 +58,7 @@ function App() {
       <Routes>
         <Route element={<PrivateRoute />}>
           {/* Ruta principal: dashboard/estadísticas solo para admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor') && (
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') && (
             <Route
               index
               element={
@@ -81,7 +81,7 @@ function App() {
           />
           
           {/* Ruta para todos los mensajes - SOLO admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor') && (
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') && (
             <Route
               path="/messages"
               element={
@@ -93,7 +93,7 @@ function App() {
             />
           )}
           {/* Ruta para la tabla de partes - SOLO admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor') && (
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') && (
             <Route
               path="/parts"
               element={<PartsPage />}
@@ -104,7 +104,7 @@ function App() {
           <Route
             index
             element={
-              roleInternalName === 'admin' || roleInternalName === 'supervisor' 
+              roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1'
                 ? <Navigate to="/messages" replace />
                 : <Navigate to="/messages/me" replace />
             }

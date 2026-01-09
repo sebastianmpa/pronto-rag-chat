@@ -6,6 +6,8 @@ import DefaultLayout from '../layout/DefaultLayout';
 import { useConversationsPaginated, useConversationById } from '../hooks/useConversation';
 import { getConversationsPaginated } from '../libs/ConversationService';
 import { useCustomerById } from '../hooks/useCustomer';
+import { useUserProfile } from '../hooks/useUser';
+import { format } from 'date-fns';
 
 // Helper para extraer texto y tabla del content
 const parseMessageContent = (content: string, hasTable: boolean) => {
@@ -14,35 +16,71 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
   }
 
   try {
+    let textContent = content;
+    let tableData = null;
+
+    // Paso 0: Buscar y extraer JSON embebido al final con patrón _____{'partInfo':...}
+    const jsonMatch = content.match(/_____(\{[\s\S]*\})$/);
+    if (jsonMatch && jsonMatch[1]) {
+      let jsonStr = jsonMatch[1]; // Extrae del content ORIGINAL (puede tener None, True, False)
+      textContent = content.substring(0, content.lastIndexOf('_____')); // Remover el separador y JSON del content ORIGINAL
+      
+      try {
+        // Normalizar el JSON extraído: None→null, True→true, False→false, comillas simples→dobles
+        let normalized = jsonStr
+          .replace(/\bNone\b/g, 'null')
+          .replace(/\bTrue\b/g, 'true')
+          .replace(/\bFalse\b/g, 'false')
+          .replace(/'/g, '"'); // Reemplazar comillas simples por dobles
+        
+        const parsed = JSON.parse(normalized); // Parse del JSON normalizado
+        console.log('[parseMessageContent] 🎯 Embedded JSON extracted and parsed successfully');
+        
+        // Si tiene partInfo array, usarlo como tableData
+        if (parsed.partInfo && Array.isArray(parsed.partInfo)) {
+          tableData = parsed.partInfo;
+          console.log('[parseMessageContent] ✅ partInfo array found with', tableData.length, 'items');
+          return { text: textContent, tableData };
+        }
+        
+        // Si el parsed en sí es un objeto con propiedades de part, tratarlo como tabla
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          // Si tiene las propiedades típicas de una parte individual, envolverlo en array
+          if (parsed.mfrId || parsed.partNumber || parsed.MFRID || parsed.PARTNUMBER) {
+            tableData = [parsed];
+            console.log('[parseMessageContent] ✅ Single part object detected, wrapping in array');
+            return { text: textContent, tableData };
+          }
+        }
+      } catch (e) {
+        console.log('[parseMessageContent] Failed to parse embedded JSON:', e.message);
+        // Continuar con el parsing tradicional
+      }
+    }
+
+    // Si no encontramos JSON embebido, intentar parsear todo el content como antes
     let parsed: any = null;
     if (typeof content === 'string') {
       let normalized = content;
       
-      // Paso 1: Reemplazar None, True, False
+      // Reemplazar None, True, False
       normalized = normalized.replace(/\bNone\b/g, 'null');
       normalized = normalized.replace(/\bTrue\b/g, 'true');
       normalized = normalized.replace(/\bFalse\b/g, 'false');
       
       console.log('[parseMessageContent] First 100 chars of normalized:', normalized.substring(0, 100));
       
-      // Paso 2: Reparar comillas dobles sin escape dentro de valores
-      // Patrón: ": "valor" otro" -> ": "valor\" otro"
-      // Estrategia: buscar secuencias de caracteres entre comillas dobles que contengan comillas dobles sin escape
+      // Reparar comillas dobles sin escape dentro de valores
       normalized = normalized.replace(/": "([^"]*)"/g, (match, value) => {
-        // Si el valor contiene caracteres que parecen parte de otro string (espacios después de comilla)
-        // intentar escapar las comillas internas
         if (value.includes('"')) {
-          // Ya tiene comillas, simplemente escaparlas
           const escapedValue = value.replace(/"/g, '\\"');
           return `": "${escapedValue}"`;
         }
         return match;
       });
       
-      // Paso 3: Buscar patrones rotos como: "14" Chain FITS
-      // Reparar comillas que están dentro de valores JSON
+      // Buscar patrones rotos como: "14" Chain FITS
       normalized = normalized.replace(/": "([^"]*)"([^,}\]]*)(,|\}|\])/g, (match, start, middle, end) => {
-        // Si hay texto después de una comilla sin estar entre comillas, escapar la comilla
         if (middle && middle.trim()) {
           const escapedStart = start.replace(/"/g, '\\"');
           const escapedMiddle = middle.replace(/"/g, '\\"');
@@ -60,7 +98,6 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         console.log('[parseMessageContent] Parse error:', e.message);
         
         // Estrategia alternativa: reparación más agresiva
-        // Buscar el patrón específico de "14" y repararlo
         let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
         
         try {
@@ -69,10 +106,8 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         } catch (e2) {
           console.log('[parseMessageContent] Aggressive repair failed:', e2.message);
           
-          // Último intento: usar eval (SOLO para data del backend)
-          // Convertir manualmente a JSON válido reemplazando comillas problemáticas
+          // Último intento: procesar carácter por carácter
           try {
-            // Estrategia nuclear: procesar carácter por carácter escapando comillas mal colocadas
             let sanitized = '';
             let inString = false;
             let stringChar = '';
@@ -80,18 +115,16 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
             
             for (let i = 0; i < normalized.length; i++) {
               const char = normalized[i];
-              const nextChar = normalized[i + 1] || '';
               
               if ((char === '"' || char === "'") && prevChar !== '\\') {
                 if (!inString) {
                   inString = true;
                   stringChar = char;
-                  sanitized += '"'; // Siempre usar doble comilla en output
+                  sanitized += '"';
                 } else if (char === stringChar) {
                   inString = false;
-                  sanitized += '"'; // Cerrar con doble comilla
+                  sanitized += '"';
                 } else {
-                  // Comilla diferente dentro de string, escaparla
                   sanitized += '\\' + char;
                 }
               } else {
@@ -105,6 +138,7 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
             console.log('[parseMessageContent] ✅ JSON parsed successfully (character-by-character repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
           } catch (e3) {
             console.log('[parseMessageContent] ❌ All parsing strategies failed:', e3.message);
+            // Si todo falla, retornar null tableData porque el contenido no es JSON válido
             return { text: content, tableData: null };
           }
         }
@@ -116,18 +150,23 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
     // Si parsed ES un array directo, retorna como tableData inmediatamente
     if (Array.isArray(parsed)) {
       console.log('[parseMessageContent] 🎯 Array detected, returning tableData with', parsed.length, 'items');
-      return { text: '', tableData: parsed };
+      return { text: textContent, tableData: parsed };
     }
 
     // Si tiene answer tipo array
     if (parsed && parsed.answer && Array.isArray(parsed.answer)) {
-      return { text: '', tableData: parsed.answer };
+      return { text: textContent, tableData: parsed.answer };
     }
 
-    // Fallback
+    // Fallback: solo retornar tableData si parsed es array. Si es objeto o inválido, retornar null
+    if (Array.isArray(parsed?.table)) {
+      return { text: textContent, tableData: parsed.table };
+    }
+    
+    // Si parsed es un objeto pero no tiene un array válido, retornar null
     return {
-      text: parsed?.answer || parsed?.text || '',
-      tableData: parsed?.table || parsed
+      text: content,
+      tableData: null
     };
   } catch (e) {
     console.log('[parseMessageContent] Final error:', e.message);
@@ -171,7 +210,7 @@ const BrandsFooter: React.FC = () => {
 };
 
 // PartsAccordion component - nuevo formato de visualización de partes
-const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data, messageId }) => {
+const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) => {
   const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
@@ -491,6 +530,9 @@ const Messages: React.FC = () => {
   // Estado para controlar qué tabla está abierta (por message id)
   const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
 
+  // Get user profile to check location
+  const { profile: userProfile } = useUserProfile();
+
   // Hooks para todas las conversaciones
   const { data: chats, loading: loadingChats } = useConversationsPaginated({ page, limit });
   const [pollChats, setPollChats] = useState<any>(null);
@@ -526,73 +568,117 @@ const Messages: React.FC = () => {
     }
   }, [chatDetail?.conversation_message]);
 
-  // Regex para links tipo Markdown [texto](url)
-  const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
-  // Regex para URLs sueltas
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  // Helper function to format dates
+  const formatDate = (date: string) => {
+    return format(new Date(date), 'MMMM d, yyyy');
+  };
 
-  function renderMessageContent(content: string, isUser: boolean) {
-    // Primero parsea los links tipo Markdown
-    let elements: (string | JSX.Element)[] = [];
-    let lastIndex = 0;
-    let match;
-    while ((match = markdownLinkRegex.exec(content)) !== null) {
-      // Texto antes del link
-      if (match.index > lastIndex) {
-        const before = content.slice(lastIndex, match.index);
-        // Parsear URLs sueltas en el texto antes del link Markdown
-        elements = elements.concat(parseUrls(before, isUser));
-      }
-      // El link Markdown
-      const text = match[1];
-      const url = match[2];
-      const isPdf = url.trim().toLowerCase().endsWith('.pdf');
-      elements.push(
-        <a
-          key={elements.length}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={isUser ? "underline break-all" : "text-blue-700 dark:text-blue-300 underline break-all"}
-        >
-          {text || (isPdf ? 'Download file' : 'Open link')}
-        </a>
-      );
-      lastIndex = markdownLinkRegex.lastIndex;
+  // Formatea los mensajes del assistant para saltos de línea y URLs
+  const renderMessageContent = (content: string, role?: string) => {
+    if (role === 'assistant') {
+      // Regex for Markdown links: [text](url)
+      const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+[\w/])\)/g;
+      // Regex for plain URLs
+      const urlRegex = /(https?:\/\/[^\s)]+[\w/])/g;
+      // Regex for HTML tags: <b class='pronto-sku'>text</b>
+      const htmlTagRegex = /<b\s+class=['"]pronto-sku['"]\s*>([^<]+)<\/b>/g;
+      
+      // Split by line breaks first
+      return content.split(/\n|\r\n/).map((line, idx) => {
+        let parts: (string | JSX.Element)[] = [];
+        let lastIdx = 0;
+        let match;
+        
+        // First, process HTML tags <b class='pronto-sku'>...</b>
+        while ((match = htmlTagRegex.exec(line)) !== null) {
+          if (match.index > lastIdx) {
+            parts.push(line.slice(lastIdx, match.index));
+          }
+          parts.push(
+            <span
+              key={`pronto-sku-${idx}-${match.index}`}
+              className="font-bold text-blue-600 dark:text-blue-400"
+            >
+              {match[1]}
+            </span>
+          );
+          lastIdx = match.index + match[0].length;
+        }
+        if (lastIdx < line.length) {
+          parts.push(line.slice(lastIdx));
+        }
+        
+        // Then, replace Markdown links with anchor tags
+        parts = parts.flatMap((part, i) => {
+          if (typeof part !== 'string') return [part];
+          
+          let subParts: (string | JSX.Element)[] = [];
+          let subLastIdx = 0;
+          let mdMatch;
+          
+          while ((mdMatch = mdLinkRegex.exec(part)) !== null) {
+            if (mdMatch.index > subLastIdx) {
+              subParts.push(part.slice(subLastIdx, mdMatch.index));
+            }
+            subParts.push(
+              <a
+                key={mdMatch[2] + i}
+                href={mdMatch[2]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline break-all"
+              >
+                {mdMatch[1]}
+              </a>
+            );
+            subLastIdx = mdMatch.index + mdMatch[0].length;
+          }
+          if (subLastIdx < part.length) {
+            subParts.push(part.slice(subLastIdx));
+          }
+          
+          return subParts;
+        });
+        
+        // Finally, process plain URLs
+        parts = parts.flatMap((part, i) => {
+          if (typeof part !== 'string') return [part];
+          return part.split(urlRegex).map((sub, j) => {
+            let url = sub;
+            let isUrl = false;
+            if (/^https?:\/\//.test(sub)) {
+              isUrl = true;
+              if (url.endsWith(')')) {
+                const open = url.slice(0, -1).split('(').length - 1;
+                const close = url.slice(0, -1).split(')').length - 1;
+                if (open > close) {
+                  url = url.slice(0, -1);
+                }
+              }
+            }
+            if (isUrl) {
+              const isPdf = url.trim().toLowerCase().endsWith('.pdf');
+              return (
+                <a
+                  key={url + '-' + i + '-' + j}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline break-all"
+                >
+                  {isPdf ? 'Download file' : 'Open link'}
+                </a>
+              );
+            }
+            return sub;
+          });
+        });
+        return <React.Fragment key={idx}>{parts}<br /></React.Fragment>;
+      });
     }
-    // Resto del texto después del último link Markdown
-    if (lastIndex < content.length) {
-      elements = elements.concat(parseUrls(content.slice(lastIndex), isUser));
-    }
-    return elements;
-  }
-
-  // Helper para parsear URLs sueltas y renderizarlas como links
-  function parseUrls(text: string, isUser: boolean) {
-    const parts = text.split(urlRegex);
-    return parts.map((part, i) => {
-      if (urlRegex.test(part)) {
-        const isPdf = part.trim().toLowerCase().endsWith('.pdf');
-        return (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={isUser ? "underline break-all" : "text-blue-700 dark:text-blue-300 underline break-all"}
-          >
-            {isPdf ? 'Download file' : 'Open link'}
-          </a>
-        );
-      }
-      return part;
-    });
-  }
-
-  function formatDate(dateString: string) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  }
+    // Usuario: solo texto plano
+    return content;
+  };
 
   return (
     <DefaultLayout>
@@ -686,7 +772,7 @@ const Messages: React.FC = () => {
                           {chatTitle}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {chat.store_domain}
+                          Pronto Mowers
                         </p>
                       </div>
                     </div>
@@ -735,22 +821,38 @@ const Messages: React.FC = () => {
                           // 1. Si viene el flag table
                           if (msg.table === true) {
                             hasTable = true;
+                            console.log('[hasTable detection] Flag msg.table === true');
                           } else if (typeof msg.content === 'string') {
-                            // 2. Si incluye el separador antiguo
-                            if (msg.content.includes('--------')) {
+                            const trimmed = msg.content.trim();
+                            
+                            // 2. Si contiene el patrón _____{'partInfo':...} - PRIORITY: check FIRST
+                            if (msg.content.includes('_____') && msg.content.includes('partInfo')) {
                               hasTable = true;
-                            } else {
-                              // 3. Si el string parece un array de objetos o un JSON de partes
-                              const trimmed = msg.content.trim();
-                              // Si empieza con [ y termina con ] y contiene {, probablemente es un array de objetos
-                              if (/^\[[\s\S]*\{[\s\S]*\}[\s\S]*\]$/.test(trimmed)) {
+                              console.log('[hasTable detection] ✅ Embedded partInfo pattern detected');
+                            }
+                            // 3. Si incluye el separador antiguo
+                            else if (msg.content.includes('--------')) {
+                              hasTable = true;
+                              console.log('[hasTable detection] Separator "--------" found');
+                            }
+                            // 4. Si el string STARTS with [ (pure JSON array) - must start AND end with [ ]
+                            else if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                              // Additional check: must contain { to be array of objects
+                              if (trimmed.includes('{')) {
                                 hasTable = true;
-                              } else {
-                                // Si empieza con { y contiene campos típicos de partes
-                                if (/^\{[\s\S]*(partNumber|related_parts|general_info|MFRID|PARTNUMBER)[\s\S]*\}$/.test(trimmed)) {
-                                  hasTable = true;
-                                }
+                                console.log('[hasTable detection] ✅ Array pattern detected');
                               }
+                            }
+                            // 5. Si el string STARTS with { (pure JSON object) - must start AND end with { }
+                            else if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                              // Additional check: must contain typical part fields
+                              if (trimmed.includes('partNumber') || trimmed.includes('related_parts') || trimmed.includes('general_info') || trimmed.includes('MFRID') || trimmed.includes('PARTNUMBER')) {
+                                hasTable = true;
+                                console.log('[hasTable detection] Object pattern detected');
+                              }
+                            }
+                            else {
+                              console.log('[hasTable detection] ❌ No pattern match. Content starts with:', trimmed.substring(0, 50));
                             }
                           }
                         }
@@ -758,6 +860,11 @@ const Messages: React.FC = () => {
                         const { text, tableData } = hasTable
                           ? parseMessageContent(msg.content, true)
                           : { text: msg.content, tableData: null };
+                        
+                        // Si hasTable es true y el text está vacío o es solo JSON, no mostrar texto
+                        const shouldRenderText = !hasTable || (text && text.trim().length > 0 && !text.trim().startsWith('[') && !text.trim().startsWith('{'));
+                        
+                        console.log('[Render] hasTable:', hasTable, '| tableData type:', Array.isArray(tableData) ? `Array[${tableData.length}]` : typeof tableData, '| shouldRenderText:', shouldRenderText);
                         
                         // Custom message for 'No answer found'
                         let content = text;
@@ -794,9 +901,11 @@ const Messages: React.FC = () => {
                                     ? 'border-blue-700 bg-blue-600 text-white'
                                     : 'border-blue-300 bg-white text-blue-900 dark:bg-boxdark-2 dark:text-white'
                                 }`}>
-                                  <p className="text-sm break-words">
-                                    {renderMessageContent(content, msg.role === 'user')}
-                                  </p>
+                                  {shouldRenderText && (
+                                    <p className="text-sm break-words">
+                                      {renderMessageContent(text, msg.role)}
+                                    </p>
+                                  )}
                                   {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}
                                   {msg.role === 'assistant' && tableData && Array.isArray(tableData) ? (
                                     <PartsAccordion data={tableData} messageId={msg.id} />

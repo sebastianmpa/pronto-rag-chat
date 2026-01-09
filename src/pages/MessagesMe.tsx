@@ -24,35 +24,71 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
   }
 
   try {
+    let textContent = content;
+    let tableData = null;
+
+    // Paso 0: Buscar y extraer JSON embebido al final con patrón _____{'partInfo':...}
+    const jsonMatch = content.match(/_____(\{[\s\S]*\})$/);
+    if (jsonMatch && jsonMatch[1]) {
+      let jsonStr = jsonMatch[1]; // Extrae del content ORIGINAL (puede tener None, True, False)
+      textContent = content.substring(0, content.lastIndexOf('_____')); // Remover el separador y JSON del content ORIGINAL
+      
+      try {
+        // Normalizar el JSON extraído: None→null, True→true, False→false, comillas simples→dobles
+        let normalized = jsonStr
+          .replace(/\bNone\b/g, 'null')
+          .replace(/\bTrue\b/g, 'true')
+          .replace(/\bFalse\b/g, 'false')
+          .replace(/'/g, '"'); // Reemplazar comillas simples por dobles
+        
+        const parsed = JSON.parse(normalized); // Parse del JSON normalizado
+        console.log('[parseMessageContent] 🎯 Embedded JSON extracted and parsed successfully');
+        
+        // Si tiene partInfo array, usarlo como tableData
+        if (parsed.partInfo && Array.isArray(parsed.partInfo)) {
+          tableData = parsed.partInfo;
+          console.log('[parseMessageContent] ✅ partInfo array found with', tableData.length, 'items');
+          return { text: textContent, tableData };
+        }
+        
+        // Si el parsed en sí es un objeto con propiedades de part, tratarlo como tabla
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          // Si tiene las propiedades típicas de una parte individual, envolverlo en array
+          if (parsed.mfrId || parsed.partNumber || parsed.MFRID || parsed.PARTNUMBER) {
+            tableData = [parsed];
+            console.log('[parseMessageContent] ✅ Single part object detected, wrapping in array');
+            return { text: textContent, tableData };
+          }
+        }
+      } catch (e) {
+        console.log('[parseMessageContent] Failed to parse embedded JSON:', e.message);
+        // Continuar con el parsing tradicional
+      }
+    }
+
+    // Si no encontramos JSON embebido, intentar parsear todo el content como antes
     let parsed: any = null;
     if (typeof content === 'string') {
       let normalized = content;
       
-      // Paso 1: Reemplazar None, True, False
+      // Reemplazar None, True, False
       normalized = normalized.replace(/\bNone\b/g, 'null');
       normalized = normalized.replace(/\bTrue\b/g, 'true');
       normalized = normalized.replace(/\bFalse\b/g, 'false');
       
       console.log('[parseMessageContent] First 100 chars of normalized:', normalized.substring(0, 100));
       
-      // Paso 2: Reparar comillas dobles sin escape dentro de valores
-      // Patrón: ": "valor" otro" -> ": "valor\" otro"
-      // Estrategia: buscar secuencias de caracteres entre comillas dobles que contengan comillas dobles sin escape
+      // Reparar comillas dobles sin escape dentro de valores
       normalized = normalized.replace(/": "([^"]*)"/g, (match, value) => {
-        // Si el valor contiene caracteres que parecen parte de otro string (espacios después de comilla)
-        // intentar escapar las comillas internas
         if (value.includes('"')) {
-          // Ya tiene comillas, simplemente escaparlas
           const escapedValue = value.replace(/"/g, '\\"');
           return `": "${escapedValue}"`;
         }
         return match;
       });
       
-      // Paso 3: Buscar patrones rotos como: "14" Chain FITS
-      // Reparar comillas que están dentro de valores JSON
+      // Buscar patrones rotos como: "14" Chain FITS
       normalized = normalized.replace(/": "([^"]*)"([^,}\]]*)(,|\}|\])/g, (match, start, middle, end) => {
-        // Si hay texto después de una comilla sin estar entre comillas, escapar la comilla
         if (middle && middle.trim()) {
           const escapedStart = start.replace(/"/g, '\\"');
           const escapedMiddle = middle.replace(/"/g, '\\"');
@@ -70,7 +106,6 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         console.log('[parseMessageContent] Parse error:', e.message);
         
         // Estrategia alternativa: reparación más agresiva
-        // Buscar el patrón específico de "14" y repararlo
         let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
         
         try {
@@ -79,10 +114,8 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         } catch (e2) {
           console.log('[parseMessageContent] Aggressive repair failed:', e2.message);
           
-          // Último intento: usar eval (SOLO para data del backend)
-          // Convertir manualmente a JSON válido reemplazando comillas problemáticas
+          // Último intento: procesar carácter por carácter
           try {
-            // Estrategia nuclear: procesar carácter por carácter escapando comillas mal colocadas
             let sanitized = '';
             let inString = false;
             let stringChar = '';
@@ -96,12 +129,11 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
                 if (!inString) {
                   inString = true;
                   stringChar = char;
-                  sanitized += '"'; // Siempre usar doble comilla en output
+                  sanitized += '"';
                 } else if (char === stringChar) {
                   inString = false;
-                  sanitized += '"'; // Cerrar con doble comilla
+                  sanitized += '"';
                 } else {
-                  // Comilla diferente dentro de string, escaparla
                   sanitized += '\\' + char;
                 }
               } else {
@@ -115,6 +147,7 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
             console.log('[parseMessageContent] ✅ JSON parsed successfully (character-by-character repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
           } catch (e3) {
             console.log('[parseMessageContent] ❌ All parsing strategies failed:', e3.message);
+            // Si todo falla, retornar null tableData porque el contenido no es JSON válido
             return { text: content, tableData: null };
           }
         }
@@ -126,18 +159,23 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
     // Si parsed ES un array directo, retorna como tableData inmediatamente
     if (Array.isArray(parsed)) {
       console.log('[parseMessageContent] 🎯 Array detected, returning tableData with', parsed.length, 'items');
-      return { text: '', tableData: parsed };
+      return { text: textContent, tableData: parsed };
     }
 
     // Si tiene answer tipo array
     if (parsed && parsed.answer && Array.isArray(parsed.answer)) {
-      return { text: '', tableData: parsed.answer };
+      return { text: textContent, tableData: parsed.answer };
     }
 
-    // Fallback
+    // Fallback: solo retornar tableData si parsed es array. Si es objeto o inválido, retornar null
+    if (Array.isArray(parsed?.table)) {
+      return { text: textContent, tableData: parsed.table };
+    }
+    
+    // Si parsed es un objeto pero no tiene un array válido, retornar null
     return {
-      text: parsed?.answer || parsed?.text || '',
-      tableData: parsed?.table || parsed
+      text: content,
+      tableData: null
     };
   } catch (e) {
     console.log('[parseMessageContent] Final error:', e.message);
@@ -152,33 +190,67 @@ const renderMessageContent = (content: string, role?: string) => {
     const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+[\w/])\)/g;
     // Regex for plain URLs
     const urlRegex = /(https?:\/\/[^\s)]+[\w/])/g;
+    // Regex for HTML tags: <b class='pronto-sku'>text</b>
+    const htmlTagRegex = /<b\s+class=['"]pronto-sku['"]\s*>([^<]+)<\/b>/g;
+    
     // Split by line breaks first
     return content.split(/\n|\r\n/).map((line, idx) => {
-      // First, replace Markdown links with anchor tags
       let parts: (string | JSX.Element)[] = [];
       let lastIdx = 0;
       let match;
-      while ((match = mdLinkRegex.exec(line)) !== null) {
+      
+      // First, process HTML tags <b class='pronto-sku'>...</b>
+      while ((match = htmlTagRegex.exec(line)) !== null) {
         if (match.index > lastIdx) {
           parts.push(line.slice(lastIdx, match.index));
         }
         parts.push(
-          <a
-            key={match[2] + idx}
-            href={match[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline break-all"
+          <span
+            key={`pronto-sku-${idx}-${match.index}`}
+            className="font-bold text-blue-600 dark:text-blue-400"
           >
             {match[1]}
-          </a>
+          </span>
         );
         lastIdx = match.index + match[0].length;
       }
       if (lastIdx < line.length) {
         parts.push(line.slice(lastIdx));
       }
-      // Now, for any remaining plain URLs in the string parts, parse as before
+      
+      // Then, replace Markdown links with anchor tags
+      parts = parts.flatMap((part, i) => {
+        if (typeof part !== 'string') return [part];
+        
+        let subParts: (string | JSX.Element)[] = [];
+        let subLastIdx = 0;
+        let mdMatch;
+        
+        while ((mdMatch = mdLinkRegex.exec(part)) !== null) {
+          if (mdMatch.index > subLastIdx) {
+            subParts.push(part.slice(subLastIdx, mdMatch.index));
+          }
+          subParts.push(
+            <a
+              key={mdMatch[2] + i}
+              href={mdMatch[2]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline break-all"
+            >
+              {mdMatch[1]}
+            </a>
+          );
+          subLastIdx = mdMatch.index + mdMatch[0].length;
+        }
+        if (subLastIdx < part.length) {
+          subParts.push(part.slice(subLastIdx));
+        }
+        
+        return subParts;
+      });
+      
+      // Finally, process plain URLs
       parts = parts.flatMap((part, i) => {
         if (typeof part !== 'string') return [part];
         return part.split(urlRegex).map((sub, j) => {
@@ -224,15 +296,19 @@ const BrandsFooter: React.FC = () => {
   const brands = [
     {
       name: 'Echo',
-      logo: '/images/Echo - LogoColor__CuerpoVideo..png'
+      logo: '/images/echo.png'
     },
     {
-      name: 'Husqvarna',
-      logo: '/images/Husqvarna - LogoColor_CuerpoVideo..png'
+      name: 'Shindaiwa',
+      logo: '/images/Shindaiwa.png'
     },
     {
-      name: 'Scag Parts Online',
-      logo: '/images/ScagPartsOnline_LogoColor_CuerpoVideo..png'
+      name: 'Scag',
+      logo: '/images/scag.png'
+    },
+    {
+      name: 'Toro',
+      logo: '/images/toro.png'
     }
   ];
 
@@ -1022,7 +1098,7 @@ const MessagesMe: React.FC = () => {
                           {chatTitle}
                         </h5>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {chat.store_domain}
+                          Pronto Mowers
                         </p>
                       </div>
                     </div>
@@ -1134,27 +1210,36 @@ const MessagesMe: React.FC = () => {
                                hasTable = true;
                                console.log('[hasTable detection] Flag msg.table === true');
                              } else if (typeof msg.content === 'string') {
-                               // 2. Si incluye el separador antiguo
-                               if (msg.content.includes('--------')) {
+                               const trimmed = msg.content.trim();
+                               
+                               // 2. Si contiene el patrón _____{'partInfo':...} - PRIORITY: check FIRST
+                               if (msg.content.includes('_____') && msg.content.includes('partInfo')) {
+                                 hasTable = true;
+                                 console.log('[hasTable detection] ✅ Embedded partInfo pattern detected');
+                               }
+                               // 3. Si incluye el separador antiguo
+                               else if (msg.content.includes('--------')) {
                                  hasTable = true;
                                  console.log('[hasTable detection] Separator "--------" found');
-                               } else {
-                                 // 3. Si el string parece un array de objetos o un JSON de partes
-                                 const trimmed = msg.content.trim();
-                                 // Si empieza con [ y termina con ] y contiene {, probablemente es un array de objetos
-                                 // Usar [\s\S] para que matchee saltos de línea, espacios, y caracteres especiales
-                                 if (/^\[[\s\S]*\{[\s\S]*\}[\s\S]*\]$/.test(trimmed)) {
+                               }
+                               // 4. Si el string STARTS with [ (pure JSON array) - must start AND end with [ ]
+                               else if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                                 // Additional check: must contain { to be array of objects
+                                 if (trimmed.includes('{')) {
                                    hasTable = true;
                                    console.log('[hasTable detection] ✅ Array pattern detected');
-                                 } else {
-                                   // Si empieza con { y contiene campos típicos de partes
-                                   if (/^\{[\s\S]*(partNumber|related_parts|general_info|MFRID|PARTNUMBER)[\s\S]*\}$/.test(trimmed)) {
-                                     hasTable = true;
-                                     console.log('[hasTable detection] Object pattern detected');
-                                   } else {
-                                     console.log('[hasTable detection] ❌ No pattern match. Content starts with:', trimmed.substring(0, 50));
-                                   }
                                  }
+                               }
+                               // 5. Si el string STARTS with { (pure JSON object) - must start AND end with { }
+                               else if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                                 // Additional check: must contain typical part fields
+                                 if (trimmed.includes('partNumber') || trimmed.includes('related_parts') || trimmed.includes('general_info') || trimmed.includes('MFRID') || trimmed.includes('PARTNUMBER')) {
+                                   hasTable = true;
+                                   console.log('[hasTable detection] Object pattern detected');
+                                 }
+                               }
+                               else {
+                                 console.log('[hasTable detection] ❌ No pattern match. Content starts with:', trimmed.substring(0, 50));
                                }
                              }
                            }
@@ -1162,7 +1247,11 @@ const MessagesMe: React.FC = () => {
                            const { text, tableData } = hasTable
                              ? parseMessageContent(msg.content, true)
                              : { text: msg.content, tableData: null };
-                           console.log('[Render] hasTable:', hasTable, '| tableData type:', Array.isArray(tableData) ? `Array[${tableData.length}]` : typeof tableData);
+                           
+                           // Si hasTable es true y el text está vacío o es solo JSON, no mostrar texto
+                           const shouldRenderText = !hasTable || (text && text.trim().length > 0 && !text.trim().startsWith('[') && !text.trim().startsWith('{'));
+                           
+                           console.log('[Render] hasTable:', hasTable, '| tableData type:', Array.isArray(tableData) ? `Array[${tableData.length}]` : typeof tableData, '| shouldRenderText:', shouldRenderText);
                            
                            return (
                              <React.Fragment key={msg.id}>
@@ -1186,9 +1275,11 @@ const MessagesMe: React.FC = () => {
                                        : 'border-blue-300 bg-white text-blue-900 dark:bg-boxdark-2 dark:text-white'
                                    }`}
                                    >
-                                     <p className="text-sm break-words">
-                                       {renderMessageContent(text, msg.role)}
-                                     </p>
+                                     {shouldRenderText && (
+                                       <p className="text-sm break-words">
+                                         {renderMessageContent(text, msg.role)}
+                                       </p>
+                                     )}
                                      {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}
                                      {msg.role === 'assistant' && tableData && Array.isArray(tableData) ? (
                                        <PartsAccordion data={tableData} messageId={msg.id} onSupersededClick={handleSupersededClicked} />

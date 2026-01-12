@@ -184,7 +184,7 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
 };
 
 // Formatea los mensajes del assistant para saltos de línea y URLs
-const renderMessageContent = (content: string, role?: string) => {
+const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku: string) => void) => {
   if (role === 'assistant') {
     // Regex for Markdown links: [text](url)
     const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+[\w/])\)/g;
@@ -204,12 +204,15 @@ const renderMessageContent = (content: string, role?: string) => {
         if (match.index > lastIdx) {
           parts.push(line.slice(lastIdx, match.index));
         }
+        const skuText = match[1];
         parts.push(
           <span
             key={`pronto-sku-${idx}-${match.index}`}
-            className="font-bold text-blue-600 dark:text-blue-400"
+            className="font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+            onClick={() => onSkuClick && onSkuClick(skuText)}
+            title={`Click to check stock for ${skuText}`}
           >
-            {match[1]}
+            {skuText}
           </span>
         );
         lastIdx = match.index + match[0].length;
@@ -1119,7 +1122,7 @@ const MessagesMe: React.FC = () => {
                     <div>
                       <h5 className="font-medium text-black dark:text-white">{t('assistant')}</h5>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {selectedChat.isNew ? t('new_chat') : chatDetail?.store_domain || ''}
+                        Pronto Mowers
                       </p>
                     </div>
                   </div>
@@ -1145,7 +1148,7 @@ const MessagesMe: React.FC = () => {
                             <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-3 px-4">
                               <p className="text-sm break-words">
                                 {localMessages.length > 0 && localMessages[0].role === 'assistant'
-                                  ? renderMessageContent(localMessages[0].content, 'assistant')
+                                  ? renderMessageContent(localMessages[0].content, 'assistant', handleSupersededClicked)
                                   : ''}
                               </p>
                             </div>
@@ -1277,7 +1280,7 @@ const MessagesMe: React.FC = () => {
                                    >
                                      {shouldRenderText && (
                                        <p className="text-sm break-words">
-                                         {renderMessageContent(text, msg.role)}
+                                         {renderMessageContent(text, msg.role, handleSupersededClicked)}
                                        </p>
                                      )}
                                      {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}

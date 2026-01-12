@@ -797,7 +797,7 @@ const Messages: React.FC = () => {
                       <h5 className="font-medium text-black dark:text-white">
                         {customerData?.name || t('user_no_name')}
                       </h5>
-                      <p className="text-sm text-gray-200 dark:text-gray-300">{chatDetail?.store_domain || ''}</p>
+                      <p className="text-sm text-gray-200 dark:text-gray-300">Pronto Mowers</p>
                     </div>
                   </div>
                   <div>

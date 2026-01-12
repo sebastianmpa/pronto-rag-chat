@@ -500,7 +500,13 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                             <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID || '-'}</td>
                             <td className="px-2 py-1 text-gray-900 dark:text-white">
                               <div className="flex items-center gap-1">
-                                <span>{part.PARTNUMBER || '-'}</span>
+                                <span 
+                                  onClick={() => onSupersededClick && onSupersededClick(part.PARTNUMBER)}
+                                  className="cursor-pointer hover:underline text-blue-600 dark:text-blue-400 font-medium"
+                                  title={`Click to check stock for ${part.PARTNUMBER}`}
+                                >
+                                  {part.PARTNUMBER || '-'}
+                                </span>
                                 {part.PARTNUMBER && (
                                   <button
                                     type="button"

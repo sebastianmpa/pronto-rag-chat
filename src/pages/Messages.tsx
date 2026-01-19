@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
@@ -6,7 +6,6 @@ import DefaultLayout from '../layout/DefaultLayout';
 import { useConversationsPaginated, useConversationById } from '../hooks/useConversation';
 import { getConversationsPaginated } from '../libs/ConversationService';
 import { useCustomerById } from '../hooks/useCustomer';
-import { useUserProfile } from '../hooks/useUser';
 import { format } from 'date-fns';
 
 // Helper para extraer texto y tabla del content
@@ -19,22 +18,117 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
     let textContent = content;
     let tableData = null;
 
-    // Paso 0: Buscar y extraer JSON embebido al final con patrón _____{'partInfo':...}
-    const jsonMatch = content.match(/_____(\{[\s\S]*\})$/);
+    // Paso 0: Buscar y extraer JSON embebido al final con patrón ._____{'partInfo':...}
+    let jsonMatch = content.match(/\._____(\{[\s\S]*\})$/);
+    
+    // Si no encuentra con ._____,  buscar _____ sin punto
+    if (!jsonMatch) {
+      jsonMatch = content.match(/_____(\{[\s\S]*\})$/);
+    }
+    
+    // Si no encuentra con _____, buscar {'partInfo' en el content
+    if (!jsonMatch) {
+      const jsonStartIdx = content.indexOf("{'partInfo'");
+      if (jsonStartIdx !== -1) {
+        // Encontrar el final del JSON (último })
+        let braceCount = 0;
+        let inString = false;
+        let stringChar = '';
+        let jsonEndIdx = -1;
+        
+        for (let i = jsonStartIdx; i < content.length; i++) {
+          const char = content[i];
+          const prevChar = i > 0 ? content[i - 1] : '';
+          
+          if ((char === '"' || char === "'") && prevChar !== '\\') {
+            if (!inString) {
+              inString = true;
+              stringChar = char;
+            } else if (char === stringChar) {
+              inString = false;
+            }
+          }
+          
+          if (!inString) {
+            if (char === '{' || char === '[') braceCount++;
+            else if (char === '}' || char === ']') braceCount--;
+            
+            if (braceCount === 0 && i > jsonStartIdx) {
+              jsonEndIdx = i;
+              break;
+            }
+          }
+        }
+        
+        if (jsonEndIdx !== -1) {
+          jsonMatch = [content.substring(jsonStartIdx, jsonEndIdx + 1), content.substring(jsonStartIdx, jsonEndIdx + 1)];
+        }
+      }
+    }
+    
     if (jsonMatch && jsonMatch[1]) {
       let jsonStr = jsonMatch[1]; // Extrae del content ORIGINAL (puede tener None, True, False)
-      textContent = content.substring(0, content.lastIndexOf('_____')); // Remover el separador y JSON del content ORIGINAL
+      textContent = content.substring(0, content.lastIndexOf(jsonStr)); // Remover el JSON del content ORIGINAL
+      textContent = textContent.replace(/_____$/, '').trim(); // Remover separador si existe
+      
+      console.log('[parseMessageContent] Found JSON embebido, attempting to parse. Length:', jsonStr.length);
+      console.log('[parseMessageContent] JSON (first 200 chars):', jsonStr.substring(0, 200));
       
       try {
-        // Normalizar el JSON extraído: None→null, True→true, False→false, comillas simples→dobles
-        let normalized = jsonStr
-          .replace(/\bNone\b/g, 'null')
-          .replace(/\bTrue\b/g, 'true')
-          .replace(/\bFalse\b/g, 'false')
-          .replace(/'/g, '"'); // Reemplazar comillas simples por dobles
+        // Estrategia INTELIGENTE: reemplazar comillas simples SOLO en delimitadores de keys/values
+        let normalized = jsonStr;
         
-        const parsed = JSON.parse(normalized); // Parse del JSON normalizado
-        console.log('[parseMessageContent] 🎯 Embedded JSON extracted and parsed successfully');
+        // 1. Reemplazar None, True, False DENTRO del JSON
+        normalized = normalized.replace(/:\s*None\b/g, ': null');
+        normalized = normalized.replace(/:\s*True\b/g, ': true');
+        normalized = normalized.replace(/:\s*False\b/g, ': false');
+        normalized = normalized.replace(/,\s*None\b/g, ', null');
+        normalized = normalized.replace(/,\s*True\b/g, ', true');
+        normalized = normalized.replace(/,\s*False\b/g, ', false');
+        normalized = normalized.replace(/\[\s*None\s*\]/g, '[null]');
+        
+        // 2. Reemplazar comillas simples por dobles, pero SOLO las que rodean keys o valores
+        // Patrón: 'key': o : 'value', o [' o , '
+        normalized = normalized.replace(/'/g, '"');
+        
+        // 3. Ahora tenemos un problema: las comillas dentro de URLs que eran simples se convirtieron en dobles
+        // Ejemplo: "jpg?c=2" debería ser "jpg?c=2" (sin cambio, es válido)
+        // Pero si hay: "BEARING, 3/4\" ROLLER" esto está mal
+        // Necesitamos escapar comillas dobles que estén dentro de strings
+        
+        // Estrategia: procesar carácter por carácter para identificar y escapar comillas mal colocadas
+        let fixed = '';
+        let inString = false;
+        
+        for (let i = 0; i < normalized.length; i++) {
+          const char = normalized[i];
+          const prevChar = i > 0 ? normalized[i - 1] : '';
+          const nextChar = i < normalized.length - 1 ? normalized[i + 1] : '';
+          
+          if (char === '"' && prevChar !== '\\') {
+            if (!inString) {
+              inString = true;
+              fixed += char;
+            } else {
+              if (nextChar === ',' || nextChar === '}' || nextChar === ']' || 
+                  nextChar === ':' || i === normalized.length - 1) {
+                inString = false;
+                fixed += char;
+              } else {
+                fixed += '\\"';
+              }
+            }
+          } else {
+            fixed += char;
+          }
+        }
+        
+        normalized = fixed;
+        
+        console.log('[parseMessageContent] Strategy 1: Normalized JSON (first 300 chars):', normalized.substring(0, 300));
+        
+        const parsed = JSON.parse(normalized);
+        console.log('[parseMessageContent] ✅ Strategy 1 - JSON parsed successfully');
         
         // Si tiene partInfo array, usarlo como tableData
         if (parsed.partInfo && Array.isArray(parsed.partInfo)) {
@@ -53,7 +147,21 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
           }
         }
       } catch (e) {
-        console.log('[parseMessageContent] Failed to parse embedded JSON:', e.message);
+        console.log('[parseMessageContent] Strategy 1 failed:', e.message);
+        
+        // Intento final: usar eval con try-catch (más permisivo)
+        try {
+          console.log('[parseMessageContent] Attempting Strategy 1B (eval)...');
+          const evaluated = eval('(' + jsonStr + ')');
+          if (evaluated && evaluated.partInfo && Array.isArray(evaluated.partInfo)) {
+            tableData = evaluated.partInfo;
+            console.log('[parseMessageContent] ✅ Strategy 1B - partInfo array found with', tableData.length, 'items');
+            return { text: textContent, tableData };
+          }
+        } catch (evalError) {
+          console.log('[parseMessageContent] Strategy 1B (eval) also failed:', evalError.message);
+        }
+        
         // Continuar con el parsing tradicional
       }
     }
@@ -89,57 +197,76 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         return match;
       });
       
-      console.log('[parseMessageContent] Chars 570-585:', normalized.substring(570, 585));
+      console.log('[parseMessageContent] Chars 560-590:', normalized.substring(560, 590));
+      console.log('[parseMessageContent] Attempting JSON.parse...');
       
       try {
         parsed = JSON.parse(normalized);
-        console.log('[parseMessageContent] ✅ JSON parsed successfully:', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
+        console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 2):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
       } catch (e) {
-        console.log('[parseMessageContent] Parse error:', e.message);
+        console.log('[parseMessageContent] Strategy 2 failed:', e.message);
+        const errorPos = parseInt(e.message.match(/position (\d+)/)?.[1] || '0');
+        console.log('[parseMessageContent] Error at position', errorPos);
+        console.log('[parseMessageContent] Context (pos', errorPos - 50, 'to', errorPos + 50, '):', normalized.substring(Math.max(0, errorPos - 50), errorPos + 50));
         
-        // Estrategia alternativa: reparación más agresiva
-        let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
-        
+        // Strategy 3: Intentar reparar escapes dobles problemáticos
         try {
-          parsed = JSON.parse(aggressiveRepair);
-          console.log('[parseMessageContent] ✅ JSON parsed successfully (aggressive repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-        } catch (e2) {
-          console.log('[parseMessageContent] Aggressive repair failed:', e2.message);
+          console.log('[parseMessageContent] Strategy 3: Fixing double escapes...');
+          let repaired = normalized;
+          // Reemplazar \" WORD\" con \" WORD (quitar el último escape)
+          repaired = repaired.replace(/\\\\" ([^"]*)\\""/g, '\\" $1"');
+          console.log('[parseMessageContent] Attempting JSON.parse after repair...');
+          parsed = JSON.parse(repaired);
+          console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 3 - escape repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
+        } catch (e3) {
+          console.log('[parseMessageContent] Strategy 3 failed:', e3.message);
           
-          // Último intento: procesar carácter por carácter
+          // Strategy 4: Reparación más agresiva
+          let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
+          
           try {
-            let sanitized = '';
-            let inString = false;
-            let stringChar = '';
-            let prevChar = '';
+            console.log('[parseMessageContent] Strategy 4: Aggressive repair...');
+            parsed = JSON.parse(aggressiveRepair);
+            console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 4):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
+          } catch (e4) {
+            console.log('[parseMessageContent] Strategy 4 failed:', e4.message);
             
-            for (let i = 0; i < normalized.length; i++) {
-              const char = normalized[i];
+            // Strategy 5: Character-by-character repair
+            try {
+              console.log('[parseMessageContent] Strategy 5: Character-by-character repair...');
+              let sanitized = '';
+              let inStr = false;
+              let strChar = '';
+              let prevC = '';
               
-              if ((char === '"' || char === "'") && prevChar !== '\\') {
-                if (!inString) {
-                  inString = true;
-                  stringChar = char;
-                  sanitized += '"';
-                } else if (char === stringChar) {
-                  inString = false;
-                  sanitized += '"';
+              for (let i = 0; i < normalized.length; i++) {
+                const char = normalized[i];
+                
+                if ((char === '"' || char === "'") && prevC !== '\\') {
+                  if (!inStr) {
+                    inStr = true;
+                    strChar = char;
+                    sanitized += '"';
+                  } else if (char === strChar) {
+                    inStr = false;
+                    sanitized += '"';
+                  } else {
+                    sanitized += '\\' + char;
+                  }
                 } else {
-                  sanitized += '\\' + char;
+                  sanitized += char;
                 }
-              } else {
-                sanitized += char;
+                
+                prevC = char;
               }
               
-              prevChar = char;
+              parsed = JSON.parse(sanitized);
+              console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 5):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
+            } catch (e5) {
+              console.log('[parseMessageContent] ❌ All parsing strategies failed:', e5.message);
+              // Si todo falla, retornar null tableData porque el contenido no es JSON válido
+              return { text: content, tableData: null };
             }
-            
-            parsed = JSON.parse(sanitized);
-            console.log('[parseMessageContent] ✅ JSON parsed successfully (character-by-character repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-          } catch (e3) {
-            console.log('[parseMessageContent] ❌ All parsing strategies failed:', e3.message);
-            // Si todo falla, retornar null tableData porque el contenido no es JSON válido
-            return { text: content, tableData: null };
           }
         }
       }
@@ -151,6 +278,12 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
     if (Array.isArray(parsed)) {
       console.log('[parseMessageContent] 🎯 Array detected, returning tableData with', parsed.length, 'items');
       return { text: textContent, tableData: parsed };
+    }
+
+    // Si tiene partInfo array (desde JSON embebido que se parseó correctamente)
+    if (parsed && parsed.partInfo && Array.isArray(parsed.partInfo)) {
+      console.log('[parseMessageContent] 🎯 partInfo array detected, returning tableData with', parsed.partInfo.length, 'items');
+      return { text: textContent, tableData: parsed.partInfo };
     }
 
     // Si tiene answer tipo array
@@ -179,16 +312,25 @@ const BrandsFooter: React.FC = () => {
   const brands = [
     {
       name: 'Echo',
-      logo: '/images/Echo - LogoColor__CuerpoVideo..png'
+      logo: '/images/echo.png'
     },
     {
-      name: 'Husqvarna',
-      logo: '/images/Husqvarna - LogoColor_CuerpoVideo..png'
+      name: 'Shindaiwa',
+      logo: '/images/Shindaiwa.png'
     },
     {
-      name: 'Scag Parts Online',
-      logo: '/images/ScagPartsOnline_LogoColor_CuerpoVideo..png'
+      name: 'Scag',
+      logo: '/images/scag.png'
+    },
+    {
+      name: 'Toro',
+      logo: '/images/toro.png'
+    },
+    {
+      name: 'Hustler',
+      logo: '/images/hulster.png'
     }
+
   ];
 
   return (
@@ -199,7 +341,7 @@ const BrandsFooter: React.FC = () => {
             <img 
               src={brand.logo} 
               alt={brand.name}
-              className="max-h-12 max-w-32 object-contain opacity-80 hover:opacity-100 transition-opacity"
+              className="max-h-12 max-w-32 object-contain"
               title={brand.name}
             />
           </div>
@@ -215,8 +357,41 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) 
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
   const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{ itemIdx: number; partIdx: number } | null>(null);
+  const [viewingLocation, setViewingLocation] = useState<{ [key: string]: 1 | 4 }>({});
   
   if (!Array.isArray(data)) return null;
+  
+  // Helper: Agrupar partes por mfrId + partNumber y luego por ubicación
+  const groupedData = useMemo(() => {
+    const grouped = new Map<string, { loc1?: any; loc4?: any }>();
+    
+    data.forEach((item, idx) => {
+      const mfrId = item.mfrId || item.MFRID || 'UNKNOWN';
+      const partNumber = item.partNumber || item.PARTNUMBER || 'UNKNOWN';
+      const key = `${mfrId}|${partNumber}`;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, {});
+      }
+      const group = grouped.get(key)!;
+      
+      // Si no tiene location definido, asumir que es location 1
+      // Convertir a número si es string
+      const location = parseInt(String(item.location)) || 1;
+      
+      if (location === 1) {
+        group.loc1 = item;
+      } else if (location === 4) {
+        group.loc4 = item;
+      }
+      
+      console.log(`[PartsAccordion] Item ${idx}: mfrId=${mfrId}, partNumber=${partNumber}, location=${location}`);
+    });
+    
+    const result = Array.from(grouped.values());
+    console.log('[PartsAccordion] Grouped data:', result.length, 'groups');
+    return result;
+  }, [data]);
   
   // Helper to copy part number
   const handleCopy = (partNumber: string, idx: number | string) => {
@@ -236,7 +411,27 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) 
   
   return (
     <div className="mt-3 max-w-4xl mx-auto">
-      {data.map((item, idx) => {
+      {groupedData.map((group, idx) => {
+        console.log(`[PartsAccordion Render] Group ${idx}:`, group);
+        
+        // Determinar qué ubicación mostrar por defecto (preferir 1, luego 4)
+        const defaultLocation = (group.loc1 ? 1 : (group.loc4 ? 4 : 1)) as 1 | 4;
+        const currentLocation = viewingLocation[idx] || defaultLocation;
+        let item = currentLocation === 1 ? group.loc1 : group.loc4;
+        
+        // Si la ubicación actual no existe, intentar usar la otra
+        if (!item) {
+          item = currentLocation === 1 ? group.loc4 : group.loc1;
+        }
+        
+        // Si aún no hay item, no mostrar nada
+        if (!item) {
+          console.log(`[PartsAccordion Render] Group ${idx} has no item, skipping`);
+          return null;
+        }
+        
+        console.log(`[PartsAccordion Render] Group ${idx} rendering with item:`, item);
+        
         const general = item.general_info || {};
         const relatedParts = item.related_parts || [];
         const mfrId = general.MFRID || item.mfrId || '-';
@@ -245,6 +440,8 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) 
         const ubicacion = item.location || '-';
         const superseded = item.superseded || general.SUPERCEDETO || '-';
         const cantidad = item.qty_loc ?? general.QTY_LOC ?? '-';
+        const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
+        const alternateLocation = currentLocation === 1 ? 4 : 1;
         return (
           <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-4xl mx-auto">
             {/* Header del acordeón */}
@@ -287,6 +484,17 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) 
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
               </div>
               <div className="flex items-center gap-2 ml-2">
+                {/* View location button - solo mostrar si hay ubicación alternativa */}
+                {hasAlternateLocation && (
+                  <button
+                    type="button"
+                    className="px-2 py-1 text-xs rounded bg-orange-100 dark:bg-orange-900 hover:bg-orange-200 dark:hover:bg-orange-800 border border-orange-300 dark:border-orange-700 focus:outline-none transition-colors"
+                    title={`Click to view location ${alternateLocation}`}
+                    onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: alternateLocation }))}
+                  >
+                    {t('parts_accordion.view_location')} {alternateLocation}
+                  </button>
+                )}
                 {/* Copy button */}
                 <button
                   type="button"
@@ -529,9 +737,6 @@ const Messages: React.FC = () => {
   const [page, setPage] = useState(1);
   // Estado para controlar qué tabla está abierta (por message id)
   const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
-
-  // Get user profile to check location
-  const { profile: userProfile } = useUserProfile();
 
   // Hooks para todas las conversaciones
   const { data: chats, loading: loadingChats } = useConversationsPaginated({ page, limit });

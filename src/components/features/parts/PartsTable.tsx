@@ -13,8 +13,10 @@ const PartsTable = () => {
   // Filtros para la API: partNumber, mfrId, location
   const [partNumberFilter, setPartNumberFilter] = useState('');
   const [mfrIdFilter, setMfrIdFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('1');
   const [showTable, setShowTable] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<string | null>(null);
+  const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<number | null>(null);
 
   // Obtener manufacturers desde el hook
   const { manufacturers, loading: loadingManufacturers } = useManufacturers();
@@ -41,6 +43,22 @@ const PartsTable = () => {
     ],
     [t]
   );
+
+  // Helper to copy to clipboard
+  const handleCopy = (partNumber: string, idx: string | number) => {
+    if (!partNumber) return;
+    navigator.clipboard.writeText(partNumber);
+    setCopiedIdx(typeof idx === 'string' ? idx : `main-${idx}`);
+    setTimeout(() => setCopiedIdx(null), 1200);
+  };
+
+  // Helper to copy related part number
+  const handleCopyRelated = (partNumber: string, idx: number) => {
+    if (!partNumber) return;
+    navigator.clipboard.writeText(partNumber);
+    setCopiedRelatedIdx(idx);
+    setTimeout(() => setCopiedRelatedIdx(null), 1200);
+  };
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -162,7 +180,27 @@ const PartsTable = () => {
                   <td className="px-2 py-2">{partInfo.location}</td>
                   <td className="px-2 py-2">{partInfo.generalInfo && partInfo.generalInfo.DESCRIPTION ? partInfo.generalInfo.DESCRIPTION : '-'}</td>
                   <td className="px-2 py-2">{partInfo.qty_loc}</td>
-                  <td className="px-2 py-2">{partInfo.related_count}</td>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-2">
+                      <span>{partInfo.related_count}</span>
+                      {partInfo.related_count > 0 && (
+                        <button
+                          type="button"
+                          className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
+                          title={t('parts_table.copy_part_number') || 'Copy part number'}
+                          onClick={() => handleCopy(partInfo.partNumber, 'main')}
+                        >
+                          <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                            <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                          </svg>
+                        </button>
+                      )}
+                      {copiedIdx === 'main' && (
+                        <span className="text-xs text-green-600 dark:text-green-400">{t('parts_table.copied') || 'Copied'}</span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
                 {Array.isArray(partInfo.relatedParts) && partInfo.relatedParts.length > 0 && (
                   <tr>
@@ -181,7 +219,27 @@ const PartsTable = () => {
                             {partInfo.relatedParts.map((rel, relIdx) => (
                               <tr key={relIdx}>
                                 <td className="px-2 py-1">{rel.MFRID}</td>
-                                <td className="px-2 py-1">{rel.PARTNUMBER}</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1">
+                                    <span>{rel.PARTNUMBER}</span>
+                                    {rel.PARTNUMBER && (
+                                      <button
+                                        type="button"
+                                        className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
+                                        title={t('parts_table.copy_part_number') || 'Copy part number'}
+                                        onClick={() => handleCopyRelated(rel.PARTNUMBER, relIdx)}
+                                      >
+                                        <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                          <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                    {copiedRelatedIdx === relIdx && (
+                                      <span className="text-xs text-green-600 dark:text-green-400">{t('parts_table.copied') || 'Copied'}</span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="px-2 py-1">{rel.DESCRIPTION}</td>
                                 <td className="px-2 py-1">{rel.QUANTITYLOC}</td>
                               </tr>

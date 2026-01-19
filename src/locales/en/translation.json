@@ -91,7 +91,8 @@
   "show_last": "Show last:",
   "assistant": "Assistant",
   "type_message": "Type a message...",
-  "disclaimer": "This AI Assistant may make mistakes. Check important information. Not all models and part types are available.",
+  "disclaimer": "This AI Assistant may make mistakes. Check important information.",
+  "disclaimer_2": "Not all models and part types are available.",
   "select_chat": "Select a chat to view the conversation",
   "thank_you_feedback": "Thank you for your feedback!",
   "edit": "Edit",
@@ -249,7 +250,7 @@
   },
   "parts_accordion": {
     "location": "Location",
-    "superseded": "Superseded",
+    "superseded": "Last superseded to",
     "quantity": "Quantity",
     "copy_part_number": "Copy Part Number",
     "copied": "Copied!",
@@ -260,6 +261,7 @@
     "part_number": "Part Number",
     "description": "Description",
     "qty": "Qty",
-    "parts_information": "Parts Information"
+    "parts_information": "Parts Information",
+    "view_location": "View location"
   }
 }

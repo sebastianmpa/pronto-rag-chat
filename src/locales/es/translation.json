@@ -42,7 +42,8 @@
   "show_last": "Mostrar últimos:",
   "assistant": "Asistente",
   "type_message": "Escribe un mensaje...",
-  "disclaimer": "Este Asistente de IA puede cometer errores. Verifica la información importante. No todos los modelos y tipos de partes están disponibles.",
+  "disclaimer": "Este Asistente de IA puede cometer errores. Verifica la información importante.",
+  "disclaimer_2": "No todos los modelos y tipos de partes están disponibles.",
   "select_chat": "Selecciona un chat para ver la conversación",
   "thank_you_feedback": "¡Gracias por tu opinión!",
   "edit": "Editar",
@@ -244,7 +245,7 @@
   },
   "parts_accordion": {
     "location": "Ubicación",
-    "superseded": "Reemplazado",
+    "superseded": "Ultimo Reemplazado",
     "quantity": "Cantidad",
     "copy_part_number": "Copiar Número de Parte",
     "copied": "¡Copiado!",
@@ -255,6 +256,7 @@
     "part_number": "Número de Parte",
     "description": "Descripción",
     "qty": "Cantidad",
-    "parts_information": "Información de Partes"
+    "parts_information": "Información de Partes",
+    "view_location": "Ver ubicación"
   }
 }

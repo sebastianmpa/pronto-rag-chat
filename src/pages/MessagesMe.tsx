@@ -11,6 +11,7 @@ import { useUserProfile } from '../hooks/useUser';
 import { sendMessageToConversationService } from '../libs/ConversationService';
 import { RatingBubble, RatingType } from '../components/RatingBubble';
 import { useRating } from '../hooks/useRating';
+import { useStockTransfer } from '../hooks/useStockTransfer';
 
 // Helper functions
 const formatDate = (date: string) => {
@@ -496,6 +497,26 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
   const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{ itemIdx: number; partIdx: number } | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{ [key: string]: 1 | 4 }>({});
+  const [transferModalIdx, setTransferModalIdx] = useState<number | null>(null);
+  const [transferForm, setTransferForm] = useState({ mfr: '', sku: '', quantity: '', order: '' });
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [transferSuccess, setTransferSuccess] = useState(false);
+  const { requestTransfer: hookRequestTransfer } = useStockTransfer();
+  
+  // Wrapper for requestTransfer that handles loading, error, and success states
+  const requestTransfer = async (payload: any) => {
+    setTransferLoading(true);
+    setTransferError(null);
+    try {
+      await hookRequestTransfer(payload);
+    } catch (err: any) {
+      setTransferError(err?.message || 'Failed to submit transfer request');
+      setTransferLoading(false);
+      throw err;
+    }
+    setTransferLoading(false);
+  };
   
   if (!Array.isArray(data)) {
     console.log('[PartsAccordion] Data is not an array:', typeof data);
@@ -662,6 +683,22 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                 )}
               </div>
               <div className="flex items-center gap-2 ml-2">
+                {/* Transfer button */}
+                <button
+                  type="button"
+                  className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
+                  title={t('stock_transfer.request') || 'Request transfer'}
+                  onClick={() => {
+                    setTransferForm({ mfr: item.mfrId, sku: item.partNumber, quantity: '', order: '' });
+                    setTransferModalIdx(idx);
+                    setTransferError(null);
+                    setTransferSuccess(false);
+                  }}
+                >
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                </button>
                 {/* Copy button */}
                 <button
                   type="button"
@@ -773,6 +810,167 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
           </div>
         );
       })}
+      
+      {/* Stock Transfer Modal */}
+      {transferModalIdx !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end z-50 pr-64">
+          <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-sm relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
+              {t('stock_transfer.request') || 'Stock Transfer'}
+            </div>
+            
+            {transferSuccess ? (
+              // Success state
+              <div className="text-center">
+                <div className="mb-4">
+                  <svg className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-blue-700 dark:text-blue-300 mb-4">
+                  {t('stock_transfer.success_message') || 'Transfer request submitted successfully!'}
+                </p>
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md transition-all duration-150"
+                  onClick={() => {
+                    setTransferModalIdx(null);
+                    setTransferSuccess(false);
+                    setTransferForm({ mfr: '', sku: '', quantity: '', order: '' });
+                  }}
+                >
+                  {t('common.close') || 'Close'}
+                </button>
+              </div>
+            ) : (
+              // Form state
+              <>
+                <p className="mb-4 text-base font-semibold text-blue-700 dark:text-blue-300 text-center">
+                  {t('stock_transfer.request_transfer') || 'Request Stock Transfer'}
+                </p>
+                
+                {/* Order Number - FIRST FIELD */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.order_number') || 'Order Number'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={transferForm.order}
+                    onChange={e => setTransferForm({ ...transferForm, order: e.target.value })}
+                    placeholder="Enter order number"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all"
+                  />
+                </div>
+                
+                {/* MFR (read-only) - PRECARGADO */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.manufacturer') || 'Manufacturer'}
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={transferForm.mfr}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                {/* SKU (read-only) - PRECARGADO */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.sku') || 'SKU'}
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={transferForm.sku}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                {/* Quantity - PRECARGADO (vacío) */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.quantity') || 'Quantity'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={transferForm.quantity}
+                    onChange={e => setTransferForm({ ...transferForm, quantity: e.target.value })}
+                    placeholder="Enter quantity"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all"
+                  />
+                </div>
+                
+                {/* Error message */}
+                {transferError && (
+                  <p className="text-red-500 text-xs mb-3 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
+                    {transferError}
+                  </p>
+                )}
+                
+                {/* Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
+                    onClick={() => {
+                      setTransferModalIdx(null);
+                      setTransferError(null);
+                      setTransferForm({ mfr: '', sku: '', quantity: '', order: '' });
+                    }}
+                    disabled={transferLoading}
+                  >
+                    {t('common.cancel') || 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md transition-all duration-150 ${
+                      !transferForm.quantity || !transferForm.order || transferLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={async () => {
+                      if (!transferForm.quantity || !transferForm.order) {
+                        setTransferError('Please fill in all required fields');
+                        return;
+                      }
+                      
+                      try {
+                        await requestTransfer({
+                          mfr: transferForm.mfr,
+                          sku: transferForm.sku,
+                          quantity: parseInt(transferForm.quantity),
+                          order: transferForm.order
+                        });
+                        setTransferSuccess(true);
+                        // Auto-close after 2 seconds
+                        setTimeout(() => {
+                          setTransferModalIdx(null);
+                          setTransferSuccess(false);
+                          setTransferForm({ mfr: '', sku: '', quantity: '', order: '' });
+                        }, 2000);
+                      } catch (err) {
+                        // Error is already set by the hook
+                      }
+                    }}
+                    disabled={!transferForm.quantity || !transferForm.order || transferLoading}
+                  >
+                    {transferLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        {t('common.submitting') || 'Submitting...'}
+                      </span>
+                    ) : (
+                      t('common.submit') || 'Submit'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1532,9 +1730,29 @@ const MessagesMe: React.FC = () => {
                                        />
                                      ) : null}
                                    </div>
-                                   <p className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                     {new Date(msg.createdAt).toLocaleTimeString()}
-                                   </p>
+                                   <div className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                                     <p>{new Date(msg.createdAt).toLocaleTimeString()}</p>
+                                     {/* Mostrar conversation_context si existe en el mensaje */}
+                                     {msg.role === 'assistant' && msg.conversation_context && (
+                                       <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                                         {msg.conversation_context.intent && (
+                                           <p><span className="font-semibold">Intent:</span> {msg.conversation_context.intent}</p>
+                                         )}
+                                         {msg.conversation_context.mfr && (
+                                           <p><span className="font-semibold">MFR:</span> {msg.conversation_context.mfr}</p>
+                                         )}
+                                         {msg.conversation_context.model && (
+                                           <p><span className="font-semibold">Model:</span> {msg.conversation_context.model}</p>
+                                         )}
+                                         {msg.conversation_context.serial && (
+                                           <p><span className="font-semibold">Serial:</span> {msg.conversation_context.serial}</p>
+                                         )}
+                                         {msg.conversation_context.part && (
+                                           <p><span className="font-semibold">Part:</span> {msg.conversation_context.part}</p>
+                                         )}
+                                       </div>
+                                     )}
+                                   </div>
                                  </div>
                                </div>
                              </React.Fragment>

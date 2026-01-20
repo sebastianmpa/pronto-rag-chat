@@ -258,5 +258,20 @@
     "qty": "Cantidad",
     "parts_information": "Información de Partes",
     "view_location": "Ver ubicación"
+  },
+  "stock_transfer": {
+    "request": "Transferencia de Stock",
+    "request_transfer": "Solicitar Transferencia de Stock",
+    "manufacturer": "Fabricante",
+    "sku": "SKU",
+    "quantity": "Cantidad",
+    "order_number": "Número de Orden",
+    "success_message": "¡Solicitud de transferencia enviada exitosamente!"
+  },
+  "common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "submit": "Enviar",
+    "submitting": "Enviando..."
   }
 }

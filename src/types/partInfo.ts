@@ -9,21 +9,25 @@ export interface GeneralPartInfo {
   MFRID: string;
   PARTNUMBER: string;
   DESCRIPTION: string;
-  SUPERCEDETO: string | null;
+  SUPERCEDETO?: string | null;
   QTY_LOC: number;
 }
 
 export interface PartInfo {
   mfrId: string;
   partNumber: string;
-  location: '1' | '4';
-  superseded: string | null;
+  productThumbnailImage?: string;
+  productStandarImage?: string;
+  location: number;
+  superseded?: string | null;
+  superseded_list?: string[];
   qty_loc: number;
-  generalInfo: GeneralPartInfo;
-  relatedParts: RelatedPart[];
+  general_info: GeneralPartInfo;
+  related_parts: RelatedPart[];
   related_count: number;
 }
 
 export interface PartInfoResponse {
-  partInfo: PartInfo;
+  partInfo: PartInfo[];
 }
+

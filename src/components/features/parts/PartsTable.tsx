@@ -1,265 +1,278 @@
-// Mock de datos para partes
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTable, Column } from 'react-table';
-import { useManufacturers } from '../../../hooks/useManufacturers';
 import { usePartInfo } from '../../../hooks/usePartInfo';
 import { PartInfo } from '../../../types/partInfo';
 
-
-
 const PartsTable = () => {
   const { t } = useTranslation();
-  // Filtros para la API: partNumber, mfrId, location
   const [partNumberFilter, setPartNumberFilter] = useState('');
-  const [mfrIdFilter, setMfrIdFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('1');
   const [showTable, setShowTable] = useState(false);
-  const [copiedIdx, setCopiedIdx] = useState<string | null>(null);
-  const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<number | null>(null);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
+  const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{ itemIdx: number; partIdx: number } | null>(null);
+  const [viewingLocation, setViewingLocation] = useState<{ [key: string]: 1 | 4 }>({});
 
-  // Obtener manufacturers desde el hook
-  const { manufacturers, loading: loadingManufacturers } = useManufacturers();
-  // State for filtering manufacturer options in the select (does not affect fetched data)
-  const [mfrSelectFilter, setMfrSelectFilter] = useState('');
+  // Hook para obtener la info de la parte
+  const { partInfoList, loading: loadingPart, error, fetchPartInfo } = usePartInfo(partNumberFilter);
 
-  // Hook para obtener la info de la parte filtrada
-  const { partInfo, loading: loadingPart, error, fetchPartInfo } = usePartInfo(
-    partNumberFilter,
-    mfrIdFilter,
-    locationFilter as '1' | '4'
-  );
+  // Agrupar datos por mfrId|partNumber
+  const groupedData = useMemo(() => {
+    const grouped = new Map<string, { loc1?: PartInfo; loc4?: PartInfo }>();
+    
+    partInfoList.forEach((item) => {
+      const key = `${item.mfrId}|${item.partNumber}`;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, {});
+      }
+      const group = grouped.get(key)!;
+      
+      const location = parseInt(String(item.location)) || 1;
+      if (location === 1) {
+        group.loc1 = item;
+      } else if (location === 4) {
+        group.loc4 = item;
+      }
+    });
+    
+    return Array.from(grouped.values());
+  }, [partInfoList]);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partNumberFilter.trim()) return;
+    
+    setShowTable(true);
+    await fetchPartInfo();
+  };
 
-  // Columnas de la tabla
-  const columns: Column<PartInfo>[] = useMemo(
-    () => [
-      { Header: t('parts_table.part_number'), accessor: 'partNumber' },
-      { Header: t('parts_table.mfr_id'), accessor: 'mfrId' },
-      { Header: t('parts_table.location'), accessor: 'location' },
-      { Header: t('parts_table.description'), accessor: (row) => row.generalInfo.DESCRIPTION, id: 'description' },
-      { Header: t('parts_table.qty_loc'), accessor: 'qty_loc' },
-      { Header: t('parts_table.related_count'), accessor: 'related_count' },
-    ],
-    [t]
-  );
-
-  // Helper to copy to clipboard
-  const handleCopy = (partNumber: string, idx: string | number) => {
+  const handleCopy = (partNumber: string, idx: number | string) => {
     if (!partNumber) return;
     navigator.clipboard.writeText(partNumber);
-    setCopiedIdx(typeof idx === 'string' ? idx : `main-${idx}`);
+    setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 1200);
   };
 
-  // Helper to copy related part number
-  const handleCopyRelated = (partNumber: string, idx: number) => {
+  const handleCopyRelated = (partNumber: string, itemIdx: number, partIdx: number) => {
     if (!partNumber) return;
     navigator.clipboard.writeText(partNumber);
-    setCopiedRelatedIdx(idx);
+    setCopiedRelatedIdx({ itemIdx, partIdx });
     setTimeout(() => setCopiedRelatedIdx(null), 1200);
   };
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-      {/* Filtros como formulario */}
+      {/* Formulario de búsqueda */}
       <form
-        className="w-full px-8 pt-4 pb-2 bg-white border-x border-b border-stroke rounded-b-lg shadow-sm flex flex-col gap-4"
-        onSubmit={async e => {
-          e.preventDefault();
-          setShowTable(true);
-          await fetchPartInfo();
-        }}
+        className="w-full px-8 py-6 bg-white border-x border-b border-stroke rounded-b-lg shadow-sm"
+        onSubmit={handleSubmit}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-            <label htmlFor="locationFilter" className="block text-sm font-medium text-gray-700 mb-2">{t('parts_table.location')}</label>
-            <select
-              id="locationFilter"
-              value={locationFilter}
-              onChange={e => setLocationFilter(e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-primary"
-            >
-              <option value="1">1</option>
-              <option value="4">4</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="mfrIdFilter" className="block text-sm font-medium text-gray-700 mb-2">{t('parts_table.mfr_id')}</label>
-            {/* Hidden input for filtering, not visible to user */}
-            <input
-              type="text"
-              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
-              tabIndex={-1}
-              aria-hidden="true"
-              value={mfrSelectFilter}
-              onChange={() => {}}
-              autoComplete="off"
-            />
-            <select
-              id="mfrIdFilter"
-              value={mfrIdFilter}
-              onChange={e => setMfrIdFilter(e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-primary"
-              disabled={loadingManufacturers}
-              onKeyDown={e => {
-                // Only filter for letters, numbers, backspace
-                if (e.key.length === 1 && /[\w\s]/.test(e.key)) {
-                  setMfrSelectFilter(prev => {
-                    const next = (prev + e.key).slice(0, 3); // Only keep up to 3 chars
-                    return next;
-                  });
-                } else if (e.key === 'Backspace') {
-                  setMfrSelectFilter(prev => prev.slice(0, -1));
-                } else if (e.key === 'Escape') {
-                  setMfrSelectFilter('');
-                }
-              }}
-              onBlur={() => setTimeout(() => setMfrSelectFilter(''), 200)}
-            >
-              {loadingManufacturers ? (
-                <option disabled>{t('parts_table.loading')}</option>
-              ) : (
-                manufacturers
-                  .filter(mfr => {
-                    if (!mfr.MFRID || mfr.MFRID.trim() === '') return false;
-                    if (!mfrSelectFilter) return true;
-                    const filter = mfrSelectFilter.toLowerCase();
-                    // Filter by prefix (startsWith) on MFRID or NAME, using first 2-3 chars
-                    return (
-                      mfr.MFRID.toLowerCase().startsWith(filter) ||
-                      (mfr.NAME && mfr.NAME.toLowerCase().startsWith(filter))
-                    );
-                  })
-                  .map(mfr => (
-                    <option key={mfr.MFRID} value={mfr.MFRID}>{mfr.MFRID} - {mfr.NAME}</option>
-                  ))
-              )}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="partNumberFilter" className="block text-sm font-medium text-gray-700 mb-2">{t('parts_table.part_number')}</label>
+        <div>
+          <label htmlFor="partNumberFilter" className="block text-sm font-medium text-gray-700 mb-4">
+            {t('parts_table.part_number')}
+          </label>
+          <div className="relative">
             <input
               id="partNumberFilter"
               type="text"
               value={partNumberFilter}
               onChange={e => setPartNumberFilter(e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none focus:border-primary"
+              className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 pr-12 text-sm text-black outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder={t('parts_table.enter_part_number')}
             />
+            <button
+              type="submit"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent focus:outline-none text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loadingPart}
+              title={t('parts_table.search')}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
-          
-          
-        </div>
-        <div className="flex justify-end mt-2">
-          <button
-            type="submit"
-            className="rounded-md border border-primary bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-dark transition"
-            disabled={loadingPart}
-          >
-            {loadingPart ? t('parts_table.searching') : t('parts_table.search')}
-          </button>
         </div>
       </form>
-      {/* Tabla solo si se ha hecho query y hay resultado */}
-      {showTable && !loadingPart && (
-        partInfo && partInfo.partNumber ? (
-          <div className="relative mt-6">
-            <table className="datatable-table w-full table-auto border-collapse overflow-hidden break-words px-4 md:table-fixed md:overflow-auto md:px-8">
-              <thead>
-                <tr>
-                  {columns.map((col, idx) => (
-                    <th key={idx} className="text-left px-2 py-2 font-semibold">{col.Header}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-2 py-2">{partInfo.partNumber}</td>
-                  <td className="px-2 py-2">{partInfo.mfrId}</td>
-                  <td className="px-2 py-2">{partInfo.location}</td>
-                  <td className="px-2 py-2">{partInfo.generalInfo && partInfo.generalInfo.DESCRIPTION ? partInfo.generalInfo.DESCRIPTION : '-'}</td>
-                  <td className="px-2 py-2">{partInfo.qty_loc}</td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-2">
-                      <span>{partInfo.related_count}</span>
-                      {partInfo.related_count > 0 && (
+
+      {/* Errores */}
+      {error && (
+        <div className="text-center text-red-500 py-6 px-8">{error}</div>
+      )}
+
+      {/* Sin resultados */}
+      {showTable && !loadingPart && partInfoList.length === 0 && !error && (
+        <div className="text-center text-gray-500 py-8 px-8">{t('parts_table.no_parts_found')}</div>
+      )}
+
+      {/* Resultados */}
+      {showTable && !loadingPart && partInfoList.length > 0 && (
+        <div className="mt-6 px-8">
+          <div className="space-y-4">
+            {groupedData.map((group, idx) => {
+              const defaultLocation = (group.loc1 ? 1 : (group.loc4 ? 4 : 1)) as 1 | 4;
+              const currentLocation = viewingLocation[idx] || defaultLocation;
+              let item = currentLocation === 1 ? group.loc1 : group.loc4;
+
+              if (!item) {
+                item = currentLocation === 1 ? group.loc4 : group.loc1;
+              }
+
+              if (!item) return null;
+
+              const general = item.general_info || {};
+              const relatedParts = item.related_parts || [];
+              const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
+              const alternateLocation = currentLocation === 1 ? 4 : 1;
+
+              return (
+                <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark">
+                  {/* Header del acordeón */}
+                  <div className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {item.productThumbnailImage && item.productThumbnailImage.startsWith('http') && (
+                        <img src={item.productThumbnailImage} alt="thumb" className="w-10 h-10 object-contain rounded border" />
+                      )}
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                          <span className="truncate">{general.MFRID}</span>
+                          <span className="truncate">{general.PARTNUMBER}</span>
+                          <span className="truncate flex-1">{general.DESCRIPTION}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>{t('parts_accordion.location')}: {item.location}</span>
+                          <span>
+                            {t('parts_accordion.superseded')}: 
+                            {item.superseded && item.superseded !== '-' ? (
+                              <span className="ml-1 text-blue-600 dark:text-blue-400 font-medium">{item.superseded}</span>
+                            ) : (
+                              <span className="ml-1">-</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end justify-center mr-2 ml-3">
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {t('parts_accordion.quantity')}: {item.qty_loc}
+                      </span>
+                      {hasAlternateLocation && (
                         <button
                           type="button"
-                          className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
-                          title={t('parts_table.copy_part_number') || 'Copy part number'}
-                          onClick={() => handleCopy(partInfo.partNumber, 'main')}
+                          onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: alternateLocation }))}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
                         >
-                          <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                            <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                          </svg>
+                          {t('parts_accordion.view_location')} {alternateLocation}
                         </button>
                       )}
-                      {copiedIdx === 'main' && (
-                        <span className="text-xs text-green-600 dark:text-green-400">{t('parts_table.copied') || 'Copied'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-2">
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
+                        onClick={() => handleCopy(general.PARTNUMBER, idx)}
+                      >
+                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                          <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                        </svg>
+                      </button>
+                      {copiedIdx === idx && (
+                        <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-meta-4 border border-transparent focus:outline-none"
+                      >
+                        <svg
+                          className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${expandedIdx === idx ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Contenido expandido */}
+                  {expandedIdx === idx && (
+                    <div className="p-4">
+                      {item.productStandarImage && item.productStandarImage.startsWith('http') && (
+                        <div className="mb-3 flex justify-center">
+                          <img src={item.productStandarImage} alt="main" className="max-h-40 object-contain rounded border" />
+                        </div>
+                      )}
+
+                      {/* Partes relacionadas */}
+                      {relatedParts.length > 0 && (
+                        <div>
+                          <div className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                            {t('parts_accordion.related_products')}
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs border border-stroke dark:border-strokedark">
+                              <thead className="bg-white dark:bg-boxdark">
+                                <tr>
+                                  <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                    {t('parts_accordion.mfr_id')}
+                                  </th>
+                                  <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                    {t('parts_accordion.part_number')}
+                                  </th>
+                                  <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                    {t('parts_accordion.description')}
+                                  </th>
+                                  <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                    {t('parts_accordion.qty')}
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white dark:bg-boxdark">
+                                {relatedParts.map((part, pidx) => (
+                                  <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
+                                    <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID}</td>
+                                    <td className="px-2 py-1 text-gray-900 dark:text-white">
+                                      <div className="flex items-center gap-1">
+                                        <span>{part.PARTNUMBER}</span>
+                                        <button
+                                          type="button"
+                                          className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
+                                          onClick={() => handleCopyRelated(part.PARTNUMBER, idx, pidx)}
+                                        >
+                                          <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                            <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                          </svg>
+                                        </button>
+                                        {copiedRelatedIdx?.itemIdx === idx && copiedRelatedIdx?.partIdx === pidx && (
+                                          <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION}</td>
+                                    <td className="px-2 py-1 text-right text-gray-900 dark:text-white">{part.QUANTITYLOC}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {relatedParts.length === 0 && (
+                        <div className="text-xs text-gray-500 mt-2">{t('parts_accordion.no_related_parts')}</div>
                       )}
                     </div>
-                  </td>
-                </tr>
-                {Array.isArray(partInfo.relatedParts) && partInfo.relatedParts.length > 0 && (
-                  <tr>
-                    <td colSpan={columns.length} className="bg-gray-50 px-6 py-4">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full text-xs">
-                          <thead>
-                            <tr>
-                              <th className="px-2 py-1 text-left font-semibold">{t('parts_table.mfr_id')}</th>
-                              <th className="px-2 py-1 text-left font-semibold">{t('parts_table.part_number')}</th>
-                              <th className="px-2 py-1 text-left font-semibold">{t('parts_table.description')}</th>
-                              <th className="px-2 py-1 text-left font-semibold">{t('parts_table.qty_loc')}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {partInfo.relatedParts.map((rel, relIdx) => (
-                              <tr key={relIdx}>
-                                <td className="px-2 py-1">{rel.MFRID}</td>
-                                <td className="px-2 py-1">
-                                  <div className="flex items-center gap-1">
-                                    <span>{rel.PARTNUMBER}</span>
-                                    {rel.PARTNUMBER && (
-                                      <button
-                                        type="button"
-                                        className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
-                                        title={t('parts_table.copy_part_number') || 'Copy part number'}
-                                        onClick={() => handleCopyRelated(rel.PARTNUMBER, relIdx)}
-                                      >
-                                        <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                                          <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                                        </svg>
-                                      </button>
-                                    )}
-                                    {copiedRelatedIdx === relIdx && (
-                                      <span className="text-xs text-green-600 dark:text-green-400">{t('parts_table.copied') || 'Copied'}</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1">{rel.DESCRIPTION}</td>
-                                <td className="px-2 py-1">{rel.QUANTITYLOC}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        ) : null
-      )}
-      {showTable && !loadingPart && (!partInfo || !partInfo.partNumber) && (
-  <div className="text-center text-gray-500 py-8">{t('parts_table.no_parts_found')}</div>
-      )}
-      {error && (
-  <div className="text-center text-red-500 py-2">{typeof error === 'string' ? error : t('parts_table.error_occurred')}</div>
+        </div>
       )}
     </section>
   );

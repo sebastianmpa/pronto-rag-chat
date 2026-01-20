@@ -19,9 +19,12 @@ export const ManufacturerService = {
     const { data } = await axios.get(`/ideal-query/${API_VERSION_V0}/manufacturers/${mfrid}`);
     return data;
   },
-  async fetchPartInfo(partNumber: string, mfrId: string, location: string): Promise<PartInfoResponse> {
+  async fetchPartInfo(partNumber: string): Promise<PartInfoResponse> {
     const { data } = await axios.get(`/ideal-query/${API_VERSION_V0}/related-part-info`, {
-      params: { partNumber, mfrId, location }
+      params: { 
+        partNumber,
+        storeUrl: 'https://www.smallenginesprodealer.com'
+      }
     });
     return data;
   },

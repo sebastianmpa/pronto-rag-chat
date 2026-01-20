@@ -91,6 +91,17 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         // Estrategia INTELIGENTE: reemplazar comillas simples SOLO en delimitadores de keys/values
         let normalized = jsonStr;
         
+        // 0. Limpiar escapes de comillas problemáticos PRIMERO
+        // Patrón: \\"\" -> simplemente \"
+        normalized = normalized.replace(/\\\\"\s*"/g, '\\"');
+        normalized = normalized.replace(/\\\\",/g, '",');
+        normalized = normalized.replace(/\\\\"\}/g, '"}');
+        normalized = normalized.replace(/\\\\"\]/g, '"]');
+        
+        // 0b. Limpiar \\" al final de strings antes de comas o llaves
+        normalized = normalized.replace(/\\\\",/g, '",');
+        normalized = normalized.replace(/\\\\"\}/g, '"}');
+        
         // 1. Reemplazar None, True, False DENTRO del JSON
         normalized = normalized.replace(/:\s*None\b/g, ': null');
         normalized = normalized.replace(/:\s*True\b/g, ': true');
@@ -100,8 +111,7 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         normalized = normalized.replace(/,\s*False\b/g, ', false');
         normalized = normalized.replace(/\[\s*None\s*\]/g, '[null]');
         
-        // 2. Reemplazar comillas simples por dobles, pero SOLO las que rodean keys o valores
-        // Patrón: 'key': o : 'value', o [' o , '
+        // 2. Reemplazar comillas simples por dobles
         normalized = normalized.replace(/'/g, '"');
         
         // 3. Ahora tenemos un problema: las comillas dentro de URLs que eran simples se convirtieron en dobles
@@ -193,6 +203,18 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
       normalized = normalized.replace(/\bTrue\b/g, 'true');
       normalized = normalized.replace(/\bFalse\b/g, 'false');
       
+      // Strategy 1.5: Limpiar escapes de comillas problemáticos ANTES de parsear
+      // Patrón: \\"\" (comilla escapada doble + comilla de cierre) -> simplificar a \"
+      // Esto se ve en: "UNIVERSAL FUEL FILTER - 1/4\\"\"" 
+      // Convertir a: "UNIVERSAL FUEL FILTER - 1/4\""
+      normalized = normalized.replace(/\\\\"\s*"/g, '\\"');
+      
+      // También limpiar patrones como: \\" al final de un string que precede a , o }
+      // Patrón: "texto\\"", -> "texto"",
+      normalized = normalized.replace(/\\\\",/g, '",');
+      normalized = normalized.replace(/\\\\"\}/g, '"}');
+      normalized = normalized.replace(/\\\\"\]/g, '"]');
+      
       console.log('[parseMessageContent] First 100 chars of normalized:', normalized.substring(0, 100));
       
       // Reparar comillas dobles sin escape dentro de valores
@@ -230,16 +252,26 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
         try {
           console.log('[parseMessageContent] Strategy 3: Fixing double escapes...');
           let repaired = normalized;
-          // Reemplazar \" WORD\" con \" WORD (quitar el último escape)
+          
+          // Patrón principal: \\"\" al final de strings
+          repaired = repaired.replace(/\\\\"\s*"/g, '\\"');
+          repaired = repaired.replace(/\\\\",/g, '",');
+          repaired = repaired.replace(/\\\\"\}/g, '"}');
+          repaired = repaired.replace(/\\\\"\]/g, '"]');
+          
+          // Otro patrón: \\" seguido de caracteres no escapados
           repaired = repaired.replace(/\\\\" ([^"]*)\\""/g, '\\" $1"');
+          
           console.log('[parseMessageContent] Attempting JSON.parse after repair...');
           parsed = JSON.parse(repaired);
           console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 3 - escape repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
         } catch (e3) {
           console.log('[parseMessageContent] Strategy 3 failed:', e3.message);
           
-          // Strategy 4: Reparación más agresiva
-          let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
+          // Strategy 4: Reparación más agresiva - remover completamente los \\" problemáticos
+          let aggressiveRepair = normalized;
+          // Remover todos los \\" seguidos de comilla de cierre de objeto/array
+          aggressiveRepair = aggressiveRepair.replace(/\\\\"/g, '');
           
           try {
             parsed = JSON.parse(aggressiveRepair);

@@ -266,12 +266,15 @@
     "sku": "SKU",
     "quantity": "Cantidad",
     "order_number": "Número de Orden",
+    "order_cancelled": "¿Fue cancelada la orden?",
     "success_message": "¡Solicitud de transferencia enviada exitosamente!"
   },
   "common": {
     "close": "Cerrar",
     "cancel": "Cancelar",
     "submit": "Enviar",
-    "submitting": "Enviando..."
+    "submitting": "Enviando...",
+    "yes": "Sí",
+    "no": "No"
   }
 }

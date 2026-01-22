@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePartInfo } from '../../../hooks/usePartInfo';
+import { useStockTransfer } from '../../../hooks/useStockTransfer';
 import { PartInfo } from '../../../types/partInfo';
 
 const PartsTable = () => {
@@ -11,6 +12,13 @@ const PartsTable = () => {
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
   const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{ itemIdx: number; partIdx: number } | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{ [key: string]: 1 | 4 }>({});
+  const [transferModalIdx, setTransferModalIdx] = useState<number | null>(null);
+  const [transferForm, setTransferForm] = useState({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [transferSuccess, setTransferSuccess] = useState(false);
+  const orderInputRef = useRef<HTMLInputElement>(null);
+  const { requestTransfer: hookRequestTransfer } = useStockTransfer();
 
   // Hook para obtener la info de la parte
   const { partInfoList, loading: loadingPart, error, fetchPartInfo } = usePartInfo(partNumberFilter);
@@ -59,6 +67,27 @@ const PartsTable = () => {
     setCopiedRelatedIdx({ itemIdx, partIdx });
     setTimeout(() => setCopiedRelatedIdx(null), 1200);
   };
+
+  // Wrapper for requestTransfer that handles loading, error, and success states
+  const requestTransfer = async (payload: any) => {
+    setTransferLoading(true);
+    setTransferError(null);
+    try {
+      await hookRequestTransfer(payload);
+    } catch (err: any) {
+      setTransferError(err?.message || 'Failed to submit transfer request');
+      setTransferLoading(false);
+      throw err;
+    }
+    setTransferLoading(false);
+  };
+  
+  // Focus on order input when modal opens
+  useEffect(() => {
+    if (transferModalIdx !== null && orderInputRef.current) {
+      setTimeout(() => orderInputRef.current?.focus(), 100);
+    }
+  }, [transferModalIdx]);
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -134,16 +163,38 @@ const PartsTable = () => {
                       )}
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                          <span className="truncate">{general.MFRID}</span>
-                          <span className="truncate">{general.PARTNUMBER}</span>
-                          <span className="truncate flex-1">{general.DESCRIPTION}</span>
+                          <span className="truncate">{item.mfrId}</span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setPartNumberFilter(item.partNumber);
+                              setShowTable(true);
+                              await fetchPartInfo();
+                            }}
+                            className="truncate text-blue-600 dark:text-blue-400 hover:underline font-bold hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                            title={`Search for ${item.partNumber}`}
+                          >
+                            {item.partNumber}
+                          </button>
+                          <span className="truncate flex-1">{general.DESCRIPTION || item.description || '-'}</span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                           <span>{t('parts_accordion.location')}: {item.location}</span>
                           <span>
                             {t('parts_accordion.superseded')}: 
                             {item.superseded && item.superseded !== '-' ? (
-                              <span className="ml-1 text-blue-600 dark:text-blue-400 font-medium">{item.superseded}</span>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  setPartNumberFilter(item.superseded);
+                                  setShowTable(true);
+                                  await fetchPartInfo();
+                                }}
+                                className="ml-1 text-blue-600 dark:text-blue-400 font-medium hover:underline hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                                title={`Search for ${item.superseded}`}
+                              >
+                                {item.superseded}
+                              </button>
                             ) : (
                               <span className="ml-1">-</span>
                             )}
@@ -171,7 +222,11 @@ const PartsTable = () => {
                       <button
                         type="button"
                         className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
-                        onClick={() => handleCopy(general.PARTNUMBER, idx)}
+                        onClick={async () => {
+                          setPartNumberFilter(item.partNumber);
+                          setShowTable(true);
+                          await fetchPartInfo();
+                        }}
                       >
                         <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
@@ -180,6 +235,23 @@ const PartsTable = () => {
                       </button>
                       {copiedIdx === idx && (
                         <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
+                      )}
+                      {currentLocation === 4 && (
+                        <button
+                          type="button"
+                          className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
+                          title={t('stock_transfer.request') || 'Request transfer'}
+                          onClick={() => {
+                            setTransferForm({ mfr: item.mfrId, sku: item.partNumber, quantity: '', order: '', orderCancelled: 'yes' });
+                            setTransferModalIdx(idx);
+                            setTransferError(null);
+                            setTransferSuccess(false);
+                          }}
+                        >
+                          <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                          </svg>
+                        </button>
                       )}
                       <button
                         type="button"
@@ -237,11 +309,27 @@ const PartsTable = () => {
                                     <td className="px-2 py-1 text-gray-900 dark:text-white">{part.MFRID}</td>
                                     <td className="px-2 py-1 text-gray-900 dark:text-white">
                                       <div className="flex items-center gap-1">
-                                        <span>{part.PARTNUMBER}</span>
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            setPartNumberFilter(part.PARTNUMBER);
+                                            setShowTable(true);
+                                            await fetchPartInfo();
+                                          }}
+                                          className="text-blue-600 dark:text-blue-400 hover:underline font-bold hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                                          title={`Search for ${part.PARTNUMBER}`}
+                                        >
+                                          {part.PARTNUMBER}
+                                        </button>
                                         <button
                                           type="button"
                                           className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
-                                          onClick={() => handleCopyRelated(part.PARTNUMBER, idx, pidx)}
+                                          onClick={async () => {
+                                            handleCopyRelated(part.PARTNUMBER, idx, pidx);
+                                            setPartNumberFilter(part.PARTNUMBER);
+                                            setShowTable(true);
+                                            await fetchPartInfo();
+                                          }}
                                         >
                                           <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
@@ -271,6 +359,173 @@ const PartsTable = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Stock Transfer Modal */}
+      {transferModalIdx !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-sm relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
+              {t('stock_transfer.request') || 'Stock Transfer'}
+            </div>
+            
+            {transferSuccess ? (
+              <div className="text-center">
+                <div className="mb-4">
+                  <svg className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-blue-700 dark:text-blue-300 mb-4">
+                  {t('stock_transfer.success_message') || 'Transfer request submitted successfully!'}
+                </p>
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md transition-all duration-150"
+                  onClick={() => {
+                    setTransferModalIdx(null);
+                    setTransferSuccess(false);
+                    setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
+                  }}
+                >
+                  {t('common.close') || 'Close'}
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="mb-4 text-base font-semibold text-blue-700 dark:text-blue-300 text-center">
+                  {t('stock_transfer.request_transfer') || 'Request Stock Transfer'}
+                </p>
+                
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.order_number') || 'Order Number'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    ref={orderInputRef}
+                    type="number"
+                    value={transferForm.order}
+                    onChange={e => setTransferForm({ ...transferForm, order: e.target.value })}
+                    placeholder="Enter order number"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all"
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.manufacturer') || 'Manufacturer'}
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={transferForm.mfr}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.sku') || 'SKU'}
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={transferForm.sku}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.quantity') || 'Quantity'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={transferForm.quantity}
+                    onChange={e => setTransferForm({ ...transferForm, quantity: e.target.value })}
+                    placeholder="Enter quantity"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    {t('stock_transfer.order_cancelled') || 'Was the order cancelled?'}
+                  </label>
+                  <select
+                    value={transferForm.orderCancelled}
+                    onChange={e => setTransferForm({ ...transferForm, orderCancelled: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all"
+                  >
+                    <option value="yes">{t('common.yes') || 'Yes'}</option>
+                    <option value="no">{t('common.no') || 'No'}</option>
+                  </select>
+                </div>
+                
+                {transferError && (
+                  <p className="text-red-500 text-xs mb-3 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
+                    {transferError}
+                  </p>
+                )}
+                
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
+                    onClick={() => {
+                      setTransferModalIdx(null);
+                      setTransferError(null);
+                      setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
+                    }}
+                    disabled={transferLoading}
+                  >
+                    {t('common.cancel') || 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md transition-all duration-150 ${
+                      !transferForm.quantity || !transferForm.order || transferLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={async () => {
+                      if (!transferForm.quantity || !transferForm.order) {
+                        setTransferError('Please fill in all required fields');
+                        return;
+                      }
+                      
+                      try {
+                        await requestTransfer({
+                          mfr: transferForm.mfr,
+                          sku: transferForm.sku,
+                          quantity: parseInt(transferForm.quantity),
+                          order: parseInt(transferForm.order)
+                        });
+                        setTransferSuccess(true);
+                        setTimeout(() => {
+                          setTransferModalIdx(null);
+                          setTransferSuccess(false);
+                          setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
+                        }, 2000);
+                      } catch (err) {
+                        // Error is already set by the hook
+                      }
+                    }}
+                    disabled={!transferForm.quantity || !transferForm.order || transferLoading}
+                  >
+                    {transferLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        {t('common.submitting') || 'Submitting...'}
+                      </span>
+                    ) : (
+                      t('common.submit') || 'Submit'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

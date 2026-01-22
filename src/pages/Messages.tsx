@@ -1123,9 +1123,31 @@ const Messages: React.FC = () => {
                                     />
                                   ) : null}
                                 </div>
-                                <p className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-left' : 'text-right'}`}>
-                                  {new Date(msg.createdAt).toLocaleTimeString()}
-                                </p>
+                                <div className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-left' : 'text-right'}`}>
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                    {/* Mostrar conversation_context si existe en el mensaje */}
+                                    {msg.role === 'assistant' && msg.conversation_context && (
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-3 gap-y-1 items-center">
+                                        {msg.conversation_context.intent && (
+                                          <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.intent')}:</span> {msg.conversation_context.intent}</span>
+                                        )}
+                                        {msg.conversation_context.mfr && (
+                                          <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.manufacturer')}:</span> {msg.conversation_context.mfr}</span>
+                                        )}
+                                        {msg.conversation_context.model && (
+                                          <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.model')}:</span> {msg.conversation_context.model}</span>
+                                        )}
+                                        {msg.conversation_context.serial && (
+                                          <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.serial')}:</span> {msg.conversation_context.serial}</span>
+                                        )}
+                                        {msg.conversation_context.part && (
+                                          <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.component')}:</span> {msg.conversation_context.part}</span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </React.Fragment>

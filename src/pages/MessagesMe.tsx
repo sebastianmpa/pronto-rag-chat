@@ -1789,27 +1789,29 @@ const MessagesMe: React.FC = () => {
                                      ) : null}
                                    </div>
                                    <div className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                     <p>{new Date(msg.createdAt).toLocaleTimeString()}</p>
-                                     {/* Mostrar conversation_context si existe en el mensaje */}
-                                     {msg.role === 'assistant' && msg.conversation_context && (
-                                       <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                                         {msg.conversation_context.intent && (
-                                           <p><span className="font-semibold">Intent:</span> {msg.conversation_context.intent}</p>
-                                         )}
-                                         {msg.conversation_context.mfr && (
-                                           <p><span className="font-semibold">MFR:</span> {msg.conversation_context.mfr}</p>
-                                         )}
-                                         {msg.conversation_context.model && (
-                                           <p><span className="font-semibold">Model:</span> {msg.conversation_context.model}</p>
-                                         )}
-                                         {msg.conversation_context.serial && (
-                                           <p><span className="font-semibold">Serial:</span> {msg.conversation_context.serial}</p>
-                                         )}
-                                         {msg.conversation_context.part && (
-                                           <p><span className="font-semibold">Part:</span> {msg.conversation_context.part}</p>
-                                         )}
-                                       </div>
-                                     )}
+                                     <div className="flex items-center gap-3 flex-wrap">
+                                       <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                       {/* Mostrar conversation_context si existe en el mensaje */}
+                                       {msg.role === 'assistant' && msg.conversation_context && (
+                                         <div className="text-xs text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-3 gap-y-1 items-center">
+                                           {msg.conversation_context.intent && (
+                                             <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.intent')}:</span> {msg.conversation_context.intent}</span>
+                                           )}
+                                           {msg.conversation_context.mfr && (
+                                             <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.manufacturer')}:</span> {msg.conversation_context.mfr}</span>
+                                           )}
+                                           {msg.conversation_context.model && (
+                                             <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.model')}:</span> {msg.conversation_context.model}</span>
+                                           )}
+                                           {msg.conversation_context.serial && (
+                                             <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.serial')}:</span> {msg.conversation_context.serial}</span>
+                                           )}
+                                           {msg.conversation_context.part && (
+                                             <span><span className="font-semibold text-gray-700 dark:text-gray-300">{t('conversation_context.component')}:</span> {msg.conversation_context.part}</span>
+                                           )}
+                                         </div>
+                                       )}
+                                     </div>
                                    </div>
                                  </div>
                                </div>

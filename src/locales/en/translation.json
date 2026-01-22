@@ -274,6 +274,13 @@
     "order_cancelled": "Was the order cancelled?",
     "success_message": "Transfer request submitted successfully!"
   },
+  "conversation_context": {
+    "intent": "Intent",
+    "manufacturer": "Manufacturer",
+    "model": "Model",
+    "serial": "Serial",
+    "component": "Component"
+  },
   "common": {
     "close": "Close",
     "cancel": "Cancel",

@@ -65,7 +65,14 @@ export interface ConversationMessage {
   deletedAt: string | null;
   conversation_id: string;
   close_conversation?: boolean;
-  table?: boolean; 
+  table?: boolean;
+  conversation_context?: {
+    intent?: string;
+    mfr?: string;
+    model?: string;
+    serial?: string;
+    part?: string;
+  };
 }
 
 export interface ConversationDetailResponse {

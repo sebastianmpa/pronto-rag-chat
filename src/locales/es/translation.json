@@ -269,6 +269,13 @@
     "order_cancelled": "¿Fue cancelada la orden?",
     "success_message": "¡Solicitud de transferencia enviada exitosamente!"
   },
+  "conversation_context": {
+    "intent": "Intención",
+    "manufacturer": "Fabricante",
+    "model": "Modelo",
+    "serial": "Serial",
+    "component": "Componente"
+  },
   "common": {
     "close": "Cerrar",
     "cancel": "Cancelar",

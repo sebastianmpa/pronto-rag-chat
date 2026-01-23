@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Roles from './pages/Pages/Roles';
 import Permissions from './pages/Pages/Permissions';
 import UsersPage from './pages/Pages/UsersPage';
+import TermsPage from './pages/Pages/TermsPage';
 
 import Loader from './common/Loader';
 import PageTitle from './components/PageTitle';
@@ -97,6 +98,13 @@ function App() {
             <Route
               path="/parts"
               element={<PartsPage />}
+            />
+          )}
+          {/* Ruta para terms - SOLO admin */}
+          {roleInternalName === 'admin' && (
+            <Route
+              path="/terms"
+              element={<TermsPage />}
             />
           )}
           

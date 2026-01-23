@@ -780,6 +780,24 @@ const Messages: React.FC = () => {
 
   // Formatea los mensajes del assistant para saltos de línea y URLs
   const renderMessageContent = (content: string, role?: string) => {
+    // Try to parse as JSON if it looks like JSON
+    let displayContent = content;
+    let isJsonError = false;
+    
+    if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+      try {
+        const parsed = JSON.parse(content);
+        // If it has an error field, display it nicely
+        if (parsed.error) {
+          displayContent = parsed.error;
+          isJsonError = true;
+        }
+      } catch (e) {
+        // If parsing fails, use original content
+        displayContent = content;
+      }
+    }
+    
     if (role === 'assistant') {
       // Regex for Markdown links: [text](url)
       const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+[\w/])\)/g;
@@ -789,7 +807,7 @@ const Messages: React.FC = () => {
       const htmlTagRegex = /<b\s+class=['"]pronto-sku['"]\s*>([^<]+)<\/b>/g;
       
       // Split by line breaks first
-      return content.split(/\n|\r\n/).map((line, idx) => {
+      return displayContent.split(/\n|\r\n/).map((line, idx) => {
         let parts: (string | JSX.Element)[] = [];
         let lastIdx = 0;
         let match;
@@ -878,11 +896,24 @@ const Messages: React.FC = () => {
             return sub;
           });
         });
+        
+        // If it was a JSON error, show it in a styled container
+        if (isJsonError && idx === 0) {
+          return (
+            <div 
+              key={idx}
+              className="rounded-sm border border-yellow-500 bg-yellow-50 p-3 text-yellow-700 dark:border-yellow-600 dark:bg-yellow-900 dark:text-yellow-200"
+            >
+              {parts}
+            </div>
+          );
+        }
+        
         return <React.Fragment key={idx}>{parts}<br /></React.Fragment>;
       });
     }
     // Usuario: solo texto plano
-    return content;
+    return displayContent;
   };
 
   return (

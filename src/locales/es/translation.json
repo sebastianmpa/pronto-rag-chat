@@ -236,6 +236,7 @@
     "myMessages": "Mis Mensajes",
     "allMessages": "Todos los Mensajes",
     "parts": "Partes",
+    "terms": "Términos",
     "loading": "Cargando..."
   },
   "header": {
@@ -282,6 +283,43 @@
     "submit": "Enviar",
     "submitting": "Enviando...",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "loading": "Cargando...",
+    "create": "Crear",
+    "update": "Actualizar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "page": "Página",
+    "of": "de",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "no_results": "No se encontraron resultados"
+  },
+  "terms": {
+    "title": "Términos",
+    "table": {
+      "term": "Término",
+      "definition": "Definición",
+      "location": "Ubicación",
+      "created_at": "Creado el",
+      "actions": "Acciones",
+      "search_placeholder": "Buscar términos...",
+      "create_term": "Crear Término",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "no_terms": "No hay términos para mostrar"
+    },
+    "create_modal": {
+      "title": "Crear Nuevo Término",
+      "term_placeholder": "Ingresa el nombre del término",
+      "definition_placeholder": "Ingresa la definición del término"
+    },
+    "edit_modal": {
+      "title": "Editar Término"
+    },
+    "delete_modal": {
+      "title": "Eliminar Término",
+      "message": "¿Estás seguro de que deseas eliminar este término? Esta acción no se puede deshacer."
+    }
   }
 }

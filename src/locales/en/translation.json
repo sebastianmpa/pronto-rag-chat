@@ -241,6 +241,7 @@
     "myMessages": "My Messages",
     "allMessages": "All Messages",
     "parts": "Parts",
+    "terms": "Terms",
     "loading": "Loading..."
   },
   "header": {
@@ -287,6 +288,43 @@
     "submit": "Submit",
     "submitting": "Submitting...",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "loading": "Loading...",
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "edit": "Edit",
+    "page": "Page",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "no_results": "No results found"
+  },
+  "terms": {
+    "title": "Terms",
+    "table": {
+      "term": "Term",
+      "definition": "Definition",
+      "location": "Location",
+      "created_at": "Created At",
+      "actions": "Actions",
+      "search_placeholder": "Search terms...",
+      "create_term": "Create Term",
+      "edit": "Edit",
+      "delete": "Delete",
+      "no_terms": "No terms to display"
+    },
+    "create_modal": {
+      "title": "Create New Term",
+      "term_placeholder": "Enter the term name",
+      "definition_placeholder": "Enter the term definition"
+    },
+    "edit_modal": {
+      "title": "Edit Term"
+    },
+    "delete_modal": {
+      "title": "Delete Term",
+      "message": "Are you sure you want to delete this term? This action cannot be undone."
+    }
   }
 }

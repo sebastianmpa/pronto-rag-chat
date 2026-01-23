@@ -120,7 +120,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             </h3>
               <ul className="mb-6 flex flex-col gap-1.5">
                 {/* Dashboard/Statistics solo para admin y supervisor */}
-                {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') ? (
+                {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL1' || roleInternalName === 'supervisorL4') ? (
                   <>
                     <SidebarLinkGroup
                       activeCondition={
@@ -420,8 +420,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   {t('sidebar.parts')}
                 </NavLink>
               </li>
-              {/* Terms (admin only) */}
-              {roleInternalName === 'admin' && (
+              {/* Terms (admin, supervisor, supervisorL1, supervisorL4) */}
+              {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorL1') && (
                 <li>
                   <NavLink
                     to="/terms"

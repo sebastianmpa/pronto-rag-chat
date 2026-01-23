@@ -365,17 +365,43 @@ const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku:
   let displayContent = content;
   let isJsonError = false;
   
-  if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+  // Primero, intenta parsear la primera capa de JSON (string que contiene JSON)
+  if (content.trim().startsWith('"') && content.trim().endsWith('"')) {
     try {
-      const parsed = JSON.parse(content);
-      // If it has an error field, display it nicely
+      displayContent = JSON.parse(content);
+    } catch (e) {
+      // Si falla, mantener el contenido original
+    }
+  }
+  
+  // Ahora intenta parsear como JSON (segunda capa o JSON directo)
+  if (displayContent.trim().startsWith('{') && displayContent.trim().endsWith('}')) {
+    try {
+      let parsed = JSON.parse(displayContent);
+      
+      // Si tiene un campo error, extraer ese
       if (parsed.error) {
         displayContent = parsed.error;
         isJsonError = true;
       }
     } catch (e) {
-      // If parsing fails, use original content
-      displayContent = content;
+      // Si falla el parseo, intentar con estrategias alternativas
+      try {
+        // Estrategia 1: Reemplazar valores de Python con null/true/false
+        let normalized = displayContent
+          .replace(/:\s*None\b/g, ': null')
+          .replace(/:\s*True\b/g, ': true')
+          .replace(/:\s*False\b/g, ': false');
+        
+        let parsed = JSON.parse(normalized);
+        if (parsed.error) {
+          displayContent = parsed.error;
+          isJsonError = true;
+        }
+      } catch (e2) {
+        // Si sigue fallando, usar el contenido original
+        displayContent = content;
+      }
     }
   }
   

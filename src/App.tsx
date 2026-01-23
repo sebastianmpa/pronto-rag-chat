@@ -45,7 +45,7 @@ function App() {
   // Redirección según rol (solo en rutas privadas)
   let defaultRoute;
   if (!isAuthRoute) {
-    if (roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') {
+    if (roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') {
       defaultRoute = <Navigate to="/messages/all" replace />;
     } else if (roleInternalName === 'user') {
       defaultRoute = <Navigate to="/messages/me" replace />;
@@ -59,7 +59,7 @@ function App() {
       <Routes>
         <Route element={<PrivateRoute />}>
           {/* Ruta principal: dashboard/estadísticas solo para admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') && (
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
             <Route
               index
               element={
@@ -82,7 +82,7 @@ function App() {
           />
           
           {/* Ruta para todos los mensajes - SOLO admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') && (
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
             <Route
               path="/messages"
               element={
@@ -93,15 +93,15 @@ function App() {
               }
             />
           )}
-          {/* Ruta para la tabla de partes - SOLO admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1') && (
+          {/* Ruta para la tabla de partes - admin, supervisor, supervisorL1, supervisorL4 */}
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
             <Route
               path="/parts"
               element={<PartsPage />}
             />
           )}
-          {/* Ruta para terms - SOLO admin */}
-          {roleInternalName === 'admin' && (
+          {/* Ruta para terms - admin, supervisor, supervisorL1, supervisorL4 */}
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
             <Route
               path="/terms"
               element={<TermsPage />}
@@ -112,7 +112,7 @@ function App() {
           <Route
             index
             element={
-              roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorl4' || roleInternalName === 'supervisorl1'
+              roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1'
                 ? <Navigate to="/messages" replace />
                 : <Navigate to="/messages/me" replace />
             }

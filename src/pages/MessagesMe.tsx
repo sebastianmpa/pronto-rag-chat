@@ -419,7 +419,9 @@ const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku:
       let lastIdx = 0;
       let match;
       
-      // First, process HTML tags <b class='pronto-sku'>...</b>
+      // First, process SKU tags <b class='pronto-sku'>text</b>
+      lastIdx = 0;
+      htmlTagRegex.lastIndex = 0;
       while ((match = htmlTagRegex.exec(line)) !== null) {
         if (match.index > lastIdx) {
           parts.push(line.slice(lastIdx, match.index));
@@ -459,7 +461,7 @@ const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku:
               href={mdMatch[2]}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline break-all"
+              className="underline break-all text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
             >
               {mdMatch[1]}
             </a>
@@ -497,7 +499,7 @@ const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku:
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline break-all"
+                className="underline break-all text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
               >
                 {isPdf ? 'Download file' : 'Open link'}
               </a>

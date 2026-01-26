@@ -16,19 +16,36 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
     definition: '',
     location: '1',
   });
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
+    
     try {
       await create(formData);
       setFormData({ term: '', definition: '', location: '1' });
       onSuccess();
-    } catch (err) {
-      // Error is handled by the hook
+    } catch (err: any) {
+      let errorMessage = 'Error al crear el término';
+      
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.response?.status === 500) {
+        errorMessage = 'Error interno del servidor. Por favor, intenta nuevamente más tarde';
+      } else if (err?.response?.status === 400) {
+        errorMessage = 'Los datos ingresados no son válidos. Por favor, verifica los campos';
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      setLocalError(errorMessage);
     }
   };
 
   if (!isOpen) return null;
+
+  const displayError = localError || error;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -84,9 +101,9 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
           </div>
 
           {/* Error Message */}
-          {error && (
+          {displayError && (
             <div className="rounded-sm border border-red-500 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900 dark:text-red-200">
-              {error}
+              {displayError}
             </div>
           )}
 

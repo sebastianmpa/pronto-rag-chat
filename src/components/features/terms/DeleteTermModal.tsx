@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDeleteTerm } from '../../../hooks/useTerm';
 
@@ -11,17 +12,33 @@ interface DeleteTermModalProps {
 const DeleteTermModal = ({ isOpen, onClose, onSuccess, termId }: DeleteTermModalProps) => {
   const { t } = useTranslation();
   const { removeTerm, loading, error } = useDeleteTerm();
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleConfirmDelete = async () => {
+    setLocalError(null);
     try {
       await removeTerm(termId);
       onSuccess();
-    } catch (err) {
-      // Error is handled by the hook
+    } catch (err: any) {
+      let errorMessage = 'Error al eliminar el término';
+      
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.response?.status === 500) {
+        errorMessage = 'Error interno del servidor. Por favor, intenta nuevamente más tarde';
+      } else if (err?.response?.status === 400) {
+        errorMessage = 'No se puede eliminar este término. Por favor, intenta nuevamente';
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      setLocalError(errorMessage);
     }
   };
 
   if (!isOpen) return null;
+
+  const displayError = localError || error;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -35,9 +52,9 @@ const DeleteTermModal = ({ isOpen, onClose, onSuccess, termId }: DeleteTermModal
         </p>
 
         {/* Error Message */}
-        {error && (
+        {displayError && (
           <div className="mb-4 rounded-sm border border-red-500 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900 dark:text-red-200">
-            {error}
+            {displayError}
           </div>
         )}
 

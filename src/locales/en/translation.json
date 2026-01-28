@@ -272,7 +272,7 @@
     "sku": "SKU",
     "quantity": "Quantity",
     "order_number": "Order Number",
-    "order_cancelled": "Was the order cancelled?",
+    "order_cancelled": "Was the Order Paid?",
     "success_message": "Transfer request submitted successfully!"
   },
   "conversation_context": {

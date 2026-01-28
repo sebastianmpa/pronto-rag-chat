@@ -267,7 +267,7 @@
     "sku": "SKU",
     "quantity": "Cantidad",
     "order_number": "Número de Orden",
-    "order_cancelled": "¿Fue cancelada la orden?",
+    "order_cancelled": "¿La Orden fue Pagada?",
     "success_message": "¡Solicitud de transferencia enviada exitosamente!"
   },
   "conversation_context": {

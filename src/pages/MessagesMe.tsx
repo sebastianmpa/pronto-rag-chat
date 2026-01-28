@@ -529,57 +529,6 @@ const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku:
 };
 
 
-// Footer component con marcas
-const BrandsFooter: React.FC = () => {
-  const { t } = useTranslation();
-  const brands = [
-    {
-      name: 'Echo',
-      logo: '/images/echo.png'
-    },
-    {
-      name: 'Shindaiwa',
-      logo: '/images/Shindaiwa.png'
-    },
-    {
-      name: 'Scag',
-      logo: '/images/scag.png'
-    },
-    {
-      name: 'Toro',
-      logo: '/images/toro.png'
-    },
-    {
-      name: 'Hustler',
-      logo: '/images/hulster.png'
-    }
-
-  ];
-
-  return (
-    <>
-      <div className="bg-white dark:bg-boxdark border-t border-stroke dark:border-strokedark py-4 px-6">
-        <div className="flex items-center justify-center gap-8 flex-wrap">
-          {brands.map((brand) => (
-            <div key={brand.name} className="flex items-center justify-center h-12">
-              <img 
-                src={brand.logo} 
-                alt={brand.name}
-                className="max-h-12 max-w-32 object-contain"
-                title={brand.name}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="bg-white dark:bg-boxdark border-t border-stroke dark:border-strokedark py-3 px-6">
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          {t('disclaimer_2')}
-        </div>
-      </div>
-    </>
-  );
-};
 
 // Nuevo componente: PartsAccordion
 const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededClick?: (superseded: string) => void }> = ({ data, messageId, onSupersededClick }) => {
@@ -771,14 +720,29 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
                 {/* Botón para cambiar de ubicación si existe alternativa */}
                 {hasAlternateLocation && (
-                  <button
-                    type="button"
-                    onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: alternateLocation }))}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
-                    title={`View location ${alternateLocation}`}
-                  >
-                    {t('parts_accordion.view_location')} {alternateLocation}
-                  </button>
+                  <div className="mt-1">
+                    <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1" role="tablist" aria-label="Locations switch">
+                      <button
+                        type="button"
+                        onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 1 }))}
+                        className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                        title={`${t('parts_accordion.view_location')} 1`}
+                        aria-pressed={currentLocation === 1}
+                      >
+                        1
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 4 }))}
+                        className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                        title={`${t('parts_accordion.view_location')} 4`}
+                        aria-pressed={currentLocation === 4}
+                      >
+                        4
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-2 ml-2">
@@ -914,8 +878,21 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
       
       {/* Stock Transfer Modal */}
       {transferModalIdx !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-sm relative">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => {
+            // Close modal when clicking overlay and reset form/state
+            setTransferModalIdx(null);
+            setTransferError(null);
+            setTransferSuccess(false);
+            setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
+            setTransferLoading(false);
+          }}
+        >
+          <div
+            className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-sm relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
               {t('stock_transfer.request') || 'Stock Transfer'}
             </div>
@@ -1253,6 +1230,47 @@ const MessagesMe: React.FC = () => {
     }
   `;
   const { profile: userProfile } = useUserProfile();
+  // Commands available in the chat UI (like ChatGPT slash commands)
+  const commands = [
+    { name: '/fix', description: 'Autocompleta el chat para corregir el mensaje' },
+    // Add more commands here as needed
+  ];
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [commandsOpen, setCommandsOpen] = useState(false);
+  const commandsBtnRef = useRef<HTMLButtonElement>(null);
+  const commandsMenuRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard shortcut (Ctrl+Shift+I) to toggle commands menu and global click/esc handlers
+  useEffect(() => {
+    const keyHandler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        setCommandsOpen((s) => !s);
+      }
+      if (e.key === 'Escape') {
+        setCommandsOpen(false);
+      }
+    };
+
+    const clickHandler = (ev: MouseEvent) => {
+      const target = ev.target as Node;
+      if (commandsOpen) {
+        if (
+          commandsMenuRef.current && commandsBtnRef.current &&
+          !commandsMenuRef.current.contains(target) && !commandsBtnRef.current.contains(target)
+        ) {
+          setCommandsOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', keyHandler);
+    document.addEventListener('click', clickHandler);
+    return () => {
+      document.removeEventListener('keydown', keyHandler);
+      document.removeEventListener('click', clickHandler);
+    };
+  }, [commandsOpen]);
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
@@ -1554,7 +1572,10 @@ const MessagesMe: React.FC = () => {
       setLocalMessages([]);
       setAssistantTyping(false);
     }
-    // Si assistantTyping está activo, no borres los mensajes locales ni la animación
+    // Clear input and close commands when switching conversations so leftover commands (eg. /fix) don't persist
+    setInputValue('');
+    setCommandsOpen(false);
+    // If assistantTyping está activo, don't clear local messages or typing animation
   }, [conversationId]);
 
   return (
@@ -1566,7 +1587,7 @@ const MessagesMe: React.FC = () => {
           {error}
         </div>
       )}
-      <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)]">
+      <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)] min-h-0">
         <div className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
           {/* Chat List */}
           <div className="hidden h-full flex-col xl:flex xl:w-1/4 bg-white dark:bg-boxdark border-r-2 border-blue-300">
@@ -1588,6 +1609,7 @@ const MessagesMe: React.FC = () => {
                 </button>
               </div>
             </div>
+            {/* Comandos panel removed per request */}
             {/* Chats per page selector */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-2 sm:py-3 border-b border-stroke dark:border-strokedark">
               <label htmlFor="limit" className="text-sm font-medium text-black dark:text-white whitespace-nowrap">
@@ -1666,14 +1688,14 @@ const MessagesMe: React.FC = () => {
           <div className="flex h-full flex-col border-l border-stroke dark:border-strokedark xl:w-3/4 bg-white dark:bg-boxdark">
             {selectedChat?.id ? (
               <>
-                <div className="sticky top-0 flex items-center justify-between border-b border-stroke px-6 py-4.5 dark:border-strokedark bg-white dark:bg-boxdark text-black dark:text-white z-10">
+                <div className="sticky top-0 flex items-center justify-between border-b border-stroke px-6 py-3 dark:border-strokedark bg-white dark:bg-boxdark text-black dark:text-white z-10">
                   <div className="flex items-center">
-                    <div className="mr-4.5 h-13 w-13 flex-shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
+                    <div className="mr-3.5 h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
                       <span className="text-lg font-medium text-black dark:text-white">A</span>
                     </div>
                     <div>
-                      <h5 className="font-medium text-black dark:text-white">{t('assistant')}</h5>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <h5 className="text-sm font-medium text-black dark:text-white">{t('assistant')}</h5>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Pronto Mowers
                       </p>
                     </div>
@@ -1818,7 +1840,7 @@ const MessagesMe: React.FC = () => {
                                  </div>
                                )}
                                <div className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                                 <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-4xl'}>
+                                  <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-4xl'}>
                                    {msg.role !== 'user' && (
                                      <p className="mb-2 text-xs font-medium text-blue-700 dark:text-blue-300">
                                        {t('assistant')}
@@ -1916,16 +1938,64 @@ const MessagesMe: React.FC = () => {
                   <div className="border-t border-stroke bg-white dark:border-strokedark dark:bg-boxdark sticky bottom-0 z-10">
                      <div className="py-5 px-6">
                        <form className="flex items-center justify-between space-x-4" onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
-                         <div className="relative flex-1">
-                           <input
-                             type="text"
-                             value={inputValue}
-                             onChange={e => setInputValue(e.target.value)}
-                             placeholder={t('type_message')}
-                             disabled={assistantTyping}
-                             className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-5 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                             onKeyDown={handleTyping}
-                           />
+                         <div className="flex items-center gap-3 flex-1">
+                           <button
+                             ref={commandsBtnRef}
+                             type="button"
+                             aria-expanded={commandsOpen}
+                            title="Abrir comandos (Ctrl/Cmd+Shift+I)"
+                             onClick={() => setCommandsOpen((s) => !s)}
+                             className="h-10 w-10 flex items-center justify-center rounded-md bg-primary text-white hover:bg-primary/90 transition-all"
+                           >
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                               <path d="M3 21l3-3m0 0A5 5 0 015 13.5 5 5 0 0111 9a5 5 0 013.5 1.5l5-5L21 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                               <path d="M14 9l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                             </svg>
+                           </button>
+                           <div className="relative flex-1">
+                             <input
+                               ref={inputRef}
+                               type="text"
+                               value={inputValue}
+                               onChange={e => setInputValue(e.target.value)}
+                               placeholder={t('type_message')}
+                               disabled={assistantTyping}
+                               className="h-12 w-full rounded-md border border-stroke bg-gray-2 dark:bg-boxdark-2 pl-4 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                               onKeyDown={handleTyping}
+                             />
+
+                             {/* Floating vertical commands menu (appears above the input) */}
+                             {commandsOpen && (
+                               <div ref={commandsMenuRef} className="absolute left-0 bottom-full mb-2 w-48 bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-md shadow-lg z-50">
+                                 <ul className="p-1">
+                                   {commands.map((cmd) => (
+                                     <li key={cmd.name}>
+                                       <button
+                                         type="button"
+                                         onClick={() => {
+                                           const insert = `${cmd.name} `;
+                                           setInputValue((prev) => (prev ? `${insert}${prev}` : insert));
+                                           setCommandsOpen(false);
+                                           setTimeout(() => {
+                                             const el = inputRef.current;
+                                             if (el) {
+                                               const pos = insert.length;
+                                               el.focus();
+                                               el.setSelectionRange(pos, pos);
+                                             }
+                                           }, 0);
+                                         }}
+                                         className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-boxdark-2 transition-colors flex items-center gap-3"
+                                       >
+                                         <span className="font-mono text-sm text-blue-600">{cmd.name}</span>
+                                         <span className="text-xs text-gray-500 dark:text-gray-400">{cmd.description}</span>
+                                       </button>
+                                     </li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             )}
+                           </div>
                          </div>
                          <button 
                            type="submit"
@@ -1938,11 +2008,10 @@ const MessagesMe: React.FC = () => {
                            </svg>
                          </button>
                        </form>
-                       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-left">
+                       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
                          {t('disclaimer')}
                        </div>
                      </div>
-                     <BrandsFooter />
                   </div>
                 </div>
               </>

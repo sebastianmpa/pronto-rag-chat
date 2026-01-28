@@ -365,8 +365,21 @@ const PartsTable = () => {
 
       {/* Stock Transfer Modal */}
       {transferModalIdx !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-sm relative">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => {
+            // Close modal when clicking overlay and reset form/state
+            setTransferModalIdx(null);
+            setTransferError(null);
+            setTransferSuccess(false);
+            setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
+            setTransferLoading(false);
+          }}
+        >
+          <div
+            className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-sm relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
               {t('stock_transfer.request') || 'Stock Transfer'}
             </div>

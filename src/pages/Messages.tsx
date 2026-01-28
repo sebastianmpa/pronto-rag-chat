@@ -307,49 +307,6 @@ const parseMessageContent = (content: string, hasTable: boolean) => {
   }
 };
 
-// Footer component con marcas
-const BrandsFooter: React.FC = () => {
-  const brands = [
-    {
-      name: 'Echo',
-      logo: '/images/echo.png'
-    },
-    {
-      name: 'Shindaiwa',
-      logo: '/images/Shindaiwa.png'
-    },
-    {
-      name: 'Scag',
-      logo: '/images/scag.png'
-    },
-    {
-      name: 'Toro',
-      logo: '/images/toro.png'
-    },
-    {
-      name: 'Hustler',
-      logo: '/images/hulster.png'
-    }
-
-  ];
-
-  return (
-    <div className="bg-white dark:bg-boxdark border-t border-stroke dark:border-strokedark py-4 px-6">
-      <div className="flex items-center justify-center gap-8 flex-wrap">
-        {brands.map((brand) => (
-          <div key={brand.name} className="flex items-center justify-center h-12">
-            <img 
-              src={brand.logo} 
-              alt={brand.name}
-              className="max-h-12 max-w-32 object-contain"
-              title={brand.name}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 // PartsAccordion component - nuevo formato de visualización de partes
 const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) => {
@@ -945,7 +902,7 @@ const Messages: React.FC = () => {
   return (
     <DefaultLayout>
   <Breadcrumb pageName={t('all_messages')} />
-      <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)]">
+      <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)] min-h-0">
         <div className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
           {/* Chat List */}
           <div className="hidden h-full flex-col xl:flex xl:w-1/4 bg-white dark:bg-boxdark border-r-2 border-blue-300">
@@ -1048,18 +1005,18 @@ const Messages: React.FC = () => {
             <div className="flex h-full flex-col border-l border-stroke dark:border-strokedark xl:w-3/4">
             {selectedChat?.id && chatDetail ? (
               <>
-                <div className="sticky top-0 flex items-center justify-between border-b border-stroke px-6 py-4.5 dark:border-strokedark bg-white dark:bg-boxdark text-black dark:text-white z-10">
+                <div className="sticky top-0 flex items-center justify-between border-b border-stroke px-6 py-3 dark:border-strokedark bg-white dark:bg-boxdark text-black dark:text-white z-10">
                   <div className="flex items-center">
-                    <div className="mr-4.5 h-13 w-13 flex-shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
+                    <div className="mr-3.5 h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-800 flex items-center justify-center">
                       <span className="text-lg font-medium text-black dark:text-white">
                         {customerData?.name?.charAt(0)?.toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <h5 className="font-medium text-black dark:text-white">
+                      <h5 className="text-sm font-medium text-black dark:text-white">
                         {customerData?.name || t('user_no_name')}
                       </h5>
-                      <p className="text-sm text-gray-200 dark:text-gray-300">Pronto Mowers</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Pronto Mowers</p>
                     </div>
                   </div>
                   <div>
@@ -1233,7 +1190,6 @@ const Messages: React.FC = () => {
                       </button>
                     </form>
                   </div>
-                  {selectedChat && <BrandsFooter />}
                 </div>
               </>
             ) : (

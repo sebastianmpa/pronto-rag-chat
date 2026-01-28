@@ -1,9 +1,18 @@
+
 import { Link } from 'react-router-dom';
 import DropdownMessage from './DropdownMessage';
 import DropdownNotification from './DropdownNotification';
 import DropdownUser from './DropdownUser';
 import LogoIcon from '../../images/logo/logo-icon.svg';
 import DarkModeSwitcher from './DarkModeSwitcher';
+
+const brands = [
+  { name: 'Echo', logo: '/images/echo.png' },
+  { name: 'Shindaiwa', logo: '/images/Shindaiwa.png' },
+  { name: 'Scag', logo: '/images/scag.png' },
+  { name: 'Toro', logo: '/images/toro.png' },
+  { name: 'Hustler', logo: '/images/hulster.png' }
+];
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
@@ -75,11 +84,22 @@ const Header = (props: {
 
         <div className="flex items-center gap-3 2xsm:gap-7">
           <ul className="flex items-center gap-2 2xsm:gap-4">
+            {/* Marcas */}
+            <div className="flex flex-grow items-center justify-center gap-8 px-8">
+              {brands.map((brand) => (
+                <img
+                  key={brand.name}
+                  src={brand.logo}
+                  alt={brand.name}
+                  className="h-14 max-h-16 w-auto object-contain transition-all"
+                  style={{ maxWidth: '180px' }}
+                  title={brand.name}
+                />
+              ))}
+            </div>
             {/* <!-- Dark Mode Toggler --> */}
             <DarkModeSwitcher />
             {/* <!-- Dark Mode Toggler --> */}
-
-           
           </ul>
 
           {/* <!-- User Area --> */}

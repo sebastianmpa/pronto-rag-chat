@@ -19,6 +19,17 @@ const TermTable = () => {
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const [selectedTerm, setSelectedTerm] = useState<Term | null>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
+  const [copiedDefId, setCopiedDefId] = useState<string | null>(null);
+
+  const handleCopyDefinition = (definition: string, id: string) => {
+    try {
+      navigator.clipboard.writeText(definition);
+      setCopiedDefId(id);
+      setTimeout(() => setCopiedDefId(null), 1200);
+    } catch (err) {
+      // ignore
+    }
+  };
 
   const { t } = useTranslation();
 
@@ -115,9 +126,25 @@ const TermTable = () => {
                         <p className="text-black dark:text-white font-medium">{term.term}</p>
                       </td>
                       <td className="px-4 py-5">
-                        <p className="text-black dark:text-white truncate max-w-xs" title={term.definition}>
-                          {term.definition}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-black dark:text-white truncate max-w-xs" title={term.definition}>
+                            {term.definition}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyDefinition(term.definition || '', term.id)}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-boxdark-3 border border-transparent focus:outline-none"
+                            title={t('parts_accordion.copy_part_number')}
+                          >
+                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                              <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                            </svg>
+                          </button>
+                          {copiedDefId === term.id && (
+                            <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-5">
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">

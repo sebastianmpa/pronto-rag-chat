@@ -441,16 +441,29 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) 
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
               </div>
               <div className="flex items-center gap-2 ml-2">
-                {/* View location button - solo mostrar si hay ubicación alternativa */}
+                {/* View location switch - mostrar si hay ubicación alternativa */}
                 {hasAlternateLocation && (
-                  <button
-                    type="button"
-                    className="px-2 py-1 text-xs rounded bg-orange-100 dark:bg-orange-900 hover:bg-orange-200 dark:hover:bg-orange-800 border border-orange-300 dark:border-orange-700 focus:outline-none transition-colors"
-                    title={`Click to view location ${alternateLocation}`}
-                    onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: alternateLocation }))}
-                  >
-                    {t('parts_accordion.view_location')} {alternateLocation}
-                  </button>
+                  <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark" role="tablist" aria-label="Locations switch">
+                    <button
+                      type="button"
+                      onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 1 }))}
+                      className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                      title={`${t('parts_accordion.view_location')} 1`}
+                      aria-pressed={currentLocation === 1}
+                    >
+                      1
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 4 }))}
+                      className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                      title={`${t('parts_accordion.view_location')} 4`}
+                      aria-pressed={currentLocation === 4}
+                    >
+                      4
+                    </button>
+                  </div>
                 )}
                 {/* Copy button */}
                 <button
@@ -1144,7 +1157,7 @@ const Messages: React.FC = () => {
                                 </span>
                               </div>
                             )}
-                            <div className={msg.role === 'user' ? 'flex justify-start' : 'flex justify-end'}>
+                            <div className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
                               <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-full'}>
                                 {msg.role === 'user' && (
                                   <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -1178,7 +1191,7 @@ const Messages: React.FC = () => {
                                     />
                                   ) : null}
                                 </div>
-                                <div className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-left' : 'text-right'}`}>
+                                <div className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                                   <div className="flex items-center gap-3 flex-wrap">
                                     <span>{new Date(msg.createdAt).toLocaleTimeString()}</span>
                                     {/* Mostrar conversation_context si existe en el mensaje */}

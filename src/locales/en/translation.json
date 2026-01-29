@@ -112,6 +112,9 @@
     "error_occurred": "An error occurred. Please try again.",
     "related_parts": "Related Parts"
   },
+  "parts": {
+    "related_parts_information": "Related Parts Information"
+  },
   "permissions": {
     "table": {
       "name": "Name",

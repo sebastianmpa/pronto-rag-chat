@@ -91,9 +91,13 @@ const PartsTable = () => {
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
+      {/* Page title (use translation key if available, fallback to literal) */}
+      <div className="px-8 pt-6 pb-2">
+        <h2 className="text-lg font-semibold text-black dark:text-white">{t('parts.related_parts_information') || 'Related Parts Information'}</h2>
+      </div>
       {/* Formulario de búsqueda */}
       <form
-        className="w-full px-8 py-6 bg-white border-x border-b border-stroke rounded-b-lg shadow-sm"
+        className="w-full px-8 py-6 bg-white dark:bg-boxdark-2 border-x border-b border-stroke dark:border-strokedark rounded-b-lg shadow-sm"
         onSubmit={handleSubmit}
       >
         <div>
@@ -106,7 +110,7 @@ const PartsTable = () => {
               type="text"
               value={partNumberFilter}
               onChange={e => setPartNumberFilter(e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 pr-12 text-sm text-black outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-md border border-stroke bg-gray-50 dark:bg-transparent px-4 py-3 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-strokedark dark:focus:border-primary"
               placeholder={t('parts_table.enter_part_number')}
             />
             <button
@@ -208,13 +212,29 @@ const PartsTable = () => {
                         {t('parts_accordion.quantity')}: {item.qty_loc}
                       </span>
                       {hasAlternateLocation && (
-                        <button
-                          type="button"
-                          onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: alternateLocation }))}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
-                        >
-                          {t('parts_accordion.view_location')} {alternateLocation}
-                        </button>
+                        <div className="mt-1">
+                          <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark" role="tablist" aria-label="Locations switch">
+                            <button
+                              type="button"
+                              onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 1 }))}
+                              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                              title={`${t('parts_accordion.view_location')} 1`}
+                              aria-pressed={currentLocation === 1}
+                            >
+                              1
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 4 }))}
+                              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                              title={`${t('parts_accordion.view_location')} 4`}
+                              aria-pressed={currentLocation === 4}
+                            >
+                              4
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
 

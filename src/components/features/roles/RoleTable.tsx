@@ -238,14 +238,18 @@ const RoleTable = () => {
   return (
     <>
       <section className="data-table-common data-table-two rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-        {/* Header con búsqueda y botón crear */}
+        {/* Header con título, búsqueda y botón crear */}
         <div className="flex flex-col gap-4 border-b border-stroke px-8 pb-4 dark:border-strokedark md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-black dark:text-white">{t('sidebar.roles')}</h2>
+          </div>
+
           <div className="w-full md:w-1/2">
             <input
               type="text"
               value={globalFilter || ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full rounded-md border border-stroke px-5 py-2.5 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:focus:border-primary"
+              className="w-full rounded-md border border-stroke px-5 py-2.5 outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary"
               placeholder={t('roles.table.search_placeholder')}
             />
           </div>

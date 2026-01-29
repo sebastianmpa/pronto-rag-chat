@@ -719,9 +719,9 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
               <div className="flex flex-col items-end justify-center mr-2 ml-3">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
                 {/* Botón para cambiar de ubicación si existe alternativa */}
-                {hasAlternateLocation && (
+                  {hasAlternateLocation && (
                   <div className="mt-1">
-                    <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1" role="tablist" aria-label="Locations switch">
+                    <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark" role="tablist" aria-label="Locations switch">
                       <button
                         type="button"
                         onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 1 }))}

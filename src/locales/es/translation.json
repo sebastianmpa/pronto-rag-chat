@@ -63,6 +63,9 @@
     "error_occurred": "Ocurrió un error. Por favor, inténtelo de nuevo.",
     "related_parts": "Partes Relacionadas"
   },
+  "parts": {
+    "related_parts_information": "Información de Partes Relacionadas"
+  },
   "permissions": {
     "table": {
       "name": "Nombre",

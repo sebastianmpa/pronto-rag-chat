@@ -67,15 +67,21 @@ const TermTable = () => {
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-      {/* Header with create button */}
-      <div className="px-4 py-6 md:px-6 xl:px-7.5 flex items-center justify-end">
-        <button
-          ref={createButtonRef}
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
-        >
-          {t('terms.table.create_term')}
-        </button>
+      {/* Header with page title and create button */}
+      <div className="px-4 py-6 md:px-6 xl:px-7.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-black dark:text-white">{t('sidebar.terms')}</h2>
+        </div>
+
+        <div>
+          <button
+            ref={createButtonRef}
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+          >
+            {t('terms.table.create_term')}
+          </button>
+        </div>
       </div>
 
       {/* Loading state */}

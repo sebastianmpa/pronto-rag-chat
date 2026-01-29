@@ -692,6 +692,8 @@ const Messages: React.FC = () => {
   const { t } = useTranslation();
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
+  // Dynamic page offset to compute available viewport height for the chat panel
+  const [pageOffset, setPageOffset] = useState<number>(186);
   // Estado para controlar qué tabla está abierta (por message id)
   const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
 
@@ -729,6 +731,46 @@ const Messages: React.FC = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
     }
   }, [chatDetail?.conversation_message]);
+
+  // Measure header + layout paddings to compute the available height for the chat panel
+  useEffect(() => {
+    const measure = () => {
+      try {
+        const header = document.querySelector('header') as HTMLElement | null;
+        const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 86;
+
+        // Try to find the main layout wrapper to include its vertical paddings if present
+        const mainWrapper = document.querySelector('#root') as HTMLElement | null || document.querySelector('main') as HTMLElement | null;
+        let paddingTop = 0;
+        let paddingBottom = 0;
+        if (mainWrapper) {
+          const cs = getComputedStyle(mainWrapper);
+          paddingTop = parseFloat(cs.paddingTop || '0') || 0;
+          paddingBottom = parseFloat(cs.paddingBottom || '0') || 0;
+        }
+
+        // Small extra offset to avoid clipping sticky elements
+        const extra = 0;
+        setPageOffset(headerHeight + Math.round(paddingTop + paddingBottom) + extra);
+      } catch (e) {
+        // noop
+      }
+    };
+
+    measure();
+    window.addEventListener('resize', measure);
+    // Observe header size changes if ResizeObserver is available
+    let ro: ResizeObserver | null = null;
+    const headerEl = document.querySelector('header');
+    if ((window as any).ResizeObserver && headerEl) {
+      ro = new (window as any).ResizeObserver(() => measure());
+      ro.observe(headerEl);
+    }
+    return () => {
+      window.removeEventListener('resize', measure);
+      if (ro) ro.disconnect();
+    };
+  }, []);
 
   // Helper function to format dates
   const formatDate = (date: string) => {
@@ -900,12 +942,11 @@ const Messages: React.FC = () => {
   };
 
   return (
-    <DefaultLayout>
-  <Breadcrumb pageName={t('all_messages')} />
-      <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)] min-h-0">
-        <div className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
+    <DefaultLayout noPadding>
+      <div className="overflow-hidden min-h-0" style={{ height: `calc(100vh - ${pageOffset}px)` }}>
+        <div className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex min-h-0">
           {/* Chat List */}
-          <div className="hidden h-full flex-col xl:flex xl:w-1/4 bg-white dark:bg-boxdark border-r-2 border-blue-300">
+          <div className="hidden h-full flex-col xl:flex xl:w-72 bg-white dark:bg-boxdark border-r-2 border-blue-300 min-h-0">
             {/* Header */}
             <div className="border-b border-stroke dark:border-strokedark px-6 py-4">
               <div className="flex items-center justify-between gap-2">
@@ -1002,7 +1043,7 @@ const Messages: React.FC = () => {
           </div>
 
           {/* Chat Box */}
-            <div className="flex h-full flex-col border-l border-stroke dark:border-strokedark xl:w-3/4">
+            <div className="flex h-full flex-col border-l border-stroke dark:border-strokedark w-full flex-1 min-h-0">
             {selectedChat?.id && chatDetail ? (
               <>
                 <div className="sticky top-0 flex items-center justify-between border-b border-stroke px-6 py-3 dark:border-strokedark bg-white dark:bg-boxdark text-black dark:text-white z-10">
@@ -1104,7 +1145,7 @@ const Messages: React.FC = () => {
                               </div>
                             )}
                             <div className={msg.role === 'user' ? 'flex justify-start' : 'flex justify-end'}>
-                              <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-2xl'}>
+                              <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-full'}>
                                 {msg.role === 'user' && (
                                   <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
                                     {customerData?.name || t('user')}
@@ -1121,7 +1162,7 @@ const Messages: React.FC = () => {
                                     : 'border-blue-300 bg-white text-blue-900 dark:bg-boxdark-2 dark:text-white'
                                 }`}>
                                   {shouldRenderText && (
-                                    <p className="text-sm break-words">
+                                    <p className="text-sm text-[105%] break-words">
                                       {renderMessageContent(text, msg.role)}
                                     </p>
                                   )}

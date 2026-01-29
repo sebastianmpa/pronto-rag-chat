@@ -1197,6 +1197,7 @@ const TableCollapsible: React.FC<{
 
 const MessagesMe: React.FC = () => {
   const { t } = useTranslation();
+  const [pageOffset, setPageOffset] = useState<number | null>(null);
   // Search state for chat list
   const [searchTerm, setSearchTerm] = useState('');
   // State para controlar qué tabla está abierta (por message id)
@@ -1578,19 +1579,55 @@ const MessagesMe: React.FC = () => {
     // If assistantTyping está activo, don't clear local messages or typing animation
   }, [conversationId]);
 
+  // Measure header + content wrapper padding and compute offset to size the chat container
+  useEffect(() => {
+    const measure = () => {
+      try {
+        const header = document.querySelector('header');
+        const contentWrapper = document.querySelector('main > div');
+        const headerH = header ? (header as HTMLElement).getBoundingClientRect().height : 0;
+        let padTop = 0;
+        let padBottom = 0;
+        if (contentWrapper) {
+          const cs = getComputedStyle(contentWrapper as Element);
+          padTop = parseFloat(cs.paddingTop || '0') || 0;
+          padBottom = parseFloat(cs.paddingBottom || '0') || 0;
+        }
+        const total = Math.round(headerH + padTop + padBottom);
+        setPageOffset(total);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    const headerEl = document.querySelector('header');
+    const wrapperEl = document.querySelector('main > div');
+    if (headerEl) ro.observe(headerEl);
+    if (wrapperEl) ro.observe(wrapperEl);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
-    <DefaultLayout>
-  <Breadcrumb pageName={t('my_chats')} />
+    <DefaultLayout noPadding>
       {/* Mostrar error si existe */}
       {error && (
         <div className="p-4 bg-red-100 text-red-700 rounded mb-2 text-center">
           {error}
         </div>
       )}
-      <div className="h-[calc(100vh-186px)] overflow-hidden sm:h-[calc(100vh-174px)] min-h-0">
-        <div className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
+      <div className="min-h-0">
+        <div
+          style={pageOffset ? { height: `calc(100vh - ${pageOffset}px)` } : undefined}
+          className="h-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex w-full"
+        >
           {/* Chat List */}
-          <div className="hidden h-full flex-col xl:flex xl:w-1/4 bg-white dark:bg-boxdark border-r-2 border-blue-300">
+          <div className="hidden h-full flex-col xl:flex xl:w-72 bg-white dark:bg-boxdark border-r-2 border-blue-300">
             {/* Header */}
             <div className="border-b border-stroke dark:border-strokedark px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between gap-2">
@@ -1685,7 +1722,7 @@ const MessagesMe: React.FC = () => {
             </div>
           </div>
           {/* Chat Box */}
-          <div className="flex h-full flex-col border-l border-stroke dark:border-strokedark xl:w-3/4 bg-white dark:bg-boxdark">
+          <div className="flex h-full flex-col border-l border-stroke dark:border-strokedark w-full flex-1 bg-white dark:bg-boxdark min-h-0">
             {selectedChat?.id ? (
               <>
                 <div className="sticky top-0 flex items-center justify-between border-b border-stroke px-6 py-3 dark:border-strokedark bg-white dark:bg-boxdark text-black dark:text-white z-10">
@@ -1694,10 +1731,10 @@ const MessagesMe: React.FC = () => {
                       <span className="text-lg font-medium text-black dark:text-white">A</span>
                     </div>
                     <div>
-                      <h5 className="text-sm font-medium text-black dark:text-white">{t('assistant')}</h5>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Pronto Mowers
-                      </p>
+                      <h3 className="font-medium text-black dark:text-white">
+                        {selectedChat.isNew ? t('new_chat') : (chatDetail?.abstract || chatDetail?.last_detected_model || chatDetail?.store_domain || t('chat'))}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Pronto Mowers</p>
                     </div>
                   </div>
                   <div>
@@ -1719,13 +1756,13 @@ const MessagesMe: React.FC = () => {
                             <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
                               {t('assistant')}
                             </p>
-                            <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-3 px-4">
-                              <p className="text-sm break-words">
-                                {localMessages.length > 0 && localMessages[0].role === 'assistant'
-                                  ? renderMessageContent(localMessages[0].content, 'assistant', handleSupersededClicked)
-                                  : ''}
-                              </p>
-                            </div>
+                              <div className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-3 px-4">
+                                <p className="text-sm text-[105%] break-words">
+                                  {localMessages.length > 0 && localMessages[0].role === 'assistant'
+                                    ? renderMessageContent(localMessages[0].content, 'assistant', handleSupersededClicked)
+                                    : ''}
+                                </p>
+                              </div>
                           </div>
                         </div>
                         {/* Mensajes locales del usuario */}
@@ -1733,7 +1770,7 @@ const MessagesMe: React.FC = () => {
                           <div className="flex justify-end" key={msg.id}>
                             <div className="max-w-xs">
                               <div className="rounded-2xl border border-blue-700 bg-blue-600 text-white py-3 px-4">
-                                <p className="text-sm break-words">{msg.content}</p>
+                                <p className="text-sm text-[105%] break-words">{msg.content}</p>
                               </div>
                               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
                                 {new Date(msg.createdAt).toLocaleTimeString()}
@@ -1840,7 +1877,7 @@ const MessagesMe: React.FC = () => {
                                  </div>
                                )}
                                <div className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                                  <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-4xl'}>
+                                   <div className={msg.role === 'user' ? 'max-w-md' : 'max-w-full'}>
                                    {msg.role !== 'user' && (
                                      <p className="mb-2 text-xs font-medium text-blue-700 dark:text-blue-300">
                                        {t('assistant')}
@@ -1853,7 +1890,7 @@ const MessagesMe: React.FC = () => {
                                    }`}
                                    >
                                      {shouldRenderText && (
-                                       <p className="text-sm break-words">
+                                       <p className="text-sm text-[105%] break-words">
                                          {renderMessageContent(text, msg.role, handleSupersededClicked)}
                                        </p>
                                      )}
@@ -1947,9 +1984,10 @@ const MessagesMe: React.FC = () => {
                              onClick={() => setCommandsOpen((s) => !s)}
                              className="h-10 w-10 flex items-center justify-center rounded-md bg-primary text-white hover:bg-primary/90 transition-all"
                            >
-                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                               <path d="M3 21l3-3m0 0A5 5 0 015 13.5 5 5 0 0111 9a5 5 0 013.5 1.5l5-5L21 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                               <path d="M14 9l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+                               <path d="M12 8v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                               <path d="M12 16h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                              </svg>
                            </button>
                            <div className="relative flex-1">

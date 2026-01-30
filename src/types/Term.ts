@@ -40,3 +40,29 @@ export interface TermUpdateRequest {
 export interface TermDefinitionResponse {
   definition: string;
 }
+
+// Located terms (for supervisor/location endpoints)
+export interface LocatedTerm {
+  id: string;
+  term: string;
+  definition: string;
+  term_type?: string; // e.g. PARTNUMBER, SKU, etc.
+  owner_id?: string | null;
+  location?: string | number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LocatedTermsResponse {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  items: LocatedTerm[];
+}
+
+export interface TermLocatedCreateRequest {
+  term: string;
+  definition: string;
+  term_type?: string;
+}
+

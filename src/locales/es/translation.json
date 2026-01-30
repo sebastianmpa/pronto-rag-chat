@@ -303,6 +303,8 @@
     "table": {
       "term": "Término",
       "definition": "Definición",
+      "owned": "Propios",
+      "search_user": "Buscar por usuario...",
       "location": "Ubicación",
       "created_at": "Creado el",
       "actions": "Acciones",
@@ -323,6 +325,30 @@
     "delete_modal": {
       "title": "Eliminar Término",
       "message": "¿Estás seguro de que deseas eliminar este término? Esta acción no se puede deshacer."
+    }
+    ,
+    "located": {
+      "title": "Términos Localizados",
+      "table": {
+        "owned": "Propios",
+        "search_user": "Buscar por usuario..."
+      },
+      "create_modal": {
+        "title": "Crear Término Localizado",
+        "term_placeholder": "Ingresa el nombre del término",
+        "definition_placeholder": "Ingresa la definición del término",
+        "user_placeholder": "Selecciona un usuario",
+        "creating": "Creando..."
+      },
+      "edit_modal": {
+        "title": "Editar Término Localizado",
+        "updating": "Actualizando..."
+      },
+      "delete_modal": {
+        "title": "Eliminar Término Localizado",
+        "message": "¿Estás seguro de que deseas eliminar este término localizado? Esta acción no se puede deshacer.",
+        "deleting": "Eliminando..."
+      }
     }
   }
 }

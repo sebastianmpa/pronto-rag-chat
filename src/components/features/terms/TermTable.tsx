@@ -68,9 +68,9 @@ const TermTable = () => {
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
       {/* Header with page title and create button */}
-      <div className="px-4 py-6 md:px-6 xl:px-7.5 flex items-center justify-between">
+          <div className="px-4 py-6 md:px-6 xl:px-7.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-black dark:text-white">{t('sidebar.terms')}</h2>
+          <h2 className="text-lg font-semibold text-black dark:text-white">{t('terms.title')}</h2>
         </div>
 
         <div>

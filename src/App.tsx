@@ -9,6 +9,7 @@ import Roles from './pages/Pages/Roles';
 import Permissions from './pages/Pages/Permissions';
 import UsersPage from './pages/Pages/UsersPage';
 import TermsPage from './pages/Pages/TermsPage';
+import LocatedTermsPage from './pages/Pages/LocatedTermsPage';
 
 import Loader from './common/Loader';
 import PageTitle from './components/PageTitle';
@@ -100,11 +101,23 @@ function App() {
               element={<PartsPage />}
             />
           )}
-          {/* Ruta para terms - admin, supervisor, supervisorL1, supervisorL4 */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+          {/* Ruta para terms - SOLO administradores */}
+          {roleInternalName === 'admin' && (
             <Route
               path="/terms"
               element={<TermsPage />}
+            />
+          )}
+          {/* Ruta para located-terms - SOLO supervisores */}
+          {(roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+            <Route
+              path="/terms/located"
+              element={
+                <>
+                  <PageTitle title="Located Terms | TailAdmin" />
+                  <LocatedTermsPage />
+                </>
+              }
             />
           )}
           

@@ -1,0 +1,368 @@
+import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { LocatedTerm, LocatedTermsResponse } from '../../../types/Term';
+import { useLocatedV1Paginated } from '../../../hooks/useTermLocated';
+import axiosInstance from '../../../interceptor/axiosInstance';
+import CreateLocatedTermModal from './CreateLocatedTermModal';
+import EditLocatedTermModal from './EditLocatedTermModal';
+import DeleteLocatedTermModal from './DeleteLocatedTermModal';
+
+const LocatedTermTable = () => {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [locatedResponse, setLocatedResponse] = useState<LocatedTermsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<LocatedTerm | null>(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const [copiedDefId, setCopiedDefId] = useState<string | null>(null);
+
+  const { t } = useTranslation();
+
+  // Filters
+  const [owned, setOwned] = useState<boolean>(false);
+  const [userQuery, setUserQuery] = useState<string>('');
+  const [userResults, setUserResults] = useState<Array<{ id: string; name: string }>>([]);
+  const [allUsers, setAllUsers] = useState<Array<{ id: string; name: string; email?: string }>>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
+  const [termFilter, setTermFilter] = useState<string>('');
+
+  const { data, loading: hookLoading, error: hookError, fetch } = useLocatedV1Paginated(page, limit, owned ? true : undefined, selectedUserId || undefined, termFilter || undefined);
+
+  // debounce timer for user search
+  const userSearchTimer = useRef<number | null>(null);
+
+  const fetchAllUsers = async () => {
+    try {
+      const resp = await axiosInstance.get('/users/v0');
+      const items = resp.data?.items || resp.data || [];
+      const mapped = items.map((u: any) => ({ id: u.id, name: `${u.firstName || u.name || ''} ${u.lastName || ''}`.trim() || u.email || u.id, email: u.email }));
+      setAllUsers(mapped);
+      setUserResults(mapped);
+    } catch (err) {
+      setAllUsers([]);
+      setUserResults([]);
+    }
+  };
+
+  // fallback search against server (kept for cases where server-side filtering is preferred)
+  const searchUsersRemote = async (q: string) => {
+    if (!q || q.length < 2) {
+      setUserResults(allUsers.length ? allUsers : []);
+      return;
+    }
+    try {
+      const resp = await axiosInstance.get('/users/v0', { params: { nameFilter: q } });
+      const items = resp.data?.items || resp.data || [];
+      const mapped = items.map((u: any) => ({ id: u.id, name: `${u.firstName || u.name || ''} ${u.lastName || ''}`.trim() || u.email || u.id, email: u.email }));
+      setUserResults(mapped);
+    } catch (err) {
+      setUserResults([]);
+    }
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await fetch();
+        setLocatedResponse(data || null);
+      } catch (err: any) {
+        setError(err?.message || 'Error fetching located terms');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, owned, selectedUserId, termFilter]);
+
+  useEffect(() => {
+    // update local response when hook data changes
+    if (data) setLocatedResponse(data);
+  }, [data]);
+
+  const handleCopyDefinition = (definition: string, id: string) => {
+    try {
+      navigator.clipboard.writeText(definition);
+      setCopiedDefId(id);
+      setTimeout(() => setCopiedDefId(null), 1200);
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const handleEdit = (termId: string) => {
+    const term = locatedResponse?.items?.find((t) => t.id === termId);
+    if (term) {
+      setSelectedTerm(term);
+      setSelectedTermId(termId);
+      setShowEditModal(true);
+    }
+  };
+
+  const handleDelete = (termId: string) => {
+    setSelectedTermId(termId);
+    setShowDeleteModal(true);
+  };
+
+  // Handlers for filters
+  const handleOwnedToggle = (value: boolean) => {
+    setOwned(value);
+    // when owned is toggled on, clear selected user
+    if (value) setSelectedUserId(null);
+    setPage(1);
+  };
+
+  const handleUserQueryChange = (q: string) => {
+    setUserQuery(q);
+    setSelectedUserId(null);
+    // debounce
+    if (userSearchTimer.current) {
+      window.clearTimeout(userSearchTimer.current);
+    }
+    // if we have loaded all users, filter locally; otherwise fallback to remote search
+    // @ts-ignore
+    userSearchTimer.current = window.setTimeout(() => {
+      if (allUsers.length > 0) {
+        const filtered = allUsers.filter(u => (u.name || '').toLowerCase().includes(q.toLowerCase()) || (u.email || '').toLowerCase().includes(q.toLowerCase()));
+        setUserResults(filtered);
+      } else {
+        searchUsersRemote(q);
+      }
+    }, 200);
+  };
+
+  const handleUserFocus = () => {
+    if (allUsers.length === 0) {
+      fetchAllUsers();
+    } else {
+      setUserResults(allUsers);
+    }
+  };
+
+  const handleSelectUser = (id: string) => {
+    setSelectedUserId(id);
+    const found = userResults.find(u => u.id === id);
+    setSelectedUserName(found ? found.name : id);
+    setUserResults([]);
+    setUserQuery('');
+    setPage(1);
+  };
+
+  const handleTermFilterChange = (q: string) => {
+    setTermFilter(q);
+    setPage(1);
+  };
+
+  return (
+    <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="px-4 py-4 md:px-6 xl:px-7.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <h2 className="text-lg font-semibold text-black dark:text-white -mb-1">{t('terms.title')}</h2>
+              <div className="mt-2 flex items-center gap-3">
+                {/* Filters container */}
+                <div className="flex items-center gap-3 bg-gray-50 dark:bg-boxdark-3 rounded-md px-3 py-2">
+                  <label className="inline-flex items-center text-sm text-gray-600 dark:text-gray-300">
+                    <input type="checkbox" checked={owned} onChange={(e) => handleOwnedToggle(e.target.checked)} className="mr-2 h-4 w-4 accent-primary border-stroke dark:border-strokedark" />
+                    <span className="text-sm">{t('terms.table.owned')}</span>
+                  </label>
+
+                  <div className="relative">
+                    {selectedUserId ? (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm dark:bg-boxdark-4 border border-stroke">
+                        <span className="text-black dark:text-white">{selectedUserName || selectedUserId}</span>
+                        <button onClick={() => { setSelectedUserId(null); setSelectedUserName(null); setPage(1); }} className="text-xs text-gray-500 ml-2">×</button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="11" cy="11" r="6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <input
+                          type="text"
+                          value={userQuery}
+                          onChange={(e) => handleUserQueryChange(e.target.value)}
+                          onFocus={handleUserFocus}
+                          onClick={handleUserFocus}
+                          placeholder={t('terms.table.search_user') || 'Buscar usuario...'}
+                          className="h-9 w-64 rounded border border-stroke bg-white pl-9 pr-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                        />
+                      </div>
+                    )}
+
+                    {userResults.length > 0 && (
+                      <ul className="absolute left-0 top-full z-50 mt-1 max-h-40 w-56 overflow-auto rounded border bg-white py-1 shadow-md dark:bg-boxdark">
+                        {userResults.map((u) => (
+                          <li key={u.id}>
+                            <button onClick={() => handleSelectUser(u.id)} className="block w-full px-3 py-1 text-left text-sm hover:bg-gray-100 dark:hover:bg-boxdark-3">{u.name}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={termFilter}
+                    onChange={(e) => handleTermFilterChange(e.target.value)}
+                    placeholder={t('terms.table.search_placeholder')}
+                    className="h-9 w-56 rounded border border-stroke bg-white px-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <button
+              ref={createButtonRef}
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+            >
+              {t('terms.table.create_term')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {(loading || hookLoading) && (
+        <div className="flex justify-center py-8">
+          <span className="text-gray-500 dark:text-gray-400">{t('common.loading')}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="px-4 py-4 md:px-6 xl:px-7.5">
+          <div className="rounded-sm border border-red-500 bg-red-50 p-4 text-red-700 dark:bg-red-900 dark:text-red-200">
+            {error}
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                  <th className="min-w-[200px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11">{t('terms.table.term')}</th>
+                  <th className="min-w-[300px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.definition')}</th>
+                  <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.location')}</th>
+                  <th className="min-w-[150px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.created_at')}</th>
+                  <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {locatedResponse?.items && locatedResponse.items.length > 0 ? (
+                  locatedResponse.items.map((term) => (
+                    <tr key={term.id} className="border-b border-stroke dark:border-strokedark">
+                      <td className="px-4 py-5 pl-9">
+                        <p className="text-black dark:text-white font-medium">{term.term}</p>
+                      </td>
+                      <td className="px-4 py-5">
+                        <div className="flex items-center gap-2">
+                          <p className="text-black dark:text-white truncate max-w-xs" title={term.definition}>{term.definition}</p>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyDefinition(term.definition || '', term.id)}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-boxdark-3 border border-transparent focus:outline-none"
+                            title={t('parts_accordion.copy_part_number')}
+                          >
+                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                              <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                            </svg>
+                          </button>
+                          {copiedDefId === term.id && (
+                            <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-5">
+                        <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.location}</span>
+                      </td>
+                      <td className="px-4 py-5">
+                        <p className="text-black dark:text-white">
+                          {new Date(term.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </p>
+                      </td>
+                      <td className="px-4 py-5">
+                        <div className="flex items-center space-x-3.5">
+                          <button className="hover:text-primary" title={t('terms.table.edit')} onClick={() => handleEdit(term.id)}>
+                            <svg className="fill-current" width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.414 2.586a2 2 0 0 0-2.828 0l-9.9 9.9a1 1 0 0 0-.263.465l-1.5 5.25a1 1 0 0 0 1.236 1.236l5.25-1.5a1 1 0 0 0 .465-.263l9.9-9.9a2 2 0 0 0 0-2.828l-2.36-2.36zm-2.121 1.415l2.12 2.12-9.193 9.193-2.12-2.12 9.193-9.193zm-10.193 10.193l2.12 2.12-3.03.866.91-3.03zm13.193-13.193a4 4 0 0 1 0 5.657l-9.9 9.9a3 3 0 0 1-1.394.788l-5.25 1.5a3 3 0 0 1-3.708-3.708l1.5-5.25a3 3 0 0 1 .788-1.394l9.9-9.9a4 4 0 0 1 5.657 0z" fill="currentColor"/></svg>
+                          </button>
+
+                          <button className="hover:text-danger" title={t('terms.table.delete')} onClick={() => handleDelete(term.id)}>
+                            <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.7535 2.47502H11.5879V1.9969C11.5879 1.15315 10.9129 0.478149 10.0691 0.478149H7.90352C7.05977 0.478149 6.38477 1.15315 6.38477 1.9969V2.47502H4.21914C3.40352 2.47502 2.72852 3.15002 2.72852 3.96565V4.8094C2.72852 5.42815 3.09414 5.9344 3.62852 6.1594L4.07852 15.4688C4.13477 16.6219 5.09102 17.5219 6.24414 17.5219H11.7004C12.8535 17.5219 13.8098 16.6219 13.866 15.4688L14.3441 6.13127C14.8785 5.90627 15.2441 5.3719 15.2441 4.78127V3.93752C15.2441 3.15002 14.5691 2.47502 13.7535 2.47502ZM7.67852 1.9969C7.67852 1.85627 7.79102 1.74377 7.93164 1.74377H10.0973C10.2379 1.74377 10.3504 1.85627 10.3504 1.9969V2.47502H7.70664V1.9969H7.67852ZM4.02227 3.96565C4.02227 3.85315 4.10664 3.74065 4.24727 3.74065H13.7535C13.866 3.74065 13.9785 3.82502 13.9785 3.96565V4.8094C13.9785 4.9219 13.8941 5.0344 13.7535 5.0344H4.24727C4.13477 5.0344 4.02227 4.95002 4.02227 4.8094V3.96565ZM11.7285 16.2563H6.27227C5.79414 16.2563 5.40039 15.8906 5.37227 15.3844L4.95039 6.2719H13.0785L12.6566 15.3844C12.6004 15.8625 12.2066 16.2563 11.7285 16.2563Z"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">{t('common.no_results')}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {locatedResponse && (
+            <div className="px-4 py-5 md:px-6 xl:px-7.5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('common.page')} {page} {t('common.of')} {locatedResponse.totalPages}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-3 py-2 rounded border border-stroke bg-gray-2 text-black hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed dark:border-strokedark dark:bg-boxdark-2 dark:text-white">{t('common.previous')}</button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{page}</span>
+                <button onClick={() => setPage(Math.min(locatedResponse.totalPages, page + 1))} disabled={page >= locatedResponse.totalPages} className="px-3 py-2 rounded border border-stroke bg-gray-2 text-black hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed dark:border-strokedark dark:bg-boxdark-2 dark:text-white">{t('common.next')}</button>
+                <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }} className="rounded border border-stroke bg-gray-2 px-2 py-2 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
+                  {[10,20,50,100].map((value) => (
+                    <option key={value} value={value}>{value}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <CreateLocatedTermModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          setPage(1);
+          fetch();
+        }}
+      />
+
+      {selectedTerm && (
+        <EditLocatedTermModal
+          isOpen={showEditModal}
+          onClose={() => { setShowEditModal(false); setSelectedTerm(null); }}
+          term={selectedTerm}
+          onSuccess={() => { setShowEditModal(false); setSelectedTerm(null); fetch(); }}
+        />
+      )}
+
+      <DeleteLocatedTermModal
+        isOpen={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setSelectedTermId(null); }}
+        termId={selectedTermId || ''}
+        onSuccess={() => { setShowDeleteModal(false); setSelectedTermId(null); setPage(1); fetch(); }}
+      />
+    </section>
+  );
+};
+
+export default LocatedTermTable;

@@ -306,8 +306,16 @@ const LocatedTermTable = () => {
                       </td>
                       <td className="px-4 py-5">
                         <div className="flex items-center space-x-3.5">
-                          <button className="hover:text-primary" title={t('terms.table.edit')} onClick={() => handleEdit(term.id)}>
-                            <svg className="fill-current" width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.414 2.586a2 2 0 0 0-2.828 0l-9.9 9.9a1 1 0 0 0-.263.465l-1.5 5.25a1 1 0 0 0 1.236 1.236l5.25-1.5a1 1 0 0 0 .465-.263l9.9-9.9a2 2 0 0 0 0-2.828l-2.36-2.36zm-2.121 1.415l2.12 2.12-9.193 9.193-2.12-2.12 9.193-9.193zm-10.193 10.193l2.12 2.12-3.03.866.91-3.03zm13.193-13.193a4 4 0 0 1 0 5.657l-9.9 9.9a3 3 0 0 1-1.394.788l-5.25 1.5a3 3 0 0 1-3.708-3.708l1.5-5.25a3 3 0 0 1 .788-1.394l9.9-9.9a4 4 0 0 1 5.657 0z" fill="currentColor"/></svg>
+                          <button
+                            onClick={() => handleEdit(term.id)}
+                            title={t('terms.table.edit')}
+                            aria-label={t('terms.table.edit')}
+                            className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-white shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
+                              <path d="M20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.29a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                            </svg>
                           </button>
 
                           <button className="hover:text-danger" title={t('terms.table.delete')} onClick={() => handleDelete(term.id)}>

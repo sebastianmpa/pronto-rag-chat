@@ -70,11 +70,6 @@ const DataStatsThree: React.FC<DataStatsThreeProps> = ({ fechaIni, fechaFin }) =
   return (
         <div>
       <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-title-sm2 font-bold text-black dark:text-white">
-            Analytics Overview
-          </h2>
-        </div>
       </div>
       <div className="2xl:gap-7.5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-3">
         {/* Models */}

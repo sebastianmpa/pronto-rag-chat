@@ -225,6 +225,8 @@
    },
   "charts": {
     "conversationsStartedPerDay": "Conversations started per day",
+    "totalEventsPerUser": "Total events per user",
+    "total": "Total",
     "loading": "Loading...",
     "errorLoadingData": "Error loading data",
     "conversations": "Conversations",

@@ -219,6 +219,8 @@
   },
   "charts": {
     "conversationsStartedPerDay": "Conversaciones iniciadas por día",
+    "totalEventsPerUser": "Total de eventos por usuario",
+    "total": "Total",
     "loading": "Cargando...",
     "errorLoadingData": "Error al cargar los datos",
     "conversations": "Conversaciones",

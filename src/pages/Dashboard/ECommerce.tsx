@@ -129,7 +129,7 @@ const ECommerce: React.FC = () => {
       <div className="mt-6">
         <div className="col-span-12 rounded-sm border border-stroke bg-white p-5 shadow-default dark:border-strokedark dark:bg-boxdark">
           <div className="mb-4 flex items-center justify-between">
-            <h4 className="text-title-sm2 font-bold text-black dark:text-white">Total events per user</h4>
+            <h4 className="text-title-sm2 font-bold text-black dark:text-white">{t('charts.totalEventsPerUser')}</h4>
           </div>
 
           {loadingTotalEvents ? (
@@ -143,9 +143,9 @@ const ECommerce: React.FC = () => {
               <table className="w-full table-auto">
                 <thead>
                   <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">Name</th>
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">Email</th>
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">Total</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('users.table.name')}</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('users.table.email')}</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('charts.total')}</th>
                   </tr>
                 </thead>
                 <tbody>

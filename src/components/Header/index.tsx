@@ -11,7 +11,9 @@ const brands = [
   { name: 'Shindaiwa', logo: '/images/Shindaiwa.png' },
   { name: 'Scag', logo: '/images/scag.png' },
   { name: 'Toro', logo: '/images/toro.png' },
-  { name: 'Hustler', logo: '/images/hulster.png' }
+  { name: 'Hustler', logo: '/images/hulster.png' },
+  { name: 'RedMax', logo: '/images/redmax.png' },
+  { name: 'STIHL', logo: '/images/stihl.png' }
 ];
 
 const Header = (props: {

@@ -26,9 +26,20 @@ export const getAllTerms = async (): Promise<Term[]> => {
  * Get paginated terms
  * GET /terms/v1/?page=1&limit=10
  */
-export const getTermsPaginated = async (page: number = 1, limit: number = 10): Promise<TermsResponse> => {
+export const getTermsPaginated = async (
+  page: number = 1,
+  limit: number = 10,
+  term?: string,
+  location?: string | number,
+  user_id?: string
+): Promise<TermsResponse> => {
+  const params: any = { page, limit };
+  if (term) params.term = term;
+  if (location !== undefined && location !== null) params.location = location;
+  if (user_id) params.user_id = user_id;
+
   const response = await axiosInstance.get(`/terms/${API_VERSION_V1}/`, {
-    params: { page, limit }
+    params
   });
   return response.data;
 };

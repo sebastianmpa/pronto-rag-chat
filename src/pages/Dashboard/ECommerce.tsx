@@ -8,6 +8,7 @@ import DefaultLayout from '../../layout/DefaultLayout';
 import { useStatsTops } from '../../hooks/useStats';
 import { useEventStats } from '../../hooks/useEventStats';
 import { useFoundStats } from '../../hooks/useFoundStats';
+import { useTotalEventsPerUser } from '../../hooks/useTotalEventsPerUser';
 import StatsBarChart from '../../components/features/stats/StatsBarChart';
 
 function getDefaultDates() {
@@ -31,7 +32,10 @@ const ECommerce: React.FC = () => {
     fetchStatsTops(dates.fechaIni, dates.fechaFin);
     fetchEventStats(dates.fechaIni, dates.fechaFin);
     fetchFoundStats(dates.fechaIni, dates.fechaFin);
+    fetchTotalEvents();
   }, [fetchStatsTops, fetchEventStats, fetchFoundStats, dates]);
+
+  const { data: totalEventsData, loading: loadingTotalEvents, error: totalEventsError, fetch: fetchTotalEvents } = useTotalEventsPerUser(dates.fechaIni, dates.fechaFin);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const timeStamp = e.target.name === 'fechaFin' ? 'T23:59:59Z' : 'T00:00:00Z';
@@ -119,6 +123,53 @@ const ECommerce: React.FC = () => {
             endDate={dates.fechaFin}
           />
         )}
+      </div>
+
+      {/* Total Events Per User */}
+      <div className="mt-6">
+        <div className="col-span-12 rounded-sm border border-stroke bg-white p-5 shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="mb-4 flex items-center justify-between">
+            <h4 className="text-title-sm2 font-bold text-black dark:text-white">Total events per user</h4>
+          </div>
+
+          {loadingTotalEvents ? (
+            <div className="py-6 text-center text-gray-600 dark:text-gray-300">{t('common.loading')}</div>
+          ) : totalEventsError ? (
+            <div className="py-6 text-center text-red-600">{totalEventsError}</div>
+          ) : (!totalEventsData || !totalEventsData.stats || totalEventsData.stats.length === 0) ? (
+            <div className="py-6 text-center text-gray-600 dark:text-gray-300">{t('common.no_results')}</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">Name</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">Email</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {totalEventsData.stats
+                    .slice()
+                    .sort((a, b) => Number(b.total) - Number(a.total))
+                    .map((s) => (
+                      <tr key={s.client_email} className="border-b border-stroke dark:border-strokedark">
+                        <td className="px-4 py-4">
+                          <p className="text-black dark:text-white">{`${s.client_firstname} ${s.client_lastname}`}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="text-black dark:text-white">{s.client_email}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="text-black dark:text-white font-semibold">{s.total}</p>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </DefaultLayout>
   );

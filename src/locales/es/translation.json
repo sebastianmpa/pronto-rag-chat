@@ -302,6 +302,8 @@
     "title": "Términos",
     "table": {
       "term": "Término",
+      "created_by": "Creado por",
+      "term_type": "Tipo de término",
       "definition": "Definición",
       "owned": "Propios",
       "search_user": "Buscar por usuario...",

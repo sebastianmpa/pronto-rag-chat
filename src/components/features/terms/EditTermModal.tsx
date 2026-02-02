@@ -17,6 +17,7 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
     term: '',
     definition: '',
     location: '1',
+    term_type: 'PARTNUMBER',
   });
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -26,6 +27,7 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
         term: term.term,
         definition: term.definition,
         location: term.location,
+        term_type: (term as any).term_type || 'PARTNUMBER',
       });
       setLocalError(null);
     }
@@ -37,7 +39,7 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
     
     setLocalError(null);
     try {
-      await update(term.id, formData);
+      await update(term.id, formData as any);
       onSuccess();
     } catch (err: any) {
       let errorMessage = 'Error al actualizar el término';
@@ -97,6 +99,19 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
               className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
             />
           </div>
+
+              {/* Term Type Field */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.term_type') || 'Term type'} *</label>
+                <select
+                  value={(formData as any).term_type}
+                  onChange={(e) => setFormData({ ...formData, term_type: e.target.value })}
+                  className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                >
+                  <option value="PARTNUMBER">PARTNUMBER</option>
+                  <option value="OTHER">OTHER</option>
+                </select>
+              </div>
 
           {/* Location Field */}
           <div>

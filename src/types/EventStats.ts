@@ -7,3 +7,15 @@ export interface EventStat {
 export interface EventStatsResponse {
   stats: EventStat[];
 }
+
+// Response for total events per user
+export interface TotalEventsPerUserStat {
+  client_firstname: string;
+  client_lastname: string;
+  client_email: string;
+  total: string;
+}
+
+export interface TotalEventsPerUserResponse {
+  stats: TotalEventsPerUserStat[];
+}

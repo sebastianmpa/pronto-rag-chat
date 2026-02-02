@@ -10,7 +10,7 @@ export const getTotalByEventType = async (fechaIni?: string, fechaFin?: string):
   if (fechaIni && fechaFin) {
     params = { fechaIni, fechaFin };
   }
-  const response = await axiosInstance.get<EventStatsResponse>(`/stats/${API_VERSION_V0}/get-total-by-even-type`, params ? { params } : undefined);
+  const response = await axiosInstance.get<EventStatsResponse>(`/stats/${API_VERSION_V0}/get-total-by-event-type`, params ? { params } : undefined);
   return response.data;
 };
 

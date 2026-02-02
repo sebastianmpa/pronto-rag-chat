@@ -13,12 +13,12 @@ interface EditLocatedTermModalProps {
 const EditLocatedTermModal = ({ isOpen, onClose, onSuccess, term }: EditLocatedTermModalProps) => {
   const { t } = useTranslation();
   const { update, loading, error } = useUpdateTerm();
-  const [formData, setFormData] = useState({ term: '', definition: '', location: '1' });
+  const [formData, setFormData] = useState({ term: '', definition: '', location: '1', term_type: 'PARTNUMBER' });
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (term) {
-      setFormData({ term: term.term, definition: term.definition, location: term.location });
+      setFormData({ term: term.term, definition: term.definition, location: term.location, term_type: term.term_type || 'PARTNUMBER' });
       setLocalError(null);
     }
   }, [term, isOpen]);
@@ -65,9 +65,23 @@ const EditLocatedTermModal = ({ isOpen, onClose, onSuccess, term }: EditLocatedT
             <textarea value={formData.definition} onChange={(e) => setFormData({ ...formData, definition: e.target.value })} required placeholder={t('terms.create_modal.definition_placeholder')} rows={4} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white" />
           </div>
 
+          {/* Term Type Field */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.term_type') || 'Term type'} *</label>
+            <select value={(formData as any).term_type} onChange={(e) => setFormData({ ...formData, term_type: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
+              <option value="PARTNUMBER">PARTNUMBER</option>
+              <option value="OTHER">OTHER</option>
+            </select>
+          </div>
+
           <div>
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.location')} *</label>
-            <select value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
+            <select
+              value={formData.location}
+              disabled
+              aria-disabled="true"
+              className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white cursor-not-allowed opacity-60"
+            >
               <option value="1">Location 1</option>
               <option value="4">Location 4</option>
             </select>

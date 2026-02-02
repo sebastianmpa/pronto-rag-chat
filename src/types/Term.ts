@@ -2,7 +2,14 @@ export interface Term {
   id: string;
   term: string;
   definition: string;
+  term_type?: string;
   location: string;
+  // optional creator info (may be provided by the API)
+  term_user?: {
+    firstName?: string;
+    lastName?: string;
+  };
+  user_id?: string;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
@@ -19,6 +26,7 @@ export interface TermDetailResponse {
   id: string;
   term: string;
   definition: string;
+  term_type?: string;
   location: string;
   createdAt: string;
   updatedAt: string;
@@ -28,13 +36,15 @@ export interface TermDetailResponse {
 export interface TermCreateRequest {
   term: string;
   definition: string;
-  location: string;
+  term_type: string;
+  location?: string;
 }
 
 export interface TermUpdateRequest {
   term?: string;
   definition?: string;
   location?: string;
+  term_type?: string;
 }
 
 export interface TermDefinitionResponse {
@@ -63,6 +73,15 @@ export interface LocatedTermsResponse {
 export interface TermLocatedCreateRequest {
   term: string;
   definition: string;
-  term_type?: string;
+  term_type: string;
+}
+
+export interface ServerValidationError {
+  campo: string;
+  mensaje: string;
+}
+
+export interface ValidationErrorResponse {
+  errors: ServerValidationError[];
 }
 

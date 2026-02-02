@@ -11,19 +11,30 @@ interface CreateLocatedTermModalProps {
 const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTermModalProps) => {
   const { t } = useTranslation();
   const { create, loading, error } = useCreateLocatedTerm();
-  const [formData, setFormData] = useState({ term: '', definition: '', location: '1', term_type: 'default' });
+  const [formData, setFormData] = useState({ term: '', definition: '', term_type: 'PARTNUMBER' });
   const [localError, setLocalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+    setFieldErrors({});
     try {
       await create(formData as any);
-      setFormData({ term: '', definition: '', location: '1', term_type: 'default' });
+      setFormData({ term: '', definition: '', term_type: 'PARTNUMBER' });
       onSuccess();
     } catch (err: any) {
       let errorMessage = 'Error al crear el término ubicado';
-      if (err?.response?.data?.message) {
+
+      const errors = err?.response?.data?.errors;
+      if (Array.isArray(errors)) {
+        const map: Record<string, string> = {};
+        errors.forEach((it: any) => {
+          if (it?.campo && it?.mensaje) map[it.campo] = it.mensaje;
+        });
+        setFieldErrors(map);
+        errorMessage = err?.response?.data?.message || 'Datos inválidos. Verifica los campos.';
+      } else if (err?.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err?.response?.status === 500) {
         errorMessage = 'Error interno del servidor. Por favor, intenta nuevamente más tarde';
@@ -49,19 +60,29 @@ const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTer
           <div>
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.term')} *</label>
             <input type="text" value={formData.term} onChange={(e) => setFormData({ ...formData, term: e.target.value })} required placeholder={t('terms.create_modal.term_placeholder')} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white" />
+            {fieldErrors.term && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-300">{fieldErrors.term}</p>
+            )}
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.definition')} *</label>
             <textarea value={formData.definition} onChange={(e) => setFormData({ ...formData, definition: e.target.value })} required placeholder={t('terms.create_modal.definition_placeholder')} rows={4} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white" />
+            {fieldErrors.definition && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-300">{fieldErrors.definition}</p>
+            )}
           </div>
 
+          {/* Term Type Field */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.location')} *</label>
-            <select value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
-              <option value="1">Location 1</option>
-              <option value="4">Location 4</option>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.term_type') || 'Term type'} *</label>
+            <select value={formData.term_type} onChange={(e) => setFormData({ ...formData, term_type: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
+              <option value="PARTNUMBER">PARTNUMBER</option>
+              <option value="OTHER">OTHER</option>
             </select>
+            {fieldErrors.term_type && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-300">{fieldErrors.term_type}</p>
+            )}
           </div>
 
           {displayError && (

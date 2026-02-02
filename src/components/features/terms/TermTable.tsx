@@ -5,10 +5,20 @@ import { Term, TermsResponse } from '../../../types/Term';
 import CreateTermModal from './CreateTermModal';
 import EditTermModal from './EditTermModal';
 import DeleteTermModal from './DeleteTermModal';
+import axiosInstance from '../../../interceptor/axiosInstance';
 
 const TermTable = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [termFilter, setTermFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  // user filter states (same behaviour as LocatedTermTable)
+  const [userQuery, setUserQuery] = useState<string>('');
+  const [userResults, setUserResults] = useState<Array<{ id: string; name: string }>>([]);
+  const [allUsers, setAllUsers] = useState<Array<{ id: string; name: string; email?: string }>>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
+  const userSearchTimer = useRef<number | null>(null);
   const [termsResponse, setTermsResponse] = useState<TermsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +48,7 @@ const TermTable = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getTermsPaginated(page, limit);
+      const result = await getTermsPaginated(page, limit, termFilter || undefined, locationFilter || undefined, selectedUserId || undefined);
       setTermsResponse(result);
     } catch (err: any) {
       setError(err?.message || 'Error fetching terms');
@@ -49,7 +59,8 @@ const TermTable = () => {
 
   useEffect(() => {
     fetchTerms();
-  }, [page, limit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, termFilter, locationFilter, selectedUserId]);
 
   const handleEdit = (termId: string) => {
     const term = termsResponse?.items?.find((t) => t.id === termId);
@@ -70,7 +81,103 @@ const TermTable = () => {
       {/* Header with page title and create button */}
           <div className="px-4 py-6 md:px-6 xl:px-7.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-black dark:text-white">{t('terms.title')}</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-black dark:text-white">{t('terms.title')}</h2>
+              <div className="mt-2">
+                <div className="flex items-center gap-3 bg-gray-50 dark:bg-boxdark-3 rounded-md px-3 py-2">
+                  {/* User filter (loads all users on focus, local filtering, remote fallback) */}
+                  <div className="relative">
+                    {selectedUserId ? (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm dark:bg-boxdark-4 border border-stroke">
+                        <span className="text-black dark:text-white">{selectedUserName || selectedUserId}</span>
+                        <button onClick={() => { setSelectedUserId(null); setSelectedUserName(null); setPage(1); }} className="text-xs text-gray-500 ml-2">×</button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="11" cy="11" r="6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <input
+                          type="text"
+                          value={userQuery}
+                          onChange={(e) => {
+                            setUserQuery(e.target.value);
+                            setSelectedUserId(null);
+                            if (userSearchTimer.current) window.clearTimeout(userSearchTimer.current);
+                            // debounce like LocatedTermTable
+                            // @ts-ignore
+                            userSearchTimer.current = window.setTimeout(() => {
+                              if (allUsers.length > 0) {
+                                const filtered = allUsers.filter(u => (u.name || '').toLowerCase().includes(e.target.value.toLowerCase()) || (u.email || '').toLowerCase().includes(e.target.value.toLowerCase()));
+                                setUserResults(filtered);
+                              } else {
+                                // remote search
+                                axiosInstance.get('/users/v0', { params: { nameFilter: e.target.value } }).then(resp => {
+                                  const items = resp.data?.items || resp.data || [];
+                                  const mapped = items.map((u: any) => ({ id: u.id, name: `${u.firstName || u.name || ''} ${u.lastName || ''}`.trim() || u.email || u.id, email: u.email }));
+                                  setUserResults(mapped);
+                                }).catch(() => setUserResults([]));
+                              }
+                            }, 200);
+                          }}
+                          onFocus={() => {
+                            if (allUsers.length === 0) {
+                              axiosInstance.get('/users/v0').then(resp => {
+                                const items = resp.data?.items || resp.data || [];
+                                const mapped = items.map((u: any) => ({ id: u.id, name: `${u.firstName || u.name || ''} ${u.lastName || ''}`.trim() || u.email || u.id, email: u.email }));
+                                setAllUsers(mapped);
+                                setUserResults(mapped);
+                              }).catch(() => { setAllUsers([]); setUserResults([]); });
+                            } else {
+                              setUserResults(allUsers);
+                            }
+                          }}
+                          onClick={() => {
+                            if (allUsers.length === 0) {
+                              axiosInstance.get('/users/v0').then(resp => {
+                                const items = resp.data?.items || resp.data || [];
+                                const mapped = items.map((u: any) => ({ id: u.id, name: `${u.firstName || u.name || ''} ${u.lastName || ''}`.trim() || u.email || u.id, email: u.email }));
+                                setAllUsers(mapped);
+                                setUserResults(mapped);
+                              }).catch(() => { setAllUsers([]); setUserResults([]); });
+                            } else {
+                              setUserResults(allUsers);
+                            }
+                          }}
+                          placeholder={t('terms.table.search_user') || 'Buscar usuario...'}
+                          className="h-9 w-64 rounded border border-stroke bg-white pl-9 pr-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                        />
+
+                        {userResults.length > 0 && (
+                          <ul className="absolute left-0 top-full z-50 mt-1 max-h-40 w-56 overflow-auto rounded border bg-white py-1 shadow-md dark:bg-boxdark">
+                            {userResults.map((u) => (
+                              <li key={u.id}>
+                                <button onClick={() => { setSelectedUserId(u.id); setSelectedUserName(u.name); setUserResults([]); setUserQuery(''); setPage(1); }} className="block w-full px-3 py-1 text-left text-sm hover:bg-gray-100 dark:hover:bg-boxdark-3">{u.name}</button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={termFilter}
+                    onChange={(e) => { setTermFilter(e.target.value); setPage(1); }}
+                    placeholder={t('terms.table.search_placeholder')}
+                    className="h-9 w-56 rounded border border-stroke bg-white pl-3 pr-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                  />
+                  <select
+                    value={locationFilter}
+                    onChange={(e) => { setLocationFilter(e.target.value); setPage(1); }}
+                    className="h-9 w-40 rounded border border-stroke bg-white px-2 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                  >
+                    <option value="">{t('terms.table.location') || 'Location'}</option>
+                    <option value="1">Location 1</option>
+                    <option value="4">Location 4</option>
+                  </select>
+                </div>
+              </div>
+            </div>
         </div>
 
         <div>
@@ -110,9 +217,13 @@ const TermTable = () => {
                   <th className="min-w-[200px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11">
                     {t('terms.table.term')}
                   </th>
-                  <th className="min-w-[300px] px-4 py-4 font-medium text-black dark:text-white">
+                  <th className="min-w-[300px] px-4 py-4 font-medium text-black dark:text-white align-top">
                     {t('terms.table.definition')}
                   </th>
+                  <th className="min-w-[140px] px-4 py-4 font-medium text-black dark:text-white align-top">
+                    {t('terms.table.term_type')}
+                  </th>
+                  <th className="min-w-[220px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.created_by') || 'Creado por'}</th>
                   <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">
                     {t('terms.table.location')}
                   </th>
@@ -131,7 +242,7 @@ const TermTable = () => {
                       <td className="px-4 py-5 pl-9">
                         <p className="text-black dark:text-white font-medium">{term.term}</p>
                       </td>
-                      <td className="px-4 py-5">
+                      <td className="px-4 py-5 align-top">
                         <div className="flex items-center gap-2">
                           <p className="text-black dark:text-white truncate max-w-xs" title={term.definition}>
                             {term.definition}
@@ -151,6 +262,12 @@ const TermTable = () => {
                             <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-4 py-5 align-top">
+                        <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.term_type || '-'}</span>
+                      </td>
+                      <td className="px-4 py-5 align-top">
+                        <p className="text-black dark:text-white">{(term as any).term_user ? `${(term as any).term_user.firstName || ''} ${(term as any).term_user.lastName || ''}`.trim() : (term as any).user_id || t('user_no_name')}</p>
                       </td>
                       <td className="px-4 py-5">
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">
@@ -224,7 +341,7 @@ const TermTable = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                       {t('common.no_results')}
                     </td>
                   </tr>

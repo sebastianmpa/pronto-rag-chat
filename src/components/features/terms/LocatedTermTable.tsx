@@ -253,11 +253,13 @@ const LocatedTermTable = () => {
             <table className="w-full table-auto">
               <thead>
                 <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                  <th className="min-w-[200px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11">{t('terms.table.term')}</th>
-                  <th className="min-w-[300px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.definition')}</th>
-                  <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.location')}</th>
-                  <th className="min-w-[150px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.created_at')}</th>
-                  <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">{t('terms.table.actions')}</th>
+                  <th className="min-w-[200px] px-4 py-4 font-medium text-black dark:text-white xl:pl-11 align-top">{t('terms.table.term')}</th>
+                  <th className="min-w-[300px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.definition')}</th>
+                  <th className="min-w-[140px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.term_type')}</th>
+                  <th className="min-w-[220px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.created_by') || 'Creado por'}</th>
+                  <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.location')}</th>
+                  <th className="min-w-[150px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.created_at')}</th>
+                  <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,6 +288,14 @@ const LocatedTermTable = () => {
                           )}
                         </div>
                       </td>
+                      <td className="px-4 py-5 align-top">
+                        <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.term_type || '-'}</span>
+                      </td>
+                      <td className="px-4 py-5 align-top">
+                        <div className="flex flex-col">
+                          <p className="text-black dark:text-white">{term.term_user ? `${term.term_user.firstName || ''} ${term.term_user.lastName || ''}`.trim() : term.user_id || t('user_no_name')}</p>
+                        </div>
+                      </td>
                       <td className="px-4 py-5">
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.location}</span>
                       </td>
@@ -309,7 +319,7 @@ const LocatedTermTable = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">{t('common.no_results')}</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">{t('common.no_results')}</td>
                   </tr>
                 )}
               </tbody>

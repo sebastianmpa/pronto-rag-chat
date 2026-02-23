@@ -66,6 +66,34 @@
   "parts": {
     "related_parts_information": "Información de Partes Relacionadas"
   },
+  "productParts": {
+    "table": {
+      "title": "Partes de Productos",
+      "model_name": "Nombre del Modelo",
+      "serie": "Serie",
+      "type": "Tipo",
+      "manuals_count": "Cantidad de Manuales",
+      "view": "Ver",
+      "actions": "Acciones",
+      "search_placeholder": "Buscar modelos...",
+      "select_brand": "Selecciona una marca",
+      "loading_brands": "Cargando marcas...",
+      "loading_models": "Cargando modelos...",
+      "no_models": "No se encontraron modelos",
+      "no_models_for_brand": "No hay modelos disponibles para {{brand}}",
+      "try_adjusting_search": "Intenta ajustar tus criterios de búsqueda",
+      "no_manuals": "Sin manuales",
+      "available_manuals": "Manuales Disponibles",
+      "serial_number": "Número de Serie",
+      "download": "Descargar",
+      "download_manual": "Descargar Manual {{number}}",
+      "view_manual": "Ver Manual {{number}}",
+      "select_brand_message": "Selecciona una Marca",
+      "select_brand_description": "Elige una marca del menú desplegable de arriba para ver sus partes de productos y modelos",
+      "showing_models": "Mostrando {{count}} de {{total}} modelos | Página {{currentPage}} de {{totalPages}}",
+      "page": "Página"
+    }
+  },
   "permissions": {
     "table": {
       "name": "Nombre",
@@ -241,6 +269,7 @@
     "myMessages": "Mis Mensajes",
     "allMessages": "Todos los Mensajes",
     "parts": "Partes",
+    "productParts": "Partes de Productos",
     "terms": "Términos",
     "loading": "Cargando..."
   },

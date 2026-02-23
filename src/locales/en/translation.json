@@ -116,6 +116,34 @@
   "parts": {
     "related_parts_information": "Related Parts Information"
   },
+  "productParts": {
+    "table": {
+      "title": "Product Parts",
+      "model_name": "Model Name",
+      "serie": "Series",
+      "type": "Type",
+      "manuals_count": "Manuals Count",
+      "view": "View",
+      "actions": "Actions",
+      "search_placeholder": "Search models...",
+      "select_brand": "Select a brand",
+      "loading_brands": "Loading brands...",
+      "loading_models": "Loading models...",
+      "no_models": "No models found",
+      "no_models_for_brand": "No models available for {{brand}}",
+      "try_adjusting_search": "Try adjusting your search criteria",
+      "no_manuals": "No manuals",
+      "available_manuals": "Available Manuals",
+      "serial_number": "Serial Number",
+      "download": "Download",
+      "download_manual": "Download Manual {{number}}",
+      "view_manual": "View Manual {{number}}",
+      "select_brand_message": "Select a Brand",
+      "select_brand_description": "Choose a brand from the dropdown above to view its product parts and models",
+      "showing_models": "Showing {{count}} of {{total}} models | Page {{currentPage}} of {{totalPages}}",
+      "page": "Page"
+    }
+  },
   "permissions": {
     "table": {
       "name": "Name",
@@ -247,6 +275,7 @@
     "myMessages": "My Messages",
     "allMessages": "All Messages",
     "parts": "Parts",
+    "productParts": "Product Parts",
     "terms": "Terms",
     "loading": "Loading..."
   },

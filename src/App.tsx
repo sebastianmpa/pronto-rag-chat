@@ -17,6 +17,7 @@ import PrivateRoute from './components/PrivateRoute';
 import { useUserProfile } from './hooks/useUser';
 import SignIn from './pages/Authentication/SignIn';
 import PartsPage from './pages/Pages/PartsPage';
+import ProductParts from './pages/Pages/ProductParts';
 
 
 function App() {
@@ -99,6 +100,18 @@ function App() {
             <Route
               path="/parts"
               element={<PartsPage />}
+            />
+          )}
+          {/* Ruta para product parts (marcas y modelos) - admin, supervisor, supervisorL1, supervisorL4 */}
+          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+            <Route
+              path="/product-parts"
+              element={
+                <>
+                  <PageTitle title="Product Parts | TailAdmin" />
+                  <ProductParts />
+                </>
+              }
             />
           )}
           {/* Ruta para terms - SOLO administradores */}

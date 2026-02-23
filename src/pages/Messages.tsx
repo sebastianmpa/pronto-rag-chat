@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
 import DefaultLayout from '../layout/DefaultLayout';
 import { useConversationsPaginated, useConversationById } from '../hooks/useConversation';
@@ -9,302 +8,15 @@ import { useCustomerById } from '../hooks/useCustomer';
 import { format } from 'date-fns';
 
 // Helper para extraer texto y tabla del content
-const parseMessageContent = (content: string, hasTable: boolean) => {
-  if (!hasTable) {
-    return { text: content, tableData: null };
+const parseMessageContent = (content: string, _hasTable?: boolean, tableData?: { partInfo?: any[] }): { text: string; tableData: any[] | null } => {
+  // Si tenemos tableData estructurado del nuevo formato de respuesta, priorizarlo
+  if (tableData?.partInfo && Array.isArray(tableData.partInfo)) {
+    console.log('[parseMessageContent] ✅ Using structured tableData with', tableData.partInfo.length, 'items');
+    return { text: content, tableData: tableData.partInfo };
   }
-
-  try {
-    let textContent = content;
-    let tableData = null;
-
-    // Paso 0: Buscar y extraer JSON embebido al final con patrón ._____{'partInfo':...}
-    let jsonMatch = content.match(/\._____(\{[\s\S]*\})$/);
-    
-    // Si no encuentra con ._____,  buscar _____ sin punto
-    if (!jsonMatch) {
-      jsonMatch = content.match(/_____(\{[\s\S]*\})$/);
-    }
-    
-    // Si no encuentra con _____, buscar {'partInfo' en el content
-    if (!jsonMatch) {
-      const jsonStartIdx = content.indexOf("{'partInfo'");
-      if (jsonStartIdx !== -1) {
-        // Encontrar el final del JSON (último })
-        let braceCount = 0;
-        let inString = false;
-        let stringChar = '';
-        let jsonEndIdx = -1;
-        
-        for (let i = jsonStartIdx; i < content.length; i++) {
-          const char = content[i];
-          const prevChar = i > 0 ? content[i - 1] : '';
-          
-          if ((char === '"' || char === "'") && prevChar !== '\\') {
-            if (!inString) {
-              inString = true;
-              stringChar = char;
-            } else if (char === stringChar) {
-              inString = false;
-            }
-          }
-          
-          if (!inString) {
-            if (char === '{' || char === '[') braceCount++;
-            else if (char === '}' || char === ']') braceCount--;
-            
-            if (braceCount === 0 && i > jsonStartIdx) {
-              jsonEndIdx = i;
-              break;
-            }
-          }
-        }
-        
-        if (jsonEndIdx !== -1) {
-          jsonMatch = [content.substring(jsonStartIdx, jsonEndIdx + 1), content.substring(jsonStartIdx, jsonEndIdx + 1)];
-        }
-      }
-    }
-    
-    if (jsonMatch && jsonMatch[1]) {
-      let jsonStr = jsonMatch[1]; // Extrae del content ORIGINAL (puede tener None, True, False)
-      textContent = content.substring(0, content.lastIndexOf(jsonStr)); // Remover el JSON del content ORIGINAL
-      textContent = textContent.replace(/_____$/, '').trim(); // Remover separador si existe
-      
-      console.log('[parseMessageContent] Found JSON embebido, attempting to parse. Length:', jsonStr.length);
-      console.log('[parseMessageContent] JSON (first 200 chars):', jsonStr.substring(0, 200));
-      
-      try {
-        // Estrategia INTELIGENTE: reemplazar comillas simples SOLO en delimitadores de keys/values
-        let normalized = jsonStr;
-        
-        // 1. Reemplazar None, True, False DENTRO del JSON
-        normalized = normalized.replace(/:\s*None\b/g, ': null');
-        normalized = normalized.replace(/:\s*True\b/g, ': true');
-        normalized = normalized.replace(/:\s*False\b/g, ': false');
-        normalized = normalized.replace(/,\s*None\b/g, ', null');
-        normalized = normalized.replace(/,\s*True\b/g, ', true');
-        normalized = normalized.replace(/,\s*False\b/g, ', false');
-        normalized = normalized.replace(/\[\s*None\s*\]/g, '[null]');
-        
-        // 2. Reemplazar comillas simples por dobles, pero SOLO las que rodean keys o valores
-        // Patrón: 'key': o : 'value', o [' o , '
-        normalized = normalized.replace(/'/g, '"');
-        
-        // 3. Ahora tenemos un problema: las comillas dentro de URLs que eran simples se convirtieron en dobles
-        // Ejemplo: "jpg?c=2" debería ser "jpg?c=2" (sin cambio, es válido)
-        // Pero si hay: "BEARING, 3/4\" ROLLER" esto está mal
-        // Necesitamos escapar comillas dobles que estén dentro de strings
-        
-        // Estrategia: procesar carácter por carácter para identificar y escapar comillas mal colocadas
-        let fixed = '';
-        let inString = false;
-        
-        for (let i = 0; i < normalized.length; i++) {
-          const char = normalized[i];
-          const prevChar = i > 0 ? normalized[i - 1] : '';
-          const nextChar = i < normalized.length - 1 ? normalized[i + 1] : '';
-          
-          if (char === '"' && prevChar !== '\\') {
-            if (!inString) {
-              inString = true;
-              fixed += char;
-            } else {
-              if (nextChar === ',' || nextChar === '}' || nextChar === ']' || 
-                  nextChar === ':' || i === normalized.length - 1) {
-                inString = false;
-                fixed += char;
-              } else {
-                fixed += '\\"';
-              }
-            }
-          } else {
-            fixed += char;
-          }
-        }
-        
-        normalized = fixed;
-        
-        console.log('[parseMessageContent] Strategy 1: Normalized JSON (first 300 chars):', normalized.substring(0, 300));
-        
-        const parsed = JSON.parse(normalized);
-        console.log('[parseMessageContent] ✅ Strategy 1 - JSON parsed successfully');
-        
-        // Si tiene partInfo array, usarlo como tableData
-        if (parsed.partInfo && Array.isArray(parsed.partInfo)) {
-          tableData = parsed.partInfo;
-          console.log('[parseMessageContent] ✅ partInfo array found with', tableData.length, 'items');
-          return { text: textContent, tableData };
-        }
-        
-        // Si el parsed en sí es un objeto con propiedades de part, tratarlo como tabla
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          // Si tiene las propiedades típicas de una parte individual, envolverlo en array
-          if (parsed.mfrId || parsed.partNumber || parsed.MFRID || parsed.PARTNUMBER) {
-            tableData = [parsed];
-            console.log('[parseMessageContent] ✅ Single part object detected, wrapping in array');
-            return { text: textContent, tableData };
-          }
-        }
-      } catch (e) {
-        console.log('[parseMessageContent] Strategy 1 failed:', e.message);
-        
-        // Intento final: usar eval con try-catch (más permisivo)
-        try {
-          console.log('[parseMessageContent] Attempting Strategy 1B (eval)...');
-          const evaluated = eval('(' + jsonStr + ')');
-          if (evaluated && evaluated.partInfo && Array.isArray(evaluated.partInfo)) {
-            tableData = evaluated.partInfo;
-            console.log('[parseMessageContent] ✅ Strategy 1B - partInfo array found with', tableData.length, 'items');
-            return { text: textContent, tableData };
-          }
-        } catch (evalError) {
-          console.log('[parseMessageContent] Strategy 1B (eval) also failed:', evalError.message);
-        }
-        
-        // Continuar con el parsing tradicional
-      }
-    }
-
-    // Si no encontramos JSON embebido, intentar parsear todo el content como antes
-    let parsed: any = null;
-    if (typeof content === 'string') {
-      let normalized = content;
-      
-      // Reemplazar None, True, False
-      normalized = normalized.replace(/\bNone\b/g, 'null');
-      normalized = normalized.replace(/\bTrue\b/g, 'true');
-      normalized = normalized.replace(/\bFalse\b/g, 'false');
-      
-      console.log('[parseMessageContent] First 100 chars of normalized:', normalized.substring(0, 100));
-      
-      // Reparar comillas dobles sin escape dentro de valores
-      normalized = normalized.replace(/": "([^"]*)"/g, (match, value) => {
-        if (value.includes('"')) {
-          const escapedValue = value.replace(/"/g, '\\"');
-          return `": "${escapedValue}"`;
-        }
-        return match;
-      });
-      
-      // Buscar patrones rotos como: "14" Chain FITS
-      normalized = normalized.replace(/": "([^"]*)"([^,}\]]*)(,|\}|\])/g, (match, start, middle, end) => {
-        if (middle && middle.trim()) {
-          const escapedStart = start.replace(/"/g, '\\"');
-          const escapedMiddle = middle.replace(/"/g, '\\"');
-          return `": "${escapedStart}\\\"${escapedMiddle}"${end}`;
-        }
-        return match;
-      });
-      
-      console.log('[parseMessageContent] Chars 560-590:', normalized.substring(560, 590));
-      console.log('[parseMessageContent] Attempting JSON.parse...');
-      
-      try {
-        parsed = JSON.parse(normalized);
-        console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 2):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-      } catch (e) {
-        console.log('[parseMessageContent] Strategy 2 failed:', e.message);
-        const errorPos = parseInt(e.message.match(/position (\d+)/)?.[1] || '0');
-        console.log('[parseMessageContent] Error at position', errorPos);
-        console.log('[parseMessageContent] Context (pos', errorPos - 50, 'to', errorPos + 50, '):', normalized.substring(Math.max(0, errorPos - 50), errorPos + 50));
-        
-        // Strategy 3: Intentar reparar escapes dobles problemáticos
-        try {
-          console.log('[parseMessageContent] Strategy 3: Fixing double escapes...');
-          let repaired = normalized;
-          // Reemplazar \" WORD\" con \" WORD (quitar el último escape)
-          repaired = repaired.replace(/\\\\" ([^"]*)\\""/g, '\\" $1"');
-          console.log('[parseMessageContent] Attempting JSON.parse after repair...');
-          parsed = JSON.parse(repaired);
-          console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 3 - escape repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-        } catch (e3) {
-          console.log('[parseMessageContent] Strategy 3 failed:', e3.message);
-          
-          // Strategy 4: Reparación más agresiva
-          let aggressiveRepair = normalized.replace(/"(\d+)"\s+(\w)/g, '"$1\\\"$2');
-          
-          try {
-            console.log('[parseMessageContent] Strategy 4: Aggressive repair...');
-            parsed = JSON.parse(aggressiveRepair);
-            console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 4):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-          } catch (e4) {
-            console.log('[parseMessageContent] Strategy 4 failed:', e4.message);
-            
-            // Strategy 5: Character-by-character repair
-            try {
-              console.log('[parseMessageContent] Strategy 5: Character-by-character repair...');
-              let sanitized = '';
-              let inStr = false;
-              let strChar = '';
-              let prevC = '';
-              
-              for (let i = 0; i < normalized.length; i++) {
-                const char = normalized[i];
-                
-                if ((char === '"' || char === "'") && prevC !== '\\') {
-                  if (!inStr) {
-                    inStr = true;
-                    strChar = char;
-                    sanitized += '"';
-                  } else if (char === strChar) {
-                    inStr = false;
-                    sanitized += '"';
-                  } else {
-                    sanitized += '\\' + char;
-                  }
-                } else {
-                  sanitized += char;
-                }
-                
-                prevC = char;
-              }
-              
-              parsed = JSON.parse(sanitized);
-              console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 5):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-            } catch (e5) {
-              console.log('[parseMessageContent] ❌ All parsing strategies failed:', e5.message);
-              // Si todo falla, retornar null tableData porque el contenido no es JSON válido
-              return { text: content, tableData: null };
-            }
-          }
-        }
-      }
-    } else {
-      parsed = content;
-    }
-
-    // Si parsed ES un array directo, retorna como tableData inmediatamente
-    if (Array.isArray(parsed)) {
-      console.log('[parseMessageContent] 🎯 Array detected, returning tableData with', parsed.length, 'items');
-      return { text: textContent, tableData: parsed };
-    }
-
-    // Si tiene partInfo array (desde JSON embebido que se parseó correctamente)
-    if (parsed && parsed.partInfo && Array.isArray(parsed.partInfo)) {
-      console.log('[parseMessageContent] 🎯 partInfo array detected, returning tableData with', parsed.partInfo.length, 'items');
-      return { text: textContent, tableData: parsed.partInfo };
-    }
-
-    // Si tiene answer tipo array
-    if (parsed && parsed.answer && Array.isArray(parsed.answer)) {
-      return { text: textContent, tableData: parsed.answer };
-    }
-
-    // Fallback: solo retornar tableData si parsed es array. Si es objeto o inválido, retornar null
-    if (Array.isArray(parsed?.table)) {
-      return { text: textContent, tableData: parsed.table };
-    }
-    
-    // Si parsed es un objeto pero no tiene un array válido, retornar null
-    return {
-      text: content,
-      tableData: null
-    };
-  } catch (e) {
-    console.log('[parseMessageContent] Final error:', e.message);
-    return { text: content, tableData: null };
-  }
+  
+  // Si no hay tableData estructurado, no hay tabla
+  return { text: content, tableData: null };
 };
 
 
@@ -398,7 +110,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({ data }) 
         const superseded = item.superseded || general.SUPERCEDETO || '-';
         const cantidad = item.qty_loc ?? general.QTY_LOC ?? '-';
         const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
-        const alternateLocation = currentLocation === 1 ? 4 : 1;
+        
         return (
           <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-4xl mx-auto">
             {/* Header del acordeón */}
@@ -1091,10 +803,10 @@ const Messages: React.FC = () => {
                         // Detectar automáticamente si el mensaje tiene tabla/acordeón
                         let hasTable = false;
                         if (msg.role === 'assistant') {
-                          // 1. Si viene el flag table
-                          if (msg.table === true) {
+                          // 1. Si viene el flag table o hay table_data estructurado
+                          if (msg.table === true || (msg.table_data && msg.table_data.partInfo && Array.isArray(msg.table_data.partInfo))) {
                             hasTable = true;
-                            console.log('[hasTable detection] Flag msg.table === true');
+                            console.log('[hasTable detection] Flag msg.table === true or structured table_data found');
                           } else if (typeof msg.content === 'string') {
                             const trimmed = msg.content.trim();
                             
@@ -1129,15 +841,18 @@ const Messages: React.FC = () => {
                             }
                           }
                         }
-                        // Parsear el content si tiene tabla
+                        // Parsear el content pasando el tableData del mensaje
                         const { text, tableData } = hasTable
-                          ? parseMessageContent(msg.content, true)
+                          ? parseMessageContent(msg.content, hasTable, msg.table_data)
                           : { text: msg.content, tableData: null };
                         
                         // Si hasTable es true y el text está vacío o es solo JSON, no mostrar texto
                         const shouldRenderText = !hasTable || (text && text.trim().length > 0 && !text.trim().startsWith('[') && !text.trim().startsWith('{'));
                         
                         console.log('[Render] hasTable:', hasTable, '| tableData type:', Array.isArray(tableData) ? `Array[${tableData.length}]` : typeof tableData, '| shouldRenderText:', shouldRenderText);
+                        if (msg.table_data) {
+                          console.log('[Render] msg.table_data present:', typeof msg.table_data, msg.table_data.partInfo ? `partInfo[${msg.table_data.partInfo.length}]` : 'no partInfo');
+                        }
                         
                         // Custom message for 'No answer found'
                         let content = text;

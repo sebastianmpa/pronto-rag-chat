@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import Breadcrumb from '../components/Breadcrumbs/Breadcrumb';
 import DropdownDefault from '../components/Dropdowns/DropdownDefault';
 import DefaultLayout from '../layout/DefaultLayout';
 import { useMyConversationsPaginated, useMyConversationById } from '../hooks/useConversation';
 import { getMyConversationsPaginated } from '../libs/ConversationService';
 import { format } from 'date-fns';
-// import { es } from 'date-fns/locale/es'; // Unused
 import { useUserProfile } from '../hooks/useUser';
 import { sendMessageToConversationService } from '../libs/ConversationService';
 import { RatingBubble, RatingType } from '../components/RatingBubble';
 import { useRating } from '../hooks/useRating';
 import { useStockTransfer } from '../hooks/useStockTransfer';
+import { usePricing } from '../hooks/usePricing';
+import { useCustomerSearch } from '../hooks/useCustomerSearch';
 
 // Helper functions
 const formatDate = (date: string) => {
@@ -19,344 +19,16 @@ const formatDate = (date: string) => {
 };
 
 // Helper para extraer texto y tabla del content
-const parseMessageContent = (content: string, hasTable: boolean) => {
-  if (!hasTable) {
-    return { text: content, tableData: null };
+// Helper para extraer texto y tabla del content
+const parseMessageContent = (content: string, _hasTable?: boolean, tableData?: { partInfo?: any[] }): { text: string; tableData: any[] | null } => {
+  // Si tenemos tableData estructurado del nuevo formato de respuesta, priorizarlo
+  if (tableData?.partInfo && Array.isArray(tableData.partInfo)) {
+    console.log('[parseMessageContent] ✅ Using structured tableData with', tableData.partInfo.length, 'items');
+    return { text: content, tableData: tableData.partInfo };
   }
-
-  try {
-    let textContent = content;
-    let tableData = null;
-
-    // Paso 0: Buscar y extraer JSON embebido al final con patrón ._____{'partInfo':...}
-    let jsonMatch = content.match(/\._____(\{[\s\S]*\})$/);
-    
-    // Si no encuentra con ._____,  buscar _____ sin punto
-    if (!jsonMatch) {
-      jsonMatch = content.match(/_____(\{[\s\S]*\})$/);
-    }
-    
-    // Si no encuentra con _____, buscar {'partInfo' en el content
-    if (!jsonMatch) {
-      const jsonStartIdx = content.indexOf("{'partInfo'");
-      if (jsonStartIdx !== -1) {
-        // Encontrar el final del JSON (último })
-        let braceCount = 0;
-        let inString = false;
-        let stringChar = '';
-        let jsonEndIdx = -1;
-        
-        for (let i = jsonStartIdx; i < content.length; i++) {
-          const char = content[i];
-          const prevChar = i > 0 ? content[i - 1] : '';
-          
-          // Track string state
-          if ((char === '"' || char === "'") && prevChar !== '\\') {
-            if (!inString) {
-              inString = true;
-              stringChar = char;
-            } else if (char === stringChar) {
-              inString = false;
-            }
-          }
-          
-          // Count braces only outside strings
-          if (!inString) {
-            if (char === '{') braceCount++;
-            if (char === '}') {
-              braceCount--;
-              if (braceCount === 0) {
-                jsonEndIdx = i + 1;
-                break;
-              }
-            }
-          }
-        }
-        
-        if (jsonEndIdx !== -1) {
-          jsonMatch = [null, content.substring(jsonStartIdx, jsonEndIdx)];
-        }
-      }
-    }
-    
-    if (jsonMatch && jsonMatch[1]) {
-      let jsonStr = jsonMatch[1]; // Extrae del content ORIGINAL (puede tener None, True, False)
-      textContent = content.substring(0, content.lastIndexOf(jsonStr)); // Remover el JSON del content ORIGINAL
-      textContent = textContent.replace(/_____$/, '').trim(); // Remover separador si existe
-      
-      console.log('[parseMessageContent] Found JSON embebido, attempting to parse. Length:', jsonStr.length);
-      console.log('[parseMessageContent] JSON (first 200 chars):', jsonStr.substring(0, 200));
-      
-      try {
-        // Estrategia INTELIGENTE: reemplazar comillas simples SOLO en delimitadores de keys/values
-        let normalized = jsonStr;
-        
-        // 0. Limpiar escapes de comillas problemáticos PRIMERO
-        // Patrón: \\"\" -> simplemente \"
-        normalized = normalized.replace(/\\\\"\s*"/g, '\\"');
-        normalized = normalized.replace(/\\\\",/g, '",');
-        normalized = normalized.replace(/\\\\"\}/g, '"}');
-        normalized = normalized.replace(/\\\\"\]/g, '"]');
-        
-        // 0b. Limpiar \\" al final de strings antes de comas o llaves
-        normalized = normalized.replace(/\\\\",/g, '",');
-        normalized = normalized.replace(/\\\\"\}/g, '"}');
-        
-        // 1. Reemplazar None, True, False DENTRO del JSON
-        normalized = normalized.replace(/:\s*None\b/g, ': null');
-        normalized = normalized.replace(/:\s*True\b/g, ': true');
-        normalized = normalized.replace(/:\s*False\b/g, ': false');
-        normalized = normalized.replace(/,\s*None\b/g, ', null');
-        normalized = normalized.replace(/,\s*True\b/g, ', true');
-        normalized = normalized.replace(/,\s*False\b/g, ', false');
-        normalized = normalized.replace(/\[\s*None\s*\]/g, '[null]');
-        
-        // 2. Reemplazar comillas simples por dobles
-        normalized = normalized.replace(/'/g, '"');
-        
-        // 3. Ahora tenemos un problema: las comillas dentro de URLs que eran simples se convirtieron en dobles
-        // Ejemplo: "jpg?c=2" debería ser "jpg?c=2" (sin cambio, es válido)
-        // Pero si hay: "BEARING, 3/4\" ROLLER" esto está mal
-        // Necesitamos escapar comillas dobles que estén dentro de strings
-        
-        // Estrategia: procesar carácter por carácter para identificar y escapar comillas mal colocadas
-        let fixed = '';
-        let inString = false;
-        let stringDelim = '';
-        
-        for (let i = 0; i < normalized.length; i++) {
-          const char = normalized[i];
-          const prevChar = i > 0 ? normalized[i - 1] : '';
-          const nextChar = i < normalized.length - 1 ? normalized[i + 1] : '';
-          
-          // Track si estamos dentro de un string
-          if (char === '"' && prevChar !== '\\') {
-            if (!inString) {
-              inString = true;
-              stringDelim = '"';
-              fixed += char;
-            } else {
-              // Verificar si es realmente el cierre o si es una comilla dentro del string
-              // Si el siguiente carácter es ',' o '}' o ']' o ':', probablemente es cierre
-              if (nextChar === ',' || nextChar === '}' || nextChar === ']' || nextChar === ':' || i === normalized.length - 1) {
-                inString = false;
-                fixed += char;
-              } else {
-                // Es una comilla dentro del string, escaparla
-                fixed += '\\"';
-              }
-            }
-          } else {
-            fixed += char;
-          }
-        }
-        
-        normalized = fixed;
-        
-        console.log('[parseMessageContent] Strategy 1: Normalized JSON (first 300 chars):', normalized.substring(0, 300));
-        
-        const parsed = JSON.parse(normalized);
-        console.log('[parseMessageContent] ✅ Strategy 1 - JSON parsed successfully');
-        
-        // Si tiene partInfo array, usarlo como tableData
-        if (parsed.partInfo && Array.isArray(parsed.partInfo)) {
-          tableData = parsed.partInfo;
-          console.log('[parseMessageContent] ✅ partInfo array found with', tableData.length, 'items');
-          return { text: textContent, tableData };
-        }
-        
-        // Si el parsed en sí es un objeto con propiedades de part, tratarlo como tabla
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          // Si tiene las propiedades típicas de una parte individual, envolverlo en array
-          if (parsed.mfrId || parsed.partNumber || parsed.MFRID || parsed.PARTNUMBER) {
-            tableData = [parsed];
-            console.log('[parseMessageContent] ✅ Single part object detected, wrapping in array');
-            return { text: textContent, tableData };
-          }
-        }
-      } catch (e) {
-        console.log('[parseMessageContent] Strategy 1 failed:', e.message);
-        
-        // Intento final: usar eval con try-catch (más permisivo)
-        try {
-          console.log('[parseMessageContent] Attempting Strategy 1B (eval)...');
-          const evaluated = eval('(' + jsonStr + ')');
-          if (evaluated && evaluated.partInfo && Array.isArray(evaluated.partInfo)) {
-            console.log('[parseMessageContent] ✅ Strategy 1B (eval) succeeded, found partInfo with', evaluated.partInfo.length, 'items');
-            return { text: textContent, tableData: evaluated.partInfo };
-          }
-        } catch (evalError) {
-          console.log('[parseMessageContent] Strategy 1B (eval) also failed:', evalError.message);
-        }
-        
-        // Continuar con el parsing tradicional
-      }
-    }
-
-    // Si no encontramos JSON embebido, intentar parsear todo el content como antes
-    let parsed: any = null;
-    if (typeof content === 'string') {
-      let normalized = content;
-      
-      // Reemplazar None, True, False
-      normalized = normalized.replace(/\bNone\b/g, 'null');
-      normalized = normalized.replace(/\bTrue\b/g, 'true');
-      normalized = normalized.replace(/\bFalse\b/g, 'false');
-      
-      // Strategy 1.5: Limpiar escapes de comillas problemáticos ANTES de parsear
-      // Patrón: \\"\" (comilla escapada doble + comilla de cierre) -> simplificar a \"
-      // Esto se ve en: "UNIVERSAL FUEL FILTER - 1/4\\"\"" 
-      // Convertir a: "UNIVERSAL FUEL FILTER - 1/4\""
-      normalized = normalized.replace(/\\\\"\s*"/g, '\\"');
-      
-      // También limpiar patrones como: \\" al final de un string que precede a , o }
-      // Patrón: "texto\\"", -> "texto"",
-      normalized = normalized.replace(/\\\\",/g, '",');
-      normalized = normalized.replace(/\\\\"\}/g, '"}');
-      normalized = normalized.replace(/\\\\"\]/g, '"]');
-      
-      console.log('[parseMessageContent] First 100 chars of normalized:', normalized.substring(0, 100));
-      
-      // Reparar comillas dobles sin escape dentro de valores
-      normalized = normalized.replace(/": "([^"]*)"/g, (match, value) => {
-        if (value.includes('"')) {
-          const escapedValue = value.replace(/"/g, '\\"');
-          return `": "${escapedValue}"`;
-        }
-        return match;
-      });
-      
-      // Buscar patrones rotos como: "14" Chain FITS
-      normalized = normalized.replace(/": "([^"]*)"([^,}\]]*)(,|\}|\])/g, (match, start, middle, end) => {
-        if (middle && middle.trim()) {
-          const escapedStart = start.replace(/"/g, '\\"');
-          const escapedMiddle = middle.replace(/"/g, '\\"');
-          return `": "${escapedStart}\\\"${escapedMiddle}"${end}`;
-        }
-        return match;
-      });
-      
-      console.log('[parseMessageContent] Chars 560-590:', normalized.substring(560, 590));
-      console.log('[parseMessageContent] Attempting JSON.parse...');
-      
-      try {
-        parsed = JSON.parse(normalized);
-        console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 2):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-      } catch (e) {
-        console.log('[parseMessageContent] Strategy 2 failed:', e.message);
-        const errorPos = parseInt(e.message.match(/position (\d+)/)?.[1] || '0');
-        console.log('[parseMessageContent] Error at position', errorPos);
-        console.log('[parseMessageContent] Context (pos', errorPos - 50, 'to', errorPos + 50, '):', normalized.substring(Math.max(0, errorPos - 50), errorPos + 50));
-        
-        // Strategy 3: Intentar reparar escapes dobles problemáticos
-        try {
-          console.log('[parseMessageContent] Strategy 3: Fixing double escapes...');
-          let repaired = normalized;
-          
-          // Patrón principal: \\"\" al final de strings
-          repaired = repaired.replace(/\\\\"\s*"/g, '\\"');
-          repaired = repaired.replace(/\\\\",/g, '",');
-          repaired = repaired.replace(/\\\\"\}/g, '"}');
-          repaired = repaired.replace(/\\\\"\]/g, '"]');
-          
-          // Otro patrón: \\" seguido de caracteres no escapados
-          repaired = repaired.replace(/\\\\" ([^"]*)\\""/g, '\\" $1"');
-          
-          console.log('[parseMessageContent] Attempting JSON.parse after repair...');
-          parsed = JSON.parse(repaired);
-          console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 3 - escape repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-        } catch (e3) {
-          console.log('[parseMessageContent] Strategy 3 failed:', e3.message);
-          
-          // Strategy 4: Reparación más agresiva - remover completamente los \\" problemáticos
-          let aggressiveRepair = normalized;
-          // Remover todos los \\" seguidos de comilla de cierre de objeto/array
-          aggressiveRepair = aggressiveRepair.replace(/\\\\"/g, '');
-          
-          try {
-            parsed = JSON.parse(aggressiveRepair);
-            console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 4 - aggressive repair):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-          } catch (e2) {
-            console.log('[parseMessageContent] Strategy 4 failed:', e2.message);
-            
-            // Último intento: procesar carácter por carácter
-            try {
-              let sanitized = '';
-              let inString = false;
-              let stringChar = '';
-              let prevChar = '';
-              
-              for (let i = 0; i < normalized.length; i++) {
-                const char = normalized[i];
-                const nextChar = normalized[i + 1] || '';
-                
-                if ((char === '"' || char === "'") && prevChar !== '\\') {
-                  if (!inString) {
-                    inString = true;
-                    stringChar = char;
-                    sanitized += '"';
-                  } else if (char === stringChar) {
-                    inString = false;
-                    sanitized += '"';
-                  } else {
-                    sanitized += '\\' + char;
-                  }
-                } else {
-                  sanitized += char;
-                }
-                
-                prevChar = char;
-              }
-              
-              parsed = JSON.parse(sanitized);
-              console.log('[parseMessageContent] ✅ JSON parsed successfully (Strategy 5 - character-by-character):', Array.isArray(parsed) ? `Array with ${parsed.length} items` : typeof parsed);
-            } catch (e4) {
-              console.log('[parseMessageContent] Strategy 5 failed:', e4.message);
-              console.log('[parseMessageContent] ❌ All parsing strategies failed:', e4.message);
-              // Si todo falla, retornar null tableData porque el contenido no es JSON válido
-              return { text: content, tableData: null };
-            }
-          }
-        }
-      }
-    } else {
-      parsed = content;
-    }
-
-    // Si parsed ES un array directo, retorna como tableData inmediatamente
-    if (Array.isArray(parsed)) {
-      console.log('[parseMessageContent] 🎯 Array detected, returning tableData with', parsed.length, 'items');
-      return { text: textContent, tableData: parsed };
-    }
-
-    // Si tiene partInfo array (desde JSON embebido que se parseó correctamente)
-    if (parsed && parsed.partInfo && Array.isArray(parsed.partInfo)) {
-      console.log('[parseMessageContent] 🎯 partInfo array detected, returning tableData with', parsed.partInfo.length, 'items');
-      return { text: textContent, tableData: parsed.partInfo };
-    }
-
-    // Si tiene answer tipo array
-    if (parsed && parsed.answer && Array.isArray(parsed.answer)) {
-      console.log('[parseMessageContent] 🎯 answer array detected, returning tableData with', parsed.answer.length, 'items');
-      return { text: textContent, tableData: parsed.answer };
-    }
-
-    // Fallback: solo retornar tableData si parsed es array. Si es objeto o inválido, retornar null
-    if (Array.isArray(parsed?.table)) {
-      console.log('[parseMessageContent] 🎯 table array detected, returning tableData with', parsed.table.length, 'items');
-      return { text: textContent, tableData: parsed.table };
-    }
-    
-    // Si parsed es un objeto pero no tiene un array válido, retornar null
-    console.log('[parseMessageContent] ⚠️ parsed is object but no valid array found. Type:', typeof parsed);
-    return {
-      text: content,
-      tableData: null
-    };
-  } catch (e) {
-    console.log('[parseMessageContent] Final error:', e.message);
-    return { text: content, tableData: null };
-  }
+  
+  // Si no hay tableData estructurado, no hay tabla
+  return { text: content, tableData: null };
 };
 
 // Formatea los mensajes del assistant para saltos de línea y URLs
@@ -531,7 +203,7 @@ const renderMessageContent = (content: string, role?: string, onSkuClick?: (sku:
 
 
 // Nuevo componente: PartsAccordion
-const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededClick?: (superseded: string) => void }> = ({ data, messageId, onSupersededClick }) => {
+const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededClick?: (superseded: string) => void }> = ({ data, messageId: _messageId, onSupersededClick }) => {
   const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
@@ -542,8 +214,29 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferError, setTransferError] = useState<string | null>(null);
   const [transferSuccess, setTransferSuccess] = useState(false);
+  const [pricingModalIdx, setPricingModalIdx] = useState<number | null>(null);
+  const [pricingForm, setPricingForm] = useState({ mfr: '', partNumber: '', customerName: '' });
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [pricingResult, setPricingResult] = useState<any>(null);
+  const [pricingStep, setPricingStep] = useState<'search' | 'select' | 'result'>('search');
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [pricingRelatedIdx, setPricingRelatedIdx] = useState<{itemIdx: number, partIdx: number} | null>(null);
   const orderInputRef = useRef<HTMLInputElement>(null);
+  const customerInputRef = useRef<HTMLInputElement>(null);
   const { requestTransfer: hookRequestTransfer } = useStockTransfer();
+  const { 
+    pricing,
+    loading: pricingHookLoading,
+    error: pricingHookError,
+    fetchPricing 
+  } = usePricing();
+  const { 
+    customers,
+    loading: customerSearchLoading,
+    error: customerSearchError,
+    searchCustomers 
+  } = useCustomerSearch();
   
   // Wrapper for requestTransfer that handles loading, error, and success states
   const requestTransfer = async (payload: any) => {
@@ -558,13 +251,103 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
     }
     setTransferLoading(false);
   };
+
+  // Handle customer search (step 1)
+  const handleCustomerSearch = async () => {
+    if (!pricingForm.customerName.trim()) {
+      setPricingError('Please enter a customer name, email, or phone number');
+      return;
+    }
+
+    try {
+      setPricingLoading(true);
+      setPricingError(null);
+      
+      // Search for customers using the hook
+      await searchCustomers({
+        q: pricingForm.customerName.trim(),
+        page: 1,
+        limit: 100 // Load up to 100 customers
+      });
+
+      // Wait a moment for the hook to update
+      setTimeout(() => {
+        if (customerSearchError) {
+          setPricingError(customerSearchError);
+        } else if (!customers || customers.length === 0) {
+          setPricingError('No customers found with that search term');
+        } else {
+          setPricingStep('select');
+        }
+        setPricingLoading(false);
+      }, 500);
+    } catch (err: any) {
+      setPricingError(err?.message || 'Failed to search for customers');
+      setPricingLoading(false);
+    }
+  };
+
+  // Handle pricing fetch (step 2)
+  const handlePricingFetch = async (customer: any) => {
+    try {
+      setPricingLoading(true);
+      setPricingError(null);
+      setSelectedCustomer(customer);
+      
+      await fetchPricing({
+        mfrId: pricingForm.mfr,
+        partNumber: pricingForm.partNumber,
+        customerId: customer.CUSTOMERID
+      });
+
+      // Wait for the hook to update, then check the result
+      setTimeout(() => {
+        if (pricingHookError) {
+          setPricingError(pricingHookError);
+        } else if (pricing) {
+          setPricingResult({
+            ...pricing,
+            customer: {
+              id: customer.CUSTOMERID,
+              name: customer.NAME,
+              firstName: customer.FIRSTNAME,
+              lastName: customer.LASTNAME,
+              phone: customer.PHONE,
+              email: customer.EMAIL,
+              city: customer.CITY,
+              state: customer.STATE
+            }
+          });
+          setPricingStep('result');
+        }
+        setPricingLoading(false);
+      }, 500);
+    } catch (err: any) {
+      setPricingError(err?.message || 'Failed to get pricing information');
+      setPricingLoading(false);
+    }
+  };
+
+  // Reset pricing modal
+  const resetPricingModal = () => {
+    setPricingModalIdx(null);
+    setPricingRelatedIdx(null);
+    setPricingError(null);
+    setPricingResult(null);
+    setPricingStep('search');
+    setSelectedCustomer(null);
+    setPricingForm({ mfr: '', partNumber: '', customerName: '' });
+  };
   
   // Focus on order input when modal opens
   useEffect(() => {
     if (transferModalIdx !== null && orderInputRef.current) {
       setTimeout(() => orderInputRef.current?.focus(), 100);
     }
-  }, [transferModalIdx]);
+    if (pricingModalIdx !== null && customerInputRef.current) {
+      setTimeout(() => customerInputRef.current?.focus(), 100);
+    }
+  }, [transferModalIdx, pricingModalIdx]);
   
   if (!Array.isArray(data)) {
     console.log('[PartsAccordion] Data is not an array:', typeof data);
@@ -663,7 +446,6 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
         const superseded = item.superseded || general.SUPERCEDETO || '-';
         const cantidad = item.qty_loc ?? general.QTY_LOC ?? '-';
         const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
-        const alternateLocation = currentLocation === 1 ? 4 : 1;
         
         return (
           <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-4xl mx-auto">
@@ -719,8 +501,8 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
               <div className="flex flex-col items-end justify-center mr-2 ml-3">
                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
                 {/* Botón para cambiar de ubicación si existe alternativa */}
+                <div className="flex items-center gap-2 mt-1">
                   {hasAlternateLocation && (
-                  <div className="mt-1">
                     <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark" role="tablist" aria-label="Locations switch">
                       <button
                         type="button"
@@ -742,8 +524,27 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                         4
                       </button>
                     </div>
-                  </div>
-                )}
+                  )}
+                  
+                  {/* Pricing Button */}
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-xs font-medium rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
+                    title="Get pricing information"
+                    onClick={() => {
+                      setPricingForm({ 
+                        mfr: mfrId, 
+                        partNumber: partNumber, 
+                        customerName: '' 
+                      });
+                      setPricingModalIdx(idx);
+                      setPricingError(null);
+                      setPricingResult(null);
+                    }}
+                  >
+                    💰
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2 ml-2">
                 {/* Transfer button - ONLY SHOW ON LOCATION 4 */}
@@ -841,17 +642,39 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                                   {part.PARTNUMBER || '-'}
                                 </span>
                                 {part.PARTNUMBER && (
-                                  <button
-                                    type="button"
-                                    className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
-                                    title={t('parts_accordion.copy_part_number')}
-                                    onClick={() => handleCopyRelated(part.PARTNUMBER, idx, pidx)}
-                                  >
-                                    <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                                      <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                                    </svg>
-                                  </button>
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
+                                      title={t('parts_accordion.copy_part_number')}
+                                      onClick={() => handleCopyRelated(part.PARTNUMBER, idx, pidx)}
+                                    >
+                                      <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                        <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                      </svg>
+                                    </button>
+                                    {/* Pricing button for related parts */}
+                                    <button
+                                      type="button"
+                                      className="p-0.5 rounded hover:bg-green-100 dark:hover:bg-green-900 border border-transparent focus:outline-none flex-shrink-0"
+                                      title="Get pricing for this part"
+                                      onClick={() => {
+                                        setPricingForm({ 
+                                          mfr: part.MFRID || '', 
+                                          partNumber: part.PARTNUMBER || '', 
+                                          customerName: '' 
+                                        });
+                                        setPricingRelatedIdx({itemIdx: idx, partIdx: pidx});
+                                        setPricingError(null);
+                                        setPricingResult(null);
+                                        setPricingStep('search');
+                                        setSelectedCustomer(null);
+                                      }}
+                                    >
+                                      <span className="text-xs">💰</span>
+                                    </button>
+                                  </>
                                 )}
                                 {copiedRelatedIdx?.itemIdx === idx && copiedRelatedIdx?.partIdx === pidx && (
                                   <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
@@ -1065,143 +888,244 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
           </div>
         </div>
       )}
-    </div>
-  );
-};
 
-// Componente para renderizar la tabla desplegable (formato antiguo)
-const TableCollapsible: React.FC<{ 
-  tableData: any; 
-  messageId: string; 
-  isExpanded: boolean; 
-  onToggle: () => void 
-}> = ({ tableData, isExpanded, onToggle }) => {
-  const { t } = useTranslation();
-  // Si table es false o "error", no mostrar nada
-  if (tableData === false || tableData === 'error' || !tableData) return null;
-
-  const { generalInfo, relatedParts } = tableData;
-
-  return (
-    <div className="mt-3 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-3xl mx-auto">
-      {/* Header clickeable */}
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark"
-      >
-        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-          📊 {t('parts_accordion.parts_information')}
-        </span>
-        <svg
-          className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* Pricing Modal */}
+      {(pricingModalIdx !== null || pricingRelatedIdx !== null) && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={resetPricingModal}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Tabla desplegable */}
-      {isExpanded && (
-        <div className="overflow-auto max-h-[500px]">
-          {/* General Info como tabla principal */}
-          {generalInfo && (
-            <div className="overflow-x-auto min-w-[600px]">
-              <table className="w-full table-auto border-collapse text-xs">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-boxdark-2 border-b border-stroke dark:border-strokedark">
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.mfr_id')}</th>
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.part_number')}</th>
-                    <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.description')}</th>
-                    {generalInfo.SUPERCEDETO && (
-                      <th className="px-2 py-2 text-left font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.superseded')}</th>
-                    )}
-                    <th className="px-2 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">{t('parts_accordion.qty')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
-                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.MFRID || '-'}</td>
-                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.PARTNUMBER || '-'}</td>
-                    <td className="px-2 py-2 text-gray-900 dark:text-white">{generalInfo.DESCRIPTION || '-'}</td>
-                    {generalInfo.SUPERCEDETO && (
-                      <td className="px-2 py-2 text-gray-900 dark:text-white font-medium text-blue-600 dark:text-blue-400">
-                        {generalInfo.SUPERCEDETO}
-                      </td>
-                    )}
-                    <td className="px-2 py-2 text-right text-gray-900 dark:text-white">{generalInfo.QTY_LOC ?? '-'}</td>
-                  </tr>
-                  {/* Related Parts como filas expandidas */}
-                  {relatedParts && relatedParts.length > 0 && (
-                    <tr>
-                      <td colSpan={4} className="bg-gray-50 dark:bg-boxdark-2 px-3 py-3">
-                        <div className="mb-2">
-                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                            {t('parts_accordion.related_products')} ({relatedParts.length})
-                          </span>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs border border-stroke dark:border-strokedark">
-                            <thead className="bg-white dark:bg-boxdark">
-                              <tr>
-                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  {t('parts_accordion.mfr_id')}
-                                </th>
-                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  {t('parts_accordion.part_number')}
-                                </th>
-                                <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  {t('parts_accordion.description')}
-                                </th>
-                                <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                  {t('parts_accordion.qty')}
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-boxdark">
-                              {relatedParts.map((part: any, idx: number) => (
-                                <tr
-                                  key={idx}
-                                  className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2"
-                                >
-                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
-                                    {part.MFRID || '-'}
-                                  </td>
-                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
-                                    {part.PARTNUMBER || '-'}
-                                  </td>
-                                  <td className="px-2 py-1 text-gray-900 dark:text-white">
-                                    {part.DESCRIPTION || '-'}
-                                  </td>
-                                  <td className="px-2 py-1 text-right text-gray-900 dark:text-white">
-                                    {part.QUANTITYLOC ?? '-'}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          <div
+            className="rounded-2xl border border-green-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-md relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
+              💰 Pricing Information
             </div>
-          )}
+            
+            {pricingStep === 'result' && pricingResult ? (
+              // Step 3: Show pricing information
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-base font-semibold text-green-700 dark:text-green-300">
+                    Pricing Details
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPricingStep('select')}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    ← Back to customers
+                  </button>
+                </div>
+                
+                {/* Customer Info */}
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Customer Information</h4>
+                  <div className="text-xs space-y-1">
+                    <div><strong>ID:</strong> {pricingResult.customer?.id}</div>
+                    <div><strong>Name:</strong> {pricingResult.customer?.name}</div>
+                    {pricingResult.customer?.phone && (
+                      <div><strong>Phone:</strong> {pricingResult.customer.phone}</div>
+                    )}
+                    {pricingResult.customer?.email && (
+                      <div><strong>Email:</strong> {pricingResult.customer.email}</div>
+                    )}
+                    <div><strong>Location:</strong> {pricingResult.customer?.city}, {pricingResult.customer?.state}</div>
+                  </div>
+                </div>
+
+                {/* Part Info */}
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Part Information</h4>
+                  <div className="text-xs space-y-1">
+                    <div><strong>Manufacturer:</strong> {pricingResult.mfr_id}</div>
+                    <div><strong>Part Number:</strong> {pricingResult.part_number}</div>
+                  </div>
+                </div>
+
+                {/* Pricing Info */}
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">Pricing Details</h4>
+                  <div className="text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span>Customer Type:</span>
+                      <span className="font-semibold">{pricingResult.customer_type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Price Level:</span>
+                      <span className="font-semibold">{pricingResult.customer_price_level}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>List Price:</span>
+                      <span className="font-semibold">${pricingResult.list_price}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 text-lg">
+                      <span className="font-bold">Net Price:</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">${pricingResult.net_price}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150"
+                  onClick={resetPricingModal}
+                >
+                  Close
+                </button>
+              </div>
+            ) : pricingStep === 'select' && customers && customers.length > 0 ? (
+              // Step 2: Select customer from list
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-base font-semibold text-green-700 dark:text-green-300">
+                    Select Customer ({customers.length} found)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPricingStep('search')}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    ← New search
+                  </button>
+                </div>
+                
+                {/* Customer List */}
+                <div className="mb-4 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                  {customers.map((customer) => (
+                    <div
+                      key={customer.CUSTOMERID}
+                      className="p-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                      onClick={() => handlePricingFetch(customer)}
+                    >
+                      <div className="font-semibold text-sm">{customer.NAME}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                        <div>ID: {customer.CUSTOMERID}</div>
+                        {customer.PHONE && <div>Phone: {customer.PHONE}</div>}
+                        {customer.EMAIL && <div>Email: {customer.EMAIL}</div>}
+                        <div>Location: {customer.CITY}, {customer.STATE}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
+                  onClick={resetPricingModal}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              // Step 1: Search for customers
+              <>
+                <p className="mb-4 text-base font-semibold text-green-700 dark:text-green-300 text-center">
+                  Get Pricing Information
+                </p>
+                
+                {/* Search Field */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Customer Search <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    ref={customerInputRef}
+                    type="text"
+                    value={pricingForm.customerName}
+                    onChange={e => setPricingForm({ ...pricingForm, customerName: e.target.value })}
+                    placeholder="Enter name, email, or phone number"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
+                    onKeyPress={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCustomerSearch();
+                      }
+                    }}
+                  />
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Search by name, email address, or phone number
+                  </div>
+                </div>
+                
+                {/* MFR (read-only) */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Manufacturer
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={pricingForm.mfr}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                {/* Part Number (read-only) */}
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Part Number
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={pricingForm.partNumber}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                {/* Error message */}
+                {pricingError && (
+                  <p className="text-red-500 text-xs mb-3 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
+                    {pricingError}
+                  </p>
+                )}
+                
+                {/* Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
+                    onClick={resetPricingModal}
+                    disabled={pricingLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150 ${
+                      !pricingForm.customerName.trim() || pricingLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={handleCustomerSearch}
+                    disabled={!pricingForm.customerName.trim() || pricingLoading}
+                  >
+                    {pricingLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Searching...
+                      </span>
+                    ) : (
+                      'Search Customers'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 };
 
+
+
 const MessagesMe: React.FC = () => {
   const { t } = useTranslation();
   const [pageOffset, setPageOffset] = useState<number | null>(null);
   // Search state for chat list
   const [searchTerm, setSearchTerm] = useState('');
-  // State para controlar qué tabla está abierta (por message id)
-  const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
   // Animación CSS para los puntos de typing
   const typingDotsStyle = `
     @keyframes chat-typing {
@@ -1324,7 +1248,7 @@ const MessagesMe: React.FC = () => {
   // Mensajes locales que aún no han sido confirmados por el backend
   const [localMessages, setLocalMessages] = useState<any[]>([]);
   // Estado de error para mostrar mensajes de error
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   // Efecto typing del assistant
   const [assistantTyping, setAssistantTyping] = useState(false);
   // Rating state
@@ -1501,15 +1425,16 @@ const MessagesMe: React.FC = () => {
         }
       }
 
-      // Mostrar el mensaje del assistant si hay answer
-      if (apiResponse && apiResponse.answer) {
+      // Mostrar el mensaje del assistant si hay answer o table_data
+      if (apiResponse && (apiResponse.answer || apiResponse.table_data)) {
         setLocalMessages(prev => [
           ...prev,
           {
             id: `assistant-${Date.now()}`,
             role: 'assistant',
-            content: apiResponse.answer,
-            table: apiResponse.table || false, // Boolean que indica si hay tabla en el content
+            content: apiResponse.answer || '',
+            table: apiResponse.table || (apiResponse.table_data && apiResponse.table_data.partInfo ? true : false), // Boolean que indica si hay tabla
+            table_data: apiResponse.table_data, // Nueva estructura de datos
             createdAt: new Date().toISOString(),
           }
         ]);
@@ -1819,29 +1744,34 @@ const MessagesMe: React.FC = () => {
                            // Detectar automáticamente si el mensaje tiene tabla/acordeón
                            let hasTable = false;
                            if (msg.role === 'assistant') {
-                             // 1. Si viene el flag table
-                             if (msg.table === true) {
+                             // 1. Si tiene table_data con partInfo (nuevo formato estructurado)
+                             if (msg.table_data && msg.table_data.partInfo && Array.isArray(msg.table_data.partInfo)) {
                                hasTable = true;
-                               console.log('[hasTable detection] Flag msg.table === true');
+                               console.log('[hasTable detection] ✅ New structured table_data format detected with partInfo array');
+                             }
+                             // 2. Si viene el flag table (formato legacy)
+                             else if (msg.table === true) {
+                               hasTable = true;
+                               console.log('[hasTable detection] Flag msg.table === true (legacy)');
                              } else if (typeof msg.content === 'string') {
                                const trimmed = msg.content.trim();
                                
-                               // 2. Si contiene el patrón _____{'partInfo':...} - PRIORITY: check FIRST
+                               // 3. Si contiene el patrón _____{'partInfo':...} - PRIORITY: check FIRST (legacy)
                                if (msg.content.includes('_____') && msg.content.includes('partInfo')) {
                                  hasTable = true;
-                                 console.log('[hasTable detection] ✅ Embedded partInfo pattern detected');
+                                 console.log('[hasTable detection] ✅ Embedded partInfo pattern detected (legacy)');
                                }
                                // 3. Si incluye el separador antiguo
                                else if (msg.content.includes('--------')) {
                                  hasTable = true;
-                                 console.log('[hasTable detection] Separator "--------" found');
+                                 console.log('[hasTable detection] Separator "--------" found (legacy)');
                                }
                                // 4. Si el string STARTS with [ (pure JSON array) - must start AND end with [ ]
                                else if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
                                  // Additional check: must contain { to be array of objects
                                  if (trimmed.includes('{')) {
                                    hasTable = true;
-                                   console.log('[hasTable detection] ✅ Array pattern detected');
+                                   console.log('[hasTable detection] ✅ Array pattern detected (legacy)');
                                  }
                                }
                                // 5. Si el string STARTS with { (pure JSON object) - must start AND end with { }
@@ -1849,17 +1779,17 @@ const MessagesMe: React.FC = () => {
                                  // Additional check: must contain typical part fields
                                  if (trimmed.includes('partNumber') || trimmed.includes('related_parts') || trimmed.includes('general_info') || trimmed.includes('MFRID') || trimmed.includes('PARTNUMBER')) {
                                    hasTable = true;
-                                   console.log('[hasTable detection] Object pattern detected');
+                                   console.log('[hasTable detection] Object pattern detected (legacy)');
                                  }
                                }
                                else {
-                                 console.log('[hasTable detection] ❌ No pattern match. Content starts with:', trimmed.substring(0, 50));
+                                 console.log('[hasTable detection] ❌ No pattern match (legacy). Content starts with:', trimmed.substring(0, 50));
                                }
                              }
                            }
                            // Parsear el content si tiene tabla
                            const { text, tableData } = hasTable
-                             ? parseMessageContent(msg.content, true)
+                             ? parseMessageContent(msg.content, true, msg.table_data)
                              : { text: msg.content, tableData: null };
                            
                            // Si hasTable es true y el text está vacío o es solo JSON, no mostrar texto
@@ -1894,17 +1824,10 @@ const MessagesMe: React.FC = () => {
                                          {renderMessageContent(text, msg.role, handleSupersededClicked)}
                                        </p>
                                      )}
-                                     {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}
-                                     {msg.role === 'assistant' && tableData && Array.isArray(tableData) ? (
+                                     {/* Mostrar acordeón si tableData es array */}
+                                     {msg.role === 'assistant' && tableData && Array.isArray(tableData) && (
                                        <PartsAccordion data={tableData} messageId={msg.id} onSupersededClick={handleSupersededClicked} />
-                                     ) : msg.role === 'assistant' && tableData ? (
-                                       <TableCollapsible
-                                         tableData={tableData}
-                                         messageId={msg.id}
-                                         isExpanded={expandedTableId === msg.id}
-                                         onToggle={() => setExpandedTableId(expandedTableId === msg.id ? null : msg.id)}
-                                       />
-                                     ) : null}
+                                     )}
                                    </div>
                                    <div className={`mt-1 text-xs text-gray-500 dark:text-gray-400 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                                      <div className="flex items-center gap-3 flex-wrap">

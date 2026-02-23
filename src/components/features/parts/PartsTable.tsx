@@ -2,7 +2,10 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePartInfo } from '../../../hooks/usePartInfo';
 import { useStockTransfer } from '../../../hooks/useStockTransfer';
+import { usePricing } from '../../../hooks/usePricing';
+import { useCustomerSearch } from '../../../hooks/useCustomerSearch';
 import { PartInfo } from '../../../types/partInfo';
+import { Customer } from '../../../types/customers';
 
 const PartsTable = () => {
   const { t } = useTranslation();
@@ -19,6 +22,18 @@ const PartsTable = () => {
   const [transferSuccess, setTransferSuccess] = useState(false);
   const orderInputRef = useRef<HTMLInputElement>(null);
   const { requestTransfer: hookRequestTransfer } = useStockTransfer();
+
+  // Pricing modal states
+  const [pricingModalIdx, setPricingModalIdx] = useState<number | null>(null);
+  const [pricingModalStep, setPricingModalStep] = useState<'search' | 'select' | 'result'>('search');
+  const [pricingSearchTerm, setPricingSearchTerm] = useState('');
+  const [pricingSelectedCustomer, setPricingSelectedCustomer] = useState<Customer | null>(null);
+  const [pricingCurrentItem, setPricingCurrentItem] = useState<{ mfrId: string; partNumber: string } | null>(null);
+  const [relatedPricingModalKey, setRelatedPricingModalKey] = useState<string | null>(null);
+  
+  // Use pricing and customer search hooks
+  const { pricing, pricingHookLoading, pricingHookError, fetchPricing, clearPricing } = usePricing();
+  const { customers, customerHookLoading, customerHookError, searchCustomers } = useCustomerSearch();
 
   // Hook para obtener la info de la parte
   const { partInfoList, loading: loadingPart, error, fetchPartInfo } = usePartInfo(partNumberFilter);
@@ -82,12 +97,85 @@ const PartsTable = () => {
     setTransferLoading(false);
   };
   
+  // Pricing helper functions
+  const openPricingModal = (idx: number, mfrId: string, partNumber: string) => {
+    setPricingModalIdx(idx);
+    setPricingModalStep('search');
+    setPricingSearchTerm('');
+    setPricingSelectedCustomer(null);
+    setPricingCurrentItem({ mfrId, partNumber });
+    setRelatedPricingModalKey(null);
+    clearPricing();
+  };
+
+  const openRelatedPricingModal = (itemIdx: number, partIdx: number, mfrId: string, partNumber: string) => {
+    const key = `${itemIdx}-${partIdx}`;
+    setRelatedPricingModalKey(key);
+    setPricingModalStep('search');
+    setPricingSearchTerm('');
+    setPricingSelectedCustomer(null);
+    setPricingCurrentItem({ mfrId, partNumber });
+    setPricingModalIdx(null);
+    clearPricing();
+  };
+
+  const closePricingModal = () => {
+    setPricingModalIdx(null);
+    setRelatedPricingModalKey(null);
+    setPricingModalStep('search');
+    setPricingSearchTerm('');
+    setPricingSelectedCustomer(null);
+    setPricingCurrentItem(null);
+    clearPricing();
+  };
+
+  const handlePricingSearch = async () => {
+    if (pricingSearchTerm.trim()) {
+      await searchCustomers(pricingSearchTerm.trim(), 1, 100);
+      setPricingModalStep('select');
+    }
+  };
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setPricingSelectedCustomer(customer);
+    setPricingModalStep('result');
+    handlePricingFetch();
+  };
+
+  const handlePricingFetch = () => {
+    if (pricingSelectedCustomer && pricingCurrentItem) {
+      fetchPricing({
+        mfrId: pricingCurrentItem.mfrId,
+        partNumber: pricingCurrentItem.partNumber,
+        customerId: pricingSelectedCustomer.id
+      });
+      // Use setTimeout to allow state to update
+      setTimeout(() => {
+        // Pricing will be available in the pricing state from usePricing hook
+      }, 100);
+    }
+  };
+  
   // Focus on order input when modal opens
   useEffect(() => {
     if (transferModalIdx !== null && orderInputRef.current) {
       setTimeout(() => orderInputRef.current?.focus(), 100);
     }
   }, [transferModalIdx]);
+
+  // Handle pricing modal keyboard events
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && (pricingModalIdx !== null || relatedPricingModalKey !== null)) {
+        closePricingModal();
+      }
+    };
+
+    if (pricingModalIdx !== null || relatedPricingModalKey !== null) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [pricingModalIdx, relatedPricingModalKey]);
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -241,6 +329,14 @@ const PartsTable = () => {
                     <div className="flex items-center gap-2 ml-2">
                       <button
                         type="button"
+                        className="px-3 py-1 text-xs font-medium rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
+                        onClick={() => openPricingModal(idx, item.mfrId, item.partNumber)}
+                        title="Get pricing information"
+                      >
+                        💰
+                      </button>
+                      <button
+                        type="button"
                         className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
                         onClick={async () => {
                           setPartNumberFilter(item.partNumber);
@@ -321,6 +417,9 @@ const PartsTable = () => {
                                   <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
                                     {t('parts_accordion.qty')}
                                   </th>
+                                  <th className="px-2 py-1 text-center font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
+                                    {t('parts_accordion.actions')}
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody className="bg-white dark:bg-boxdark">
@@ -363,6 +462,16 @@ const PartsTable = () => {
                                     </td>
                                     <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION}</td>
                                     <td className="px-2 py-1 text-right text-gray-900 dark:text-white">{part.QUANTITYLOC}</td>
+                                    <td className="px-2 py-1 text-center">
+                                      <button
+                                        type="button"
+                                        className="p-0.5 rounded hover:bg-green-100 dark:hover:bg-green-900 border border-transparent focus:outline-none flex-shrink-0"
+                                        onClick={() => openRelatedPricingModal(idx, pidx, part.MFRID, part.PARTNUMBER)}
+                                        title="Get pricing for this part"
+                                      >
+                                        <span className="text-xs">💰</span>
+                                      </button>
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -554,6 +663,250 @@ const PartsTable = () => {
                       </span>
                     ) : (
                       t('common.submit') || 'Submit'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Pricing Modal */}
+      {(pricingModalIdx !== null || relatedPricingModalKey !== null) && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={closePricingModal}
+        >
+          <div
+            className="rounded-2xl border border-green-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-md relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
+              💰 Pricing Information
+            </div>
+            
+            {pricingModalStep === 'result' && pricing ? (
+              // Step 3: Show pricing information
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-base font-semibold text-green-700 dark:text-green-300">
+                    Pricing Details
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPricingModalStep('select')}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    ← Back to customers
+                  </button>
+                </div>
+                
+                {/* Customer Info */}
+                {pricingSelectedCustomer && (
+                  <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Customer Information</h4>
+                    <div className="text-xs space-y-1">
+                      <div><strong>ID:</strong> {pricingSelectedCustomer.id}</div>
+                      <div><strong>Name:</strong> {pricingSelectedCustomer.name}</div>
+                      {pricingSelectedCustomer.phone && (
+                        <div><strong>Phone:</strong> {pricingSelectedCustomer.phone}</div>
+                      )}
+                      {pricingSelectedCustomer.email && (
+                        <div><strong>Email:</strong> {pricingSelectedCustomer.email}</div>
+                      )}
+                      <div><strong>Location:</strong> {pricingSelectedCustomer.city}, {pricingSelectedCustomer.state}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Part Info */}
+                {pricingCurrentItem && (
+                  <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Part Information</h4>
+                    <div className="text-xs space-y-1">
+                      <div><strong>Manufacturer:</strong> {pricingCurrentItem.mfrId}</div>
+                      <div><strong>Part Number:</strong> {pricingCurrentItem.partNumber}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pricing Info */}
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">Pricing Details</h4>
+                  {pricingHookLoading ? (
+                    <div className="text-center py-4">
+                      <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Loading pricing information...</p>
+                    </div>
+                  ) : pricingHookError ? (
+                    <div className="text-center py-4">
+                      <p className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
+                        {pricingHookError}
+                      </p>
+                    </div>
+                  ) : pricing ? (
+                    <div className="text-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">List Price:</span>
+                        <span className="font-semibold">${pricing.listPrice?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Your Price:</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">${pricing.customerPrice?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Core Price:</span>
+                        <span className="font-semibold">${pricing.corePrice?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Availability:</span>
+                        <span className="font-semibold">{pricing.availability || 'N/A'}</span>
+                      </div>
+                      {pricing.discount && pricing.discount > 0 && (
+                        <div className="flex justify-between pt-2 border-t border-green-300 dark:border-green-600">
+                          <span className="text-green-700 dark:text-green-300">Discount:</span>
+                          <span className="font-semibold text-green-700 dark:text-green-300">{pricing.discount}%</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500 text-sm">No pricing information available</p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150"
+                  onClick={closePricingModal}
+                >
+                  Close
+                </button>
+              </div>
+            ) : pricingModalStep === 'select' && customers.length > 0 ? (
+              // Step 2: Select customer from search results
+              <div>
+                <p className="mb-4 text-base font-semibold text-green-700 dark:text-green-300 text-center">
+                  Select Customer
+                </p>
+                
+                <div className="mb-4 max-h-60 overflow-y-auto space-y-2">
+                  {customers.map((customer) => (
+                    <div
+                      key={customer.id}
+                      className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600 transition-all"
+                      onClick={() => handleCustomerSelect(customer)}
+                    >
+                      <div className="font-semibold text-sm">{customer.name}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                        <div>ID: {customer.id}</div>
+                        {customer.phone && <div>Phone: {customer.phone}</div>}
+                        {customer.email && <div>Email: {customer.email}</div>}
+                        <div>Location: {customer.city}, {customer.state}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
+                  onClick={closePricingModal}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              // Step 1: Search for customers
+              <>
+                <p className="mb-4 text-base font-semibold text-green-700 dark:text-green-300 text-center">
+                  Get Pricing Information
+                </p>
+                
+                {/* Search Field */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Customer Search <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={pricingSearchTerm}
+                    onChange={e => setPricingSearchTerm(e.target.value)}
+                    placeholder="Enter name, email, or phone number"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
+                    onKeyPress={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handlePricingSearch();
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Search by name, email address, or phone number
+                  </div>
+                </div>
+                
+                {/* MFR (read-only) */}
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Manufacturer
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={pricingCurrentItem?.mfrId || ''}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                {/* Part Number (read-only) */}
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Part Number
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={pricingCurrentItem?.partNumber || ''}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                </div>
+                
+                {/* Error message */}
+                {customerHookError && (
+                  <p className="text-red-500 text-xs mb-3 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
+                    {customerHookError}
+                  </p>
+                )}
+                
+                {/* Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
+                    onClick={closePricingModal}
+                    disabled={customerHookLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150 ${
+                      !pricingSearchTerm.trim() || customerHookLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={handlePricingSearch}
+                    disabled={!pricingSearchTerm.trim() || customerHookLoading}
+                  >
+                    {customerHookLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Searching...
+                      </span>
+                    ) : (
+                      'Search Customers'
                     )}
                   </button>
                 </div>

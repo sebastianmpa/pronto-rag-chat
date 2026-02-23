@@ -420,6 +420,37 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   {t('sidebar.parts')}
                 </NavLink>
               </li>
+              
+              {/* Product Parts (visible para admin, supervisor, supervisorL1, supervisorL4) */}
+              {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+                <li>
+                  <NavLink
+                    to="/product-parts"
+                    className={({ isActive }) =>
+                      'group relative flex items-center gap-2.5 rounded-md px-4 py-2 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
+                      (isActive && '!text-white')
+                    }
+                  >
+                    <svg
+                      className="fill-current"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect x="1" y="3" width="16" height="12" rx="2" stroke="#E5E7EB" strokeWidth="1.5" fill="none" />
+                      <path d="M1 7H17" stroke="#E5E7EB" strokeWidth="1.5" />
+                      <path d="M5 11V7" stroke="#E5E7EB" strokeWidth="1.5" />
+                      <path d="M9 11V7" stroke="#E5E7EB" strokeWidth="1.5" />
+                      <path d="M13 11V7" stroke="#E5E7EB" strokeWidth="1.5" />
+                      <circle cx="3" cy="5" r="1" fill="#E5E7EB" />
+                      <circle cx="15" cy="5" r="1" fill="#E5E7EB" />
+                    </svg>
+                    {t('sidebar.productParts')}
+                  </NavLink>
+                </li>
+              )}
               {/* Terms (solo admin) */}
               {roleInternalName === 'admin' && (
                 <li>

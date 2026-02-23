@@ -66,6 +66,9 @@ export interface ConversationMessage {
   conversation_id: string;
   close_conversation?: boolean;
   table?: boolean;
+  table_data?: {
+    partInfo?: any[];
+  };
   conversation_context?: {
     intent?: string;
     mfr?: string;

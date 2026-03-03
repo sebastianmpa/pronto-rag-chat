@@ -27,7 +27,13 @@ export const searchCustomers = async (params: CustomerSearchQueryParams): Promis
     }
 
     const response = await axiosInstance.get(
-      `/ideal-query/${API_VERSION_V0}/clients/search?${queryParams.toString()}`
+      `/ideal-query/${API_VERSION_V0}/clients/search?${queryParams.toString()}`,
+      {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      }
     );
 
     return response.data;

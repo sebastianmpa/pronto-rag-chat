@@ -25,15 +25,31 @@ const PartsTable = () => {
 
   // Pricing modal states
   const [pricingModalIdx, setPricingModalIdx] = useState<number | null>(null);
-  const [pricingModalStep, setPricingModalStep] = useState<'search' | 'select' | 'result'>('search');
-  const [pricingSearchTerm, setPricingSearchTerm] = useState('');
-  const [pricingSelectedCustomer, setPricingSelectedCustomer] = useState<Customer | null>(null);
-  const [pricingCurrentItem, setPricingCurrentItem] = useState<{ mfrId: string; partNumber: string } | null>(null);
-  const [relatedPricingModalKey, setRelatedPricingModalKey] = useState<string | null>(null);
+  const [pricingForm, setPricingForm] = useState({ mfr: '', partNumber: '', customerName: '' });
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [pricingResult, setPricingResult] = useState<any>(null);
+  const [pricingStep, setPricingStep] = useState<'search' | 'result'>('search');
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [pricingRelatedIdx, setPricingRelatedIdx] = useState<{itemIdx: number, partIdx: number} | null>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const customerInputRef = useRef<HTMLInputElement>(null);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
   
   // Use pricing and customer search hooks
-  const { pricing, pricingHookLoading, pricingHookError, fetchPricing, clearPricing } = usePricing();
-  const { customers, customerHookLoading, customerHookError, searchCustomers } = useCustomerSearch();
+  const { 
+    pricing,
+    loading: pricingHookLoading,
+    error: pricingHookError,
+    fetchPricing 
+  } = usePricing();
+  const { 
+    customers,
+    loading: customerSearchLoading,
+    error: customerSearchError,
+    searchCustomers 
+  } = useCustomerSearch();
 
   // Hook para obtener la info de la parte
   const { partInfoList, loading: loadingPart, error, fetchPartInfo } = usePartInfo(partNumberFilter);
@@ -97,85 +113,163 @@ const PartsTable = () => {
     setTransferLoading(false);
   };
   
-  // Pricing helper functions
-  const openPricingModal = (idx: number, mfrId: string, partNumber: string) => {
-    setPricingModalIdx(idx);
-    setPricingModalStep('search');
-    setPricingSearchTerm('');
-    setPricingSelectedCustomer(null);
-    setPricingCurrentItem({ mfrId, partNumber });
-    setRelatedPricingModalKey(null);
-    clearPricing();
-  };
-
-  const openRelatedPricingModal = (itemIdx: number, partIdx: number, mfrId: string, partNumber: string) => {
-    const key = `${itemIdx}-${partIdx}`;
-    setRelatedPricingModalKey(key);
-    setPricingModalStep('search');
-    setPricingSearchTerm('');
-    setPricingSelectedCustomer(null);
-    setPricingCurrentItem({ mfrId, partNumber });
-    setPricingModalIdx(null);
-    clearPricing();
-  };
-
-  const closePricingModal = () => {
-    setPricingModalIdx(null);
-    setRelatedPricingModalKey(null);
-    setPricingModalStep('search');
-    setPricingSearchTerm('');
-    setPricingSelectedCustomer(null);
-    setPricingCurrentItem(null);
-    clearPricing();
-  };
-
-  const handlePricingSearch = async () => {
-    if (pricingSearchTerm.trim()) {
-      await searchCustomers(pricingSearchTerm.trim(), 1, 100);
-      setPricingModalStep('select');
+  // Handle customer search (auto-search while typing)
+  const handleCustomerSearch = async (searchQuery: string) => {
+    if (searchQuery.length < 3) {
+      setShowCustomerDropdown(false);
+      return;
     }
-  };
 
-  const handleCustomerSelect = (customer: Customer) => {
-    setPricingSelectedCustomer(customer);
-    setPricingModalStep('result');
-    handlePricingFetch();
-  };
-
-  const handlePricingFetch = () => {
-    if (pricingSelectedCustomer && pricingCurrentItem) {
-      fetchPricing({
-        mfrId: pricingCurrentItem.mfrId,
-        partNumber: pricingCurrentItem.partNumber,
-        customerId: pricingSelectedCustomer.id
+    try {
+      setIsSearching(true);
+      setPricingError(null);
+      
+      // Search for customers using the hook
+      await searchCustomers({
+        q: searchQuery.trim(),
+        page: 1,
+        limit: 100 // Load up to 100 customers
       });
-      // Use setTimeout to allow state to update
-      setTimeout(() => {
-        // Pricing will be available in the pricing state from usePricing hook
-      }, 100);
+    } catch (err: any) {
+      setPricingError(err?.message || 'Failed to search for customers');
+      setShowCustomerDropdown(false);
+      setIsSearching(false);
     }
   };
+
+  // Handle pricing fetch (step 2)
+  const handlePricingFetch = async (customer: any) => {
+    try {
+      setPricingLoading(true);
+      setPricingError(null);
+      setSelectedCustomer(customer);
+      setShowCustomerDropdown(false);
+      
+      await fetchPricing({
+        mfrId: pricingForm.mfr,
+        partNumber: pricingForm.partNumber,
+        customerId: customer.CUSTOMERID
+      });
+
+      // Wait for the hook to update, then check the result
+      setTimeout(() => {
+        if (pricingHookError) {
+          setPricingError(pricingHookError);
+        } else if (pricing) {
+          setPricingResult({
+            ...pricing,
+            customer: {
+              id: customer.CUSTOMERID,
+              name: customer.NAME,
+              firstName: customer.FIRSTNAME,
+              lastName: customer.LASTNAME,
+              phone: customer.PHONE,
+              email: customer.EMAIL,
+              city: customer.CITY,
+              state: customer.STATE
+            }
+          });
+          setPricingStep('result');
+        }
+        setPricingLoading(false);
+      }, 500);
+    } catch (err: any) {
+      setPricingError(err?.message || 'Failed to get pricing information');
+      setPricingLoading(false);
+    }
+  };
+
+  // Reset pricing modal
+  const resetPricingModal = () => {
+    setPricingModalIdx(null);
+    setPricingRelatedIdx(null);
+    setPricingError(null);
+    setPricingResult(null);
+    setPricingStep('search');
+    setSelectedCustomer(null);
+    setShowCustomerDropdown(false);
+    setIsSearching(false);
+    setPricingForm({ mfr: '', partNumber: '', customerName: '' });
+  };
+  
+  // Update dropdown when customers data changes
+  useEffect(() => {
+    // Only process when search has finished loading
+    if (customerSearchLoading) return;
+    
+    if (customerSearchError) {
+      setPricingError(customerSearchError);
+      setShowCustomerDropdown(false);
+      setIsSearching(false);
+    } else if (pricingForm.customerName.trim().length >= 3) {
+      if (customers && customers.length > 0) {
+        setShowCustomerDropdown(true);
+        setIsSearching(false);
+      } else {
+        // No results found
+        setPricingError(t('pricing.no_customers_found') || 'No customers found with that search term');
+        setShowCustomerDropdown(false);
+        setIsSearching(false);
+      }
+    } else {
+      setIsSearching(false);
+    }
+  }, [customers, customerSearchLoading, customerSearchError, pricingForm.customerName, t]);
+  
+  // Debounce customer search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (pricingForm.customerName.trim().length >= 3) {
+        handleCustomerSearch(pricingForm.customerName);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricingForm.customerName]);
   
   // Focus on order input when modal opens
   useEffect(() => {
     if (transferModalIdx !== null && orderInputRef.current) {
       setTimeout(() => orderInputRef.current?.focus(), 100);
     }
-  }, [transferModalIdx]);
+    if (pricingModalIdx !== null && customerInputRef.current) {
+      setTimeout(() => customerInputRef.current?.focus(), 100);
+    }
+  }, [transferModalIdx, pricingModalIdx]);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        customerDropdownRef.current &&
+        !customerDropdownRef.current.contains(event.target as Node) &&
+        customerInputRef.current &&
+        !customerInputRef.current.contains(event.target as Node)
+      ) {
+        setShowCustomerDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Handle pricing modal keyboard events
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && (pricingModalIdx !== null || relatedPricingModalKey !== null)) {
-        closePricingModal();
+      if (e.key === 'Escape' && (pricingModalIdx !== null || pricingRelatedIdx !== null)) {
+        resetPricingModal();
       }
     };
 
-    if (pricingModalIdx !== null || relatedPricingModalKey !== null) {
+    if (pricingModalIdx !== null || pricingRelatedIdx !== null) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [pricingModalIdx, relatedPricingModalKey]);
+  }, [pricingModalIdx, pricingRelatedIdx]);
 
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -242,6 +336,8 @@ const PartsTable = () => {
 
               const general = item.general_info || {};
               const relatedParts = item.related_parts || [];
+              const pricing = item.pricing || {};
+              const netPrice = pricing.net_price ?? null;
               const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
               const alternateLocation = currentLocation === 1 ? 4 : 1;
 
@@ -295,12 +391,23 @@ const PartsTable = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end justify-center mr-2 ml-3">
-                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {t('parts_accordion.quantity')}: {item.qty_loc}
-                      </span>
-                      {hasAlternateLocation && (
-                        <div className="mt-1">
+                    {/* Columna derecha: Cantidad, Precio y Botones alineados */}
+                    <div className="flex flex-col items-end justify-center gap-2 ml-3">
+                      {/* Primera fila: Cantidad y Precio */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          {t('parts_accordion.quantity')}: {item.qty_loc}
+                        </span>
+                        {netPrice !== null && netPrice !== undefined && (
+                          <span className="text-sm font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
+                            ${Number(netPrice).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Segunda fila: Botones de ubicación y acciones */}
+                      <div className="flex items-center gap-2">
+                        {hasAlternateLocation && (
                           <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark" role="tablist" aria-label="Locations switch">
                             <button
                               type="button"
@@ -322,67 +429,62 @@ const PartsTable = () => {
                               4
                             </button>
                           </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-2">
-                      <button
-                        type="button"
-                        className="px-3 py-1 text-xs font-medium rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
-                        onClick={() => openPricingModal(idx, item.mfrId, item.partNumber)}
-                        title="Get pricing information"
-                      >
-                        💰
-                      </button>
-                      <button
-                        type="button"
-                        className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
-                        onClick={async () => {
-                          setPartNumberFilter(item.partNumber);
-                          setShowTable(true);
-                          await fetchPartInfo();
-                        }}
-                      >
-                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                          <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
-                        </svg>
-                      </button>
-                      {copiedIdx === idx && (
-                        <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
-                      )}
-                      {currentLocation === 4 && (
+                        )}
+                        
+                        {/* Pricing Button */}
                         <button
                           type="button"
-                          className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
-                          title={t('stock_transfer.request') || 'Request transfer'}
+                          className="p-1.5 rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
+                          title={t('pricing.get_info') || 'Get pricing information'}
                           onClick={() => {
-                            setTransferForm({ mfr: item.mfrId, sku: item.partNumber, quantity: '', order: '', orderCancelled: 'yes' });
-                            setTransferModalIdx(idx);
-                            setTransferError(null);
-                            setTransferSuccess(false);
+                            setPricingForm({ 
+                              mfr: item.mfrId, 
+                              partNumber: item.partNumber, 
+                              customerName: '' 
+                            });
+                            setPricingModalIdx(idx);
+                            setPricingError(null);
+                            setPricingResult(null);
                           }}
                         >
-                          <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
-                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-meta-4 border border-transparent focus:outline-none"
-                      >
-                        <svg
-                          className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${expandedIdx === idx ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                        
+                        {currentLocation === 4 && (
+                          <button
+                            type="button"
+                            className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
+                            title={t('stock_transfer.request') || 'Request transfer'}
+                            onClick={() => {
+                              setTransferForm({ mfr: item.mfrId, sku: item.partNumber, quantity: '', order: '', orderCancelled: 'yes' });
+                              setTransferModalIdx(idx);
+                              setTransferError(null);
+                              setTransferSuccess(false);
+                            }}
+                          >
+                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                          </button>
+                        )}
+                        
+                        <button
+                          type="button"
+                          onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+                          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-meta-4 border border-transparent focus:outline-none"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
+                          <svg
+                            className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${expandedIdx === idx ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -416,9 +518,6 @@ const PartsTable = () => {
                                   </th>
                                   <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
                                     {t('parts_accordion.qty')}
-                                  </th>
-                                  <th className="px-2 py-1 text-center font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">
-                                    {t('parts_accordion.actions')}
                                   </th>
                                 </tr>
                               </thead>
@@ -455,6 +554,28 @@ const PartsTable = () => {
                                             <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
                                           </svg>
                                         </button>
+                                        {/* Pricing button for related parts */}
+                                        <button
+                                          type="button"
+                                          className="p-0.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 focus:outline-none flex-shrink-0"
+                                          title={t('pricing.get_info') || 'Get pricing for this part'}
+                                          onClick={() => {
+                                            setPricingForm({ 
+                                              mfr: part.MFRID || '', 
+                                              partNumber: part.PARTNUMBER || '', 
+                                              customerName: '' 
+                                            });
+                                            setPricingRelatedIdx({itemIdx: idx, partIdx: pidx});
+                                            setPricingError(null);
+                                            setPricingResult(null);
+                                            setPricingStep('search');
+                                            setSelectedCustomer(null);
+                                          }}
+                                        >
+                                          <svg className="w-3.5 h-3.5 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                        </button>
                                         {copiedRelatedIdx?.itemIdx === idx && copiedRelatedIdx?.partIdx === pidx && (
                                           <span className="text-xs text-green-600 dark:text-green-400">{t('parts_accordion.copied')}</span>
                                         )}
@@ -462,16 +583,6 @@ const PartsTable = () => {
                                     </td>
                                     <td className="px-2 py-1 text-gray-900 dark:text-white">{part.DESCRIPTION}</td>
                                     <td className="px-2 py-1 text-right text-gray-900 dark:text-white">{part.QUANTITYLOC}</td>
-                                    <td className="px-2 py-1 text-center">
-                                      <button
-                                        type="button"
-                                        className="p-0.5 rounded hover:bg-green-100 dark:hover:bg-green-900 border border-transparent focus:outline-none flex-shrink-0"
-                                        onClick={() => openRelatedPricingModal(idx, pidx, part.MFRID, part.PARTNUMBER)}
-                                        title="Get pricing for this part"
-                                      >
-                                        <span className="text-xs">💰</span>
-                                      </button>
-                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -673,191 +784,179 @@ const PartsTable = () => {
       )}
 
       {/* Pricing Modal */}
-      {(pricingModalIdx !== null || relatedPricingModalKey !== null) && (
+      {(pricingModalIdx !== null || pricingRelatedIdx !== null) && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={closePricingModal}
+          onClick={resetPricingModal}
         >
           <div
             className="rounded-2xl border border-green-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-md relative"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
-              💰 Pricing Information
+              {t('pricing.title') || 'Pricing Information'}
             </div>
             
-            {pricingModalStep === 'result' && pricing ? (
-              // Step 3: Show pricing information
+            {pricingStep === 'result' && pricingResult ? (
+              // Show pricing information
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-base font-semibold text-green-700 dark:text-green-300">
-                    Pricing Details
+                    {t('pricing.details') || 'Pricing Details'}
                   </p>
                   <button
                     type="button"
-                    onClick={() => setPricingModalStep('select')}
+                    onClick={() => {
+                      setPricingStep('search');
+                      setPricingResult(null);
+                      setSelectedCustomer(null);
+                    }}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                   >
-                    ← Back to customers
+                    ← {t('pricing.new_search') || 'New search'}
                   </button>
                 </div>
                 
                 {/* Customer Info */}
-                {pricingSelectedCustomer && (
-                  <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Customer Information</h4>
-                    <div className="text-xs space-y-1">
-                      <div><strong>ID:</strong> {pricingSelectedCustomer.id}</div>
-                      <div><strong>Name:</strong> {pricingSelectedCustomer.name}</div>
-                      {pricingSelectedCustomer.phone && (
-                        <div><strong>Phone:</strong> {pricingSelectedCustomer.phone}</div>
-                      )}
-                      {pricingSelectedCustomer.email && (
-                        <div><strong>Email:</strong> {pricingSelectedCustomer.email}</div>
-                      )}
-                      <div><strong>Location:</strong> {pricingSelectedCustomer.city}, {pricingSelectedCustomer.state}</div>
-                    </div>
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('pricing.customer_info') || 'Customer Information'}</h4>
+                  <div className="text-xs space-y-1">
+                    <div><strong>{t('pricing.customer_id') || 'ID'}:</strong> {pricingResult.customer?.id}</div>
+                    <div><strong>{t('pricing.customer_name') || 'Name'}:</strong> {pricingResult.customer?.name}</div>
+                    {pricingResult.customer?.phone && (
+                      <div><strong>{t('pricing.customer_phone') || 'Phone'}:</strong> {pricingResult.customer.phone}</div>
+                    )}
+                    {pricingResult.customer?.email && (
+                      <div><strong>{t('pricing.customer_email') || 'Email'}:</strong> {pricingResult.customer.email}</div>
+                    )}
+                    <div><strong>{t('pricing.customer_location') || 'Location'}:</strong> {pricingResult.customer?.city}, {pricingResult.customer?.state}</div>
                   </div>
-                )}
+                </div>
 
                 {/* Part Info */}
-                {pricingCurrentItem && (
-                  <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Part Information</h4>
-                    <div className="text-xs space-y-1">
-                      <div><strong>Manufacturer:</strong> {pricingCurrentItem.mfrId}</div>
-                      <div><strong>Part Number:</strong> {pricingCurrentItem.partNumber}</div>
-                    </div>
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('pricing.part_info') || 'Part Information'}</h4>
+                  <div className="text-xs space-y-1">
+                    <div><strong>{t('pricing.manufacturer') || 'Manufacturer'}:</strong> {pricingResult.mfr_id}</div>
+                    <div><strong>{t('pricing.part_number') || 'Part Number'}:</strong> {pricingResult.part_number}</div>
                   </div>
-                )}
+                </div>
 
                 {/* Pricing Info */}
                 <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
-                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">Pricing Details</h4>
-                  {pricingHookLoading ? (
-                    <div className="text-center py-4">
-                      <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Loading pricing information...</p>
+                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">{t('pricing.details') || 'Pricing Details'}</h4>
+                  <div className="text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span>{t('pricing.customer_type') || 'Customer Type'}:</span>
+                      <span className="font-semibold">{pricingResult.customer_type}</span>
                     </div>
-                  ) : pricingHookError ? (
-                    <div className="text-center py-4">
-                      <p className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
-                        {pricingHookError}
-                      </p>
+                    <div className="flex justify-between">
+                      <span>{t('pricing.price_level') || 'Price Level'}:</span>
+                      <span className="font-semibold">{pricingResult.customer_price_level}</span>
                     </div>
-                  ) : pricing ? (
-                    <div className="text-sm space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">List Price:</span>
-                        <span className="font-semibold">${pricing.listPrice?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Your Price:</span>
-                        <span className="font-semibold text-green-600 dark:text-green-400">${pricing.customerPrice?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Core Price:</span>
-                        <span className="font-semibold">${pricing.corePrice?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Availability:</span>
-                        <span className="font-semibold">{pricing.availability || 'N/A'}</span>
-                      </div>
-                      {pricing.discount && pricing.discount > 0 && (
-                        <div className="flex justify-between pt-2 border-t border-green-300 dark:border-green-600">
-                          <span className="text-green-700 dark:text-green-300">Discount:</span>
-                          <span className="font-semibold text-green-700 dark:text-green-300">{pricing.discount}%</span>
-                        </div>
-                      )}
+                    <div className="flex justify-between">
+                      <span>{t('pricing.list_price') || 'List Price'}:</span>
+                      <span className="font-semibold">${pricingResult.list_price}</span>
                     </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <p className="text-gray-500 text-sm">No pricing information available</p>
+                    <div className="flex justify-between border-t pt-2 text-lg">
+                      <span className="font-bold">{t('pricing.net_price') || 'Net Price'}:</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">${pricingResult.net_price}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
-
+                
                 <button
                   type="button"
                   className="w-full py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150"
-                  onClick={closePricingModal}
+                  onClick={resetPricingModal}
                 >
-                  Close
-                </button>
-              </div>
-            ) : pricingModalStep === 'select' && customers.length > 0 ? (
-              // Step 2: Select customer from search results
-              <div>
-                <p className="mb-4 text-base font-semibold text-green-700 dark:text-green-300 text-center">
-                  Select Customer
-                </p>
-                
-                <div className="mb-4 max-h-60 overflow-y-auto space-y-2">
-                  {customers.map((customer) => (
-                    <div
-                      key={customer.id}
-                      className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600 transition-all"
-                      onClick={() => handleCustomerSelect(customer)}
-                    >
-                      <div className="font-semibold text-sm">{customer.name}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                        <div>ID: {customer.id}</div>
-                        {customer.phone && <div>Phone: {customer.phone}</div>}
-                        {customer.email && <div>Email: {customer.email}</div>}
-                        <div>Location: {customer.city}, {customer.state}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <button
-                  type="button"
-                  className="w-full py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
-                  onClick={closePricingModal}
-                >
-                  Cancel
+                  {t('common.close') || 'Close'}
                 </button>
               </div>
             ) : (
-              // Step 1: Search for customers
+              // Search for customers with auto-complete dropdown
               <>
                 <p className="mb-4 text-base font-semibold text-green-700 dark:text-green-300 text-center">
-                  Get Pricing Information
+                  {t('pricing.get_info') || 'Get Pricing Information'}
                 </p>
                 
-                {/* Search Field */}
-                <div className="mb-3">
+                {/* Search Field with Dropdown */}
+                <div className="mb-3 relative">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Customer Search <span className="text-red-500">*</span>
+                    {t('pricing.customer_search') || 'Customer Search'} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={pricingSearchTerm}
-                    onChange={e => setPricingSearchTerm(e.target.value)}
-                    placeholder="Enter name, email, or phone number"
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
-                    onKeyPress={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handlePricingSearch();
-                      }
-                    }}
-                    autoFocus
-                  />
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Search by name, email address, or phone number
+                  <div className="relative">
+                    <input
+                      ref={customerInputRef}
+                      type="text"
+                      value={pricingForm.customerName}
+                      onChange={e => setPricingForm({ ...pricingForm, customerName: e.target.value })}
+                      onFocus={() => {
+                        if (pricingForm.customerName.length >= 3 && customers && customers.length > 0) {
+                          setShowCustomerDropdown(true);
+                        }
+                      }}
+                      placeholder={t('pricing.search_placeholder') || 'Type at least 3 characters to search...'}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 pr-10 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
+                      autoComplete="off"
+                    />
+                    {/* Loading spinner */}
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                    {/* Check icon when customer selected */}
+                    {selectedCustomer && !isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {t('pricing.search_hint') || 'Start typing name, email, or phone number (min. 3 characters)'}
+                  </div>
+                  
+                  {/* Customer Dropdown */}
+                  {showCustomerDropdown && customers && customers.length > 0 && (
+                    <div
+                      ref={customerDropdownRef}
+                      className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white dark:bg-boxdark border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg"
+                    >
+                      {customers.map((customer) => (
+                        <div
+                          key={customer.CUSTOMERID}
+                          className="p-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-colors"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setPricingForm({ ...pricingForm, customerName: customer.NAME });
+                            setShowCustomerDropdown(false);
+                          }}
+                        >
+                          <div className="font-semibold text-sm text-gray-900 dark:text-white">{customer.NAME}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+                            <div>ID: {customer.CUSTOMERID}</div>
+                            {customer.PHONE && <div>📞 {customer.PHONE}</div>}
+                            {customer.EMAIL && <div>📧 {customer.EMAIL}</div>}
+                            <div>📍 {customer.CITY}, {customer.STATE}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {/* MFR (read-only) */}
                 <div className="mb-3">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Manufacturer
+                    {t('pricing.manufacturer') || 'Manufacturer'}
                   </label>
                   <input
                     type="text"
                     readOnly
-                    value={pricingCurrentItem?.mfrId || ''}
+                    value={pricingForm.mfr}
                     className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
                   />
                 </div>
@@ -865,20 +964,20 @@ const PartsTable = () => {
                 {/* Part Number (read-only) */}
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Part Number
+                    {t('pricing.part_number') || 'Part Number'}
                   </label>
                   <input
                     type="text"
                     readOnly
-                    value={pricingCurrentItem?.partNumber || ''}
+                    value={pricingForm.partNumber}
                     className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed"
                   />
                 </div>
                 
                 {/* Error message */}
-                {customerHookError && (
+                {pricingError && (
                   <p className="text-red-500 text-xs mb-3 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
-                    {customerHookError}
+                    {pricingError}
                   </p>
                 )}
                 
@@ -887,26 +986,30 @@ const PartsTable = () => {
                   <button
                     type="button"
                     className="flex-1 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
-                    onClick={closePricingModal}
-                    disabled={customerHookLoading}
+                    onClick={resetPricingModal}
+                    disabled={pricingLoading}
                   >
-                    Cancel
+                    {t('common.cancel') || 'Cancel'}
                   </button>
                   <button
                     type="button"
                     className={`flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150 ${
-                      !pricingSearchTerm.trim() || customerHookLoading ? 'opacity-50 cursor-not-allowed' : ''
+                      !selectedCustomer || pricingLoading ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
-                    onClick={handlePricingSearch}
-                    disabled={!pricingSearchTerm.trim() || customerHookLoading}
+                    onClick={() => {
+                      if (selectedCustomer) {
+                        handlePricingFetch(selectedCustomer);
+                      }
+                    }}
+                    disabled={!selectedCustomer || pricingLoading}
                   >
-                    {customerHookLoading ? (
+                    {pricingLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Searching...
+                        {t('common.loading') || 'Loading...'}
                       </span>
                     ) : (
-                      'Search Customers'
+                      t('pricing.get_pricing') || 'Get Pricing'
                     )}
                   </button>
                 </div>

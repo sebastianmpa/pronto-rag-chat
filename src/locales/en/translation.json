@@ -118,7 +118,7 @@
   },
   "productParts": {
     "table": {
-      "title": "Product Parts",
+      "title": "Models by Brand",
       "model_name": "Model Name",
       "serie": "Series",
       "type": "Type",
@@ -275,7 +275,7 @@
     "myMessages": "My Messages",
     "allMessages": "All Messages",
     "parts": "Parts",
-    "productParts": "Product Parts",
+    "productParts": "Models by Brand",
     "terms": "Terms",
     "loading": "Loading..."
   },
@@ -334,6 +334,29 @@
     "previous": "Previous",
     "next": "Next",
     "no_results": "No results found"
+  },
+  "pricing": {
+    "title": "Pricing Information",
+    "details": "Pricing Details",
+    "new_search": "New search",
+    "customer_info": "Customer Information",
+    "customer_id": "ID",
+    "customer_name": "Name",
+    "customer_phone": "Phone",
+    "customer_email": "Email",
+    "customer_location": "Location",
+    "part_info": "Part Information",
+    "manufacturer": "Manufacturer",
+    "part_number": "Part Number",
+    "customer_type": "Customer Type",
+    "price_level": "Price Level",
+    "list_price": "List Price",
+    "net_price": "Net Price",
+    "get_info": "Get Pricing Information",
+    "customer_search": "Customer Search",
+    "search_placeholder": "Type at least 3 characters to search...",
+    "search_hint": "Start typing name, email, or phone number (min. 3 characters)",
+    "get_pricing": "Get Pricing"
   },
   "terms": {
     "title": "Terms",

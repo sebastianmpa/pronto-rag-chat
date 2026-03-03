@@ -68,7 +68,7 @@
   },
   "productParts": {
     "table": {
-      "title": "Partes de Productos",
+      "title": "Modelos por Marca",
       "model_name": "Nombre del Modelo",
       "serie": "Serie",
       "type": "Tipo",
@@ -269,7 +269,7 @@
     "myMessages": "Mis Mensajes",
     "allMessages": "Todos los Mensajes",
     "parts": "Partes",
-    "productParts": "Partes de Productos",
+    "productParts": "Modelos por Marca",
     "terms": "Términos",
     "loading": "Cargando..."
   },
@@ -328,6 +328,29 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "no_results": "No se encontraron resultados"
+  },
+  "pricing": {
+    "title": "Información de Precios",
+    "details": "Detalles de Precios",
+    "new_search": "Nueva búsqueda",
+    "customer_info": "Información del Cliente",
+    "customer_id": "ID",
+    "customer_name": "Nombre",
+    "customer_phone": "Teléfono",
+    "customer_email": "Email",
+    "customer_location": "Ubicación",
+    "part_info": "Información de la Pieza",
+    "manufacturer": "Fabricante",
+    "part_number": "Número de Pieza",
+    "customer_type": "Tipo de Cliente",
+    "price_level": "Nivel de Precio",
+    "list_price": "Precio de Lista",
+    "net_price": "Precio Neto",
+    "get_info": "Obtener Información de Precios",
+    "customer_search": "Búsqueda de Cliente",
+    "search_placeholder": "Escribe al menos 3 caracteres para buscar...",
+    "search_hint": "Comienza a escribir nombre, email o teléfono (mín. 3 caracteres)",
+    "get_pricing": "Obtener Precio"
   },
   "terms": {
     "title": "Términos",

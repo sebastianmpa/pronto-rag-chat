@@ -222,8 +222,11 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
   const [pricingStep, setPricingStep] = useState<'search' | 'select' | 'result'>('search');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [pricingRelatedIdx, setPricingRelatedIdx] = useState<{itemIdx: number, partIdx: number} | null>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const orderInputRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
   const { requestTransfer: hookRequestTransfer } = useStockTransfer();
   const { 
     pricing,
@@ -252,40 +255,65 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
     setTransferLoading(false);
   };
 
-  // Handle customer search (step 1)
-  const handleCustomerSearch = async () => {
-    if (!pricingForm.customerName.trim()) {
-      setPricingError('Please enter a customer name, email, or phone number');
+  // Handle customer search (auto-search while typing)
+  const handleCustomerSearch = async (searchQuery: string) => {
+    if (searchQuery.length < 3) {
+      setShowCustomerDropdown(false);
       return;
     }
 
     try {
-      setPricingLoading(true);
+      setIsSearching(true);
       setPricingError(null);
       
       // Search for customers using the hook
       await searchCustomers({
-        q: pricingForm.customerName.trim(),
+        q: searchQuery.trim(),
         page: 1,
         limit: 100 // Load up to 100 customers
       });
-
-      // Wait a moment for the hook to update
-      setTimeout(() => {
-        if (customerSearchError) {
-          setPricingError(customerSearchError);
-        } else if (!customers || customers.length === 0) {
-          setPricingError('No customers found with that search term');
-        } else {
-          setPricingStep('select');
-        }
-        setPricingLoading(false);
-      }, 500);
     } catch (err: any) {
       setPricingError(err?.message || 'Failed to search for customers');
-      setPricingLoading(false);
+      setShowCustomerDropdown(false);
+      setIsSearching(false);
     }
   };
+
+  // Update dropdown when customers data changes
+  useEffect(() => {
+    // Only process when search has finished loading
+    if (customerSearchLoading) return;
+    
+    if (customerSearchError) {
+      setPricingError(customerSearchError);
+      setShowCustomerDropdown(false);
+      setIsSearching(false);
+    } else if (pricingForm.customerName.trim().length >= 3) {
+      if (customers && customers.length > 0) {
+        setShowCustomerDropdown(true);
+        setIsSearching(false);
+      } else {
+        // No results found
+        setPricingError('No customers found with that search term');
+        setShowCustomerDropdown(false);
+        setIsSearching(false);
+      }
+    } else {
+      setIsSearching(false);
+    }
+  }, [customers, customerSearchLoading, customerSearchError, pricingForm.customerName]);
+  
+  // Debounce customer search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (pricingForm.customerName.trim().length >= 3) {
+        handleCustomerSearch(pricingForm.customerName);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricingForm.customerName]);
 
   // Handle pricing fetch (step 2)
   const handlePricingFetch = async (customer: any) => {
@@ -293,6 +321,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
       setPricingLoading(true);
       setPricingError(null);
       setSelectedCustomer(customer);
+      setShowCustomerDropdown(false);
       
       await fetchPricing({
         mfrId: pricingForm.mfr,
@@ -336,6 +365,8 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
     setPricingResult(null);
     setPricingStep('search');
     setSelectedCustomer(null);
+    setShowCustomerDropdown(false);
+    setIsSearching(false);
     setPricingForm({ mfr: '', partNumber: '', customerName: '' });
   };
   
@@ -348,6 +379,25 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
       setTimeout(() => customerInputRef.current?.focus(), 100);
     }
   }, [transferModalIdx, pricingModalIdx]);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        customerDropdownRef.current &&
+        !customerDropdownRef.current.contains(event.target as Node) &&
+        customerInputRef.current &&
+        !customerInputRef.current.contains(event.target as Node)
+      ) {
+        setShowCustomerDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   if (!Array.isArray(data)) {
     console.log('[PartsAccordion] Data is not an array:', typeof data);
@@ -415,7 +465,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
   };
   
   return (
-    <div className="mt-3 max-w-4xl mx-auto">
+    <div className="mt-3 w-full mx-auto">
       {groupedData.map((group, idx) => {
         console.log(`[PartsAccordion Render] Group ${idx}:`, group);
         
@@ -439,16 +489,18 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
         
         const general = item.general_info || {};
         const relatedParts = item.related_parts || [];
+        const pricing = item.pricing || {};
         const mfrId = general.MFRID || item.mfrId || '-';
         const partNumber = general.PARTNUMBER || item.partNumber || '-';
         const description = general.DESCRIPTION || '-';
         const ubicacion = item.location || '-';
         const superseded = item.superseded || general.SUPERCEDETO || '-';
         const cantidad = item.qty_loc ?? general.QTY_LOC ?? '-';
+        const netPrice = pricing.net_price ?? null;
         const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
         
         return (
-          <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark max-w-4xl mx-auto">
+          <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark w-full mx-auto">
             {/* Header del acordeón */}
             <div className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark">
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -497,9 +549,17 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                   </div>
                 </div>
               </div>
-              {/* Quantity alineado a la derecha en su propia columna */}
+              {/* Quantity and Price alineados a la derecha en su propia columna */}
               <div className="flex flex-col items-end justify-center mr-2 ml-3">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
+                {/* Quantity y Price en la misma línea */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{t('parts_accordion.quantity')}: {cantidad ?? '-'}</span>
+                  {netPrice !== null && netPrice !== undefined && (
+                    <span className="text-sm font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
+                      ${Number(netPrice).toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 {/* Botón para cambiar de ubicación si existe alternativa */}
                 <div className="flex items-center gap-2 mt-1">
                   {hasAlternateLocation && (
@@ -529,7 +589,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                   {/* Pricing Button */}
                   <button
                     type="button"
-                    className="px-3 py-1 text-xs font-medium rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
+                    className="p-1.5 rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
                     title="Get pricing information"
                     onClick={() => {
                       setPricingForm({ 
@@ -542,7 +602,9 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                       setPricingResult(null);
                     }}
                   >
-                    💰
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -657,7 +719,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                                     {/* Pricing button for related parts */}
                                     <button
                                       type="button"
-                                      className="p-0.5 rounded hover:bg-green-100 dark:hover:bg-green-900 border border-transparent focus:outline-none flex-shrink-0"
+                                      className="p-0.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 focus:outline-none flex-shrink-0"
                                       title="Get pricing for this part"
                                       onClick={() => {
                                         setPricingForm({ 
@@ -672,7 +734,9 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                                         setSelectedCustomer(null);
                                       }}
                                     >
-                                      <span className="text-xs">💰</span>
+                                      <svg className="w-3.5 h-3.5 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
                                     </button>
                                   </>
                                 )}
@@ -900,68 +964,72 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white rounded-full px-4 py-1 text-xs font-semibold shadow-md">
-              💰 Pricing Information
+              {t('pricing.title') || 'Pricing Information'}
             </div>
             
             {pricingStep === 'result' && pricingResult ? (
-              // Step 3: Show pricing information
+              // Show pricing information
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-base font-semibold text-green-700 dark:text-green-300">
-                    Pricing Details
+                    {t('pricing.details') || 'Pricing Details'}
                   </p>
                   <button
                     type="button"
-                    onClick={() => setPricingStep('select')}
+                    onClick={() => {
+                      setPricingStep('search');
+                      setPricingResult(null);
+                      setSelectedCustomer(null);
+                    }}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                   >
-                    ← Back to customers
+                    ← {t('pricing.new_search') || 'New search'}
                   </button>
                 </div>
                 
                 {/* Customer Info */}
                 <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Customer Information</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('pricing.customer_info') || 'Customer Information'}</h4>
                   <div className="text-xs space-y-1">
-                    <div><strong>ID:</strong> {pricingResult.customer?.id}</div>
-                    <div><strong>Name:</strong> {pricingResult.customer?.name}</div>
+                    <div><strong>{t('pricing.customer_id') || 'ID'}:</strong> {pricingResult.customer?.id}</div>
+                    <div><strong>{t('pricing.customer_name') || 'Name'}:</strong> {pricingResult.customer?.name}</div>
                     {pricingResult.customer?.phone && (
-                      <div><strong>Phone:</strong> {pricingResult.customer.phone}</div>
+                      <div><strong>{t('pricing.customer_phone') || 'Phone'}:</strong> {pricingResult.customer.phone}</div>
                     )}
                     {pricingResult.customer?.email && (
-                      <div><strong>Email:</strong> {pricingResult.customer.email}</div>
+                      <div><strong>{t('pricing.customer_email') || 'Email'}:</strong> {pricingResult.customer.email}</div>
                     )}
-                    <div><strong>Location:</strong> {pricingResult.customer?.city}, {pricingResult.customer?.state}</div>
+                    <div><strong>{t('pricing.customer_location') || 'Location'}:</strong> {pricingResult.customer?.city}, {pricingResult.customer?.state}</div>
                   </div>
                 </div>
 
                 {/* Part Info */}
                 <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Part Information</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('pricing.part_info') || 'Part Information'}</h4>
                   <div className="text-xs space-y-1">
-                    <div><strong>Manufacturer:</strong> {pricingResult.mfr_id}</div>
-                    <div><strong>Part Number:</strong> {pricingResult.part_number}</div>
+                    <div><strong>{t('pricing.manufacturer') || 'Manufacturer'}:</strong> {pricingResult.mfr_id}</div>
+                    <div><strong>{t('pricing.part_number') || 'Part Number'}:</strong> {pricingResult.part_number}</div>
                   </div>
                 </div>
 
                 {/* Pricing Info */}
                 <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
-                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">Pricing Details</h4>
+                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">{t('pricing.details') || 'Pricing Details'}</h4>
                   <div className="text-sm space-y-2">
                     <div className="flex justify-between">
-                      <span>Customer Type:</span>
+                      <span>{t('pricing.customer_type') || 'Customer Type'}:</span>
                       <span className="font-semibold">{pricingResult.customer_type}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Price Level:</span>
+                      <span>{t('pricing.price_level') || 'Price Level'}:</span>
                       <span className="font-semibold">{pricingResult.customer_price_level}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>List Price:</span>
+                      <span>{t('pricing.list_price') || 'List Price'}:</span>
                       <span className="font-semibold">${pricingResult.list_price}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2 text-lg">
-                      <span className="font-bold">Net Price:</span>
+                      <span className="font-bold">{t('pricing.net_price') || 'Net Price'}:</span>
                       <span className="font-bold text-green-600 dark:text-green-400">${pricingResult.net_price}</span>
                     </div>
                   </div>
@@ -972,87 +1040,88 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                   className="w-full py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150"
                   onClick={resetPricingModal}
                 >
-                  Close
-                </button>
-              </div>
-            ) : pricingStep === 'select' && customers && customers.length > 0 ? (
-              // Step 2: Select customer from list
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-base font-semibold text-green-700 dark:text-green-300">
-                    Select Customer ({customers.length} found)
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setPricingStep('search')}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline"
-                  >
-                    ← New search
-                  </button>
-                </div>
-                
-                {/* Customer List */}
-                <div className="mb-4 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                  {customers.map((customer) => (
-                    <div
-                      key={customer.CUSTOMERID}
-                      className="p-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                      onClick={() => handlePricingFetch(customer)}
-                    >
-                      <div className="font-semibold text-sm">{customer.NAME}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                        <div>ID: {customer.CUSTOMERID}</div>
-                        {customer.PHONE && <div>Phone: {customer.PHONE}</div>}
-                        {customer.EMAIL && <div>Email: {customer.EMAIL}</div>}
-                        <div>Location: {customer.CITY}, {customer.STATE}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <button
-                  type="button"
-                  className="w-full py-2 rounded-lg bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold shadow-md transition-all duration-150"
-                  onClick={resetPricingModal}
-                >
-                  Cancel
+                  {t('common.close') || 'Close'}
                 </button>
               </div>
             ) : (
-              // Step 1: Search for customers
+              // Search for customers with auto-complete dropdown
               <>
                 <p className="mb-4 text-base font-semibold text-green-700 dark:text-green-300 text-center">
-                  Get Pricing Information
+                  {t('pricing.get_info') || 'Get Pricing Information'}
                 </p>
                 
-                {/* Search Field */}
-                <div className="mb-3">
+                {/* Search Field with Dropdown */}
+                <div className="mb-3 relative">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Customer Search <span className="text-red-500">*</span>
+                    {t('pricing.customer_search') || 'Customer Search'} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    ref={customerInputRef}
-                    type="text"
-                    value={pricingForm.customerName}
-                    onChange={e => setPricingForm({ ...pricingForm, customerName: e.target.value })}
-                    placeholder="Enter name, email, or phone number"
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
-                    onKeyPress={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleCustomerSearch();
-                      }
-                    }}
-                  />
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Search by name, email address, or phone number
+                  <div className="relative">
+                    <input
+                      ref={customerInputRef}
+                      type="text"
+                      value={pricingForm.customerName}
+                      onChange={e => setPricingForm({ ...pricingForm, customerName: e.target.value })}
+                      onFocus={() => {
+                        if (pricingForm.customerName.length >= 3 && customers && customers.length > 0) {
+                          setShowCustomerDropdown(true);
+                        }
+                      }}
+                      placeholder={t('pricing.search_placeholder') || 'Type at least 3 characters to search...'}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 pr-10 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
+                      autoComplete="off"
+                    />
+                    {/* Loading spinner */}
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                    {/* Check icon when customer selected */}
+                    {selectedCustomer && !isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {t('pricing.search_hint') || 'Start typing name, email, or phone number (min. 3 characters)'}
+                  </div>
+                  
+                  {/* Customer Dropdown */}
+                  {showCustomerDropdown && customers && customers.length > 0 && (
+                    <div
+                      ref={customerDropdownRef}
+                      className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white dark:bg-boxdark border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg"
+                    >
+                      {customers.map((customer) => (
+                        <div
+                          key={customer.CUSTOMERID}
+                          className="p-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-colors"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setPricingForm({ ...pricingForm, customerName: customer.NAME });
+                            setShowCustomerDropdown(false);
+                          }}
+                        >
+                          <div className="font-semibold text-sm text-gray-900 dark:text-white">{customer.NAME}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+                            <div>ID: {customer.CUSTOMERID}</div>
+                            {customer.PHONE && <div>📞 {customer.PHONE}</div>}
+                            {customer.EMAIL && <div>📧 {customer.EMAIL}</div>}
+                            <div>📍 {customer.CITY}, {customer.STATE}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {/* MFR (read-only) */}
                 <div className="mb-3">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Manufacturer
+                    {t('pricing.manufacturer') || 'Manufacturer'}
                   </label>
                   <input
                     type="text"
@@ -1065,7 +1134,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                 {/* Part Number (read-only) */}
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Part Number
+                    {t('pricing.part_number') || 'Part Number'}
                   </label>
                   <input
                     type="text"
@@ -1090,23 +1159,27 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string; onSupersededCli
                     onClick={resetPricingModal}
                     disabled={pricingLoading}
                   >
-                    Cancel
+                    {t('common.cancel') || 'Cancel'}
                   </button>
                   <button
                     type="button"
                     className={`flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150 ${
-                      !pricingForm.customerName.trim() || pricingLoading ? 'opacity-50 cursor-not-allowed' : ''
+                      !selectedCustomer || pricingLoading ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
-                    onClick={handleCustomerSearch}
-                    disabled={!pricingForm.customerName.trim() || pricingLoading}
+                    onClick={() => {
+                      if (selectedCustomer) {
+                        handlePricingFetch(selectedCustomer);
+                      }
+                    }}
+                    disabled={!selectedCustomer || pricingLoading}
                   >
                     {pricingLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Searching...
+                        {t('common.loading') || 'Loading...'}
                       </span>
                     ) : (
-                      'Search Customers'
+                      t('pricing.get_pricing') || 'Get Pricing'
                     )}
                   </button>
                 </div>

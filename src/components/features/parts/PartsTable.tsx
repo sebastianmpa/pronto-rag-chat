@@ -31,6 +31,7 @@ const PartsTable = () => {
   const [pricingResult, setPricingResult] = useState<any>(null);
   const [pricingStep, setPricingStep] = useState<'search' | 'result'>('search');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [isCustomerReady, setIsCustomerReady] = useState(false);
   const [pricingRelatedIdx, setPricingRelatedIdx] = useState<{itemIdx: number, partIdx: number} | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -128,7 +129,7 @@ const PartsTable = () => {
       await searchCustomers({
         q: searchQuery.trim(),
         page: 1,
-        limit: 100 // Load up to 100 customers
+        limit: 10 // Load only 10 customers for better performance
       });
     } catch (err: any) {
       setPricingError(err?.message || 'Failed to search for customers');
@@ -150,29 +151,6 @@ const PartsTable = () => {
         partNumber: pricingForm.partNumber,
         customerId: customer.CUSTOMERID
       });
-
-      // Wait for the hook to update, then check the result
-      setTimeout(() => {
-        if (pricingHookError) {
-          setPricingError(pricingHookError);
-        } else if (pricing) {
-          setPricingResult({
-            ...pricing,
-            customer: {
-              id: customer.CUSTOMERID,
-              name: customer.NAME,
-              firstName: customer.FIRSTNAME,
-              lastName: customer.LASTNAME,
-              phone: customer.PHONE,
-              email: customer.EMAIL,
-              city: customer.CITY,
-              state: customer.STATE
-            }
-          });
-          setPricingStep('result');
-        }
-        setPricingLoading(false);
-      }, 500);
     } catch (err: any) {
       setPricingError(err?.message || 'Failed to get pricing information');
       setPricingLoading(false);
@@ -187,15 +165,32 @@ const PartsTable = () => {
     setPricingResult(null);
     setPricingStep('search');
     setSelectedCustomer(null);
+    setIsCustomerReady(false);
     setShowCustomerDropdown(false);
     setIsSearching(false);
     setPricingForm({ mfr: '', partNumber: '', customerName: '' });
   };
   
+  // Validate when customer is fully loaded and ready
+  useEffect(() => {
+    if (selectedCustomer && selectedCustomer.CUSTOMERID) {
+      setIsCustomerReady(true);
+    } else {
+      setIsCustomerReady(false);
+    }
+  }, [selectedCustomer]);
+  
   // Update dropdown when customers data changes
   useEffect(() => {
     // Only process when search has finished loading
     if (customerSearchLoading) return;
+    
+    // Don't show dropdown if customer is already selected
+    if (selectedCustomer) {
+      setShowCustomerDropdown(false);
+      setIsSearching(false);
+      return;
+    }
     
     if (customerSearchError) {
       setPricingError(customerSearchError);
@@ -214,10 +209,13 @@ const PartsTable = () => {
     } else {
       setIsSearching(false);
     }
-  }, [customers, customerSearchLoading, customerSearchError, pricingForm.customerName, t]);
+  }, [customers, customerSearchLoading, customerSearchError, pricingForm.customerName, selectedCustomer, t]);
   
   // Debounce customer search
   useEffect(() => {
+    // Don't search if a customer is already selected (prevents search when clicking from dropdown)
+    if (selectedCustomer) return;
+    
     const timeoutId = setTimeout(() => {
       if (pricingForm.customerName.trim().length >= 3) {
         handleCustomerSearch(pricingForm.customerName);
@@ -256,6 +254,30 @@ const PartsTable = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // React to pricing data changes
+  useEffect(() => {
+    if (pricingLoading && pricing && selectedCustomer) {
+      setPricingResult({
+        ...pricing,
+        customer: {
+          id: selectedCustomer.CUSTOMERID,
+          name: selectedCustomer.NAME,
+          firstName: selectedCustomer.FIRSTNAME,
+          lastName: selectedCustomer.LASTNAME,
+          phone: selectedCustomer.PHONE,
+          email: selectedCustomer.EMAIL,
+          city: selectedCustomer.CITY,
+          state: selectedCustomer.STATE
+        }
+      });
+      setPricingStep('result');
+      setPricingLoading(false);
+    } else if (pricingLoading && pricingHookError) {
+      setPricingError(pricingHookError);
+      setPricingLoading(false);
+    }
+  }, [pricing, pricingHookError, pricingLoading, selectedCustomer]);
 
   // Handle pricing modal keyboard events
   useEffect(() => {
@@ -994,14 +1016,14 @@ const PartsTable = () => {
                   <button
                     type="button"
                     className={`flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold shadow-md transition-all duration-150 ${
-                      !selectedCustomer || pricingLoading ? 'opacity-50 cursor-not-allowed' : ''
+                      !isCustomerReady || pricingLoading ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                     onClick={() => {
-                      if (selectedCustomer) {
+                      if (isCustomerReady && selectedCustomer) {
                         handlePricingFetch(selectedCustomer);
                       }
                     }}
-                    disabled={!selectedCustomer || pricingLoading}
+                    disabled={!isCustomerReady || pricingLoading}
                   >
                     {pricingLoading ? (
                       <span className="flex items-center justify-center gap-2">

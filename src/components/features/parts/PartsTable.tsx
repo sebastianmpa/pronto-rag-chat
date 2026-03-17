@@ -43,7 +43,8 @@ const PartsTable = () => {
     pricing,
     loading: pricingHookLoading,
     error: pricingHookError,
-    fetchPricing 
+    fetchPricing,
+    clearPricing
   } = usePricing();
   const { 
     customers,
@@ -169,6 +170,8 @@ const PartsTable = () => {
     setShowCustomerDropdown(false);
     setIsSearching(false);
     setPricingForm({ mfr: '', partNumber: '', customerName: '' });
+    setPricingLoading(false);
+    clearPricing(); // Clear the pricing hook state
   };
   
   // Validate when customer is fully loaded and ready
@@ -226,6 +229,26 @@ const PartsTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricingForm.customerName]);
   
+  // Clean pricing state when opening a new pricing modal
+  useEffect(() => {
+    if (pricingModalIdx !== null || pricingRelatedIdx !== null) {
+      // Only reset the form but keep modal open for new search
+      setPricingError(null);
+      setPricingResult(null);
+      setPricingStep('search');
+      setSelectedCustomer(null);
+      setIsCustomerReady(false);
+      setShowCustomerDropdown(false);
+      setIsSearching(false);
+      setPricingForm(prev => ({
+        ...prev,
+        customerName: ''
+      }));
+      setPricingLoading(false);
+      clearPricing(); // Clear the pricing hook state
+    }
+  }, [pricingModalIdx, pricingRelatedIdx, clearPricing]);
+
   // Focus on order input when modal opens
   useEffect(() => {
     if (transferModalIdx !== null && orderInputRef.current) {
@@ -459,14 +482,21 @@ const PartsTable = () => {
                           className="p-1.5 rounded-full transition-colors bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
                           title={t('pricing.get_info') || 'Get pricing information'}
                           onClick={() => {
+                            clearPricing(); // Clear any previous pricing data
                             setPricingForm({ 
                               mfr: item.mfrId, 
                               partNumber: item.partNumber, 
                               customerName: '' 
                             });
+                            setPricingRelatedIdx(null);
                             setPricingModalIdx(idx);
                             setPricingError(null);
                             setPricingResult(null);
+                            setPricingStep('search');
+                            setSelectedCustomer(null);
+                            setIsCustomerReady(false);
+                            setShowCustomerDropdown(false);
+                            setPricingLoading(false);
                           }}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -582,16 +612,21 @@ const PartsTable = () => {
                                           className="p-0.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 focus:outline-none flex-shrink-0"
                                           title={t('pricing.get_info') || 'Get pricing for this part'}
                                           onClick={() => {
+                                            clearPricing(); // Clear any previous pricing data
                                             setPricingForm({ 
                                               mfr: part.MFRID || '', 
                                               partNumber: part.PARTNUMBER || '', 
                                               customerName: '' 
                                             });
+                                            setPricingModalIdx(null);
                                             setPricingRelatedIdx({itemIdx: idx, partIdx: pidx});
                                             setPricingError(null);
                                             setPricingResult(null);
                                             setPricingStep('search');
                                             setSelectedCustomer(null);
+                                            setIsCustomerReady(false);
+                                            setShowCustomerDropdown(false);
+                                            setPricingLoading(false);
                                           }}
                                         >
                                           <svg className="w-3.5 h-3.5 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

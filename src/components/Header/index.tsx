@@ -33,13 +33,18 @@ const Header = (props: {
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
+    if (paused) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % brands.length);
     }, 2500);
     return () => clearInterval(interval);
-  }, []);
+  }, [paused]);
+
+  const goPrev = () => setCurrentIndex((prev) => (prev - 1 + brands.length) % brands.length);
+  const goNext = () => setCurrentIndex((prev) => (prev + 1) % brands.length);
 
   const visibleBrands = Array.from({ length: ITEMS_PER_PAGE }, (_, i) =>
     brands[(currentIndex + i) % brands.length]
@@ -111,18 +116,49 @@ const Header = (props: {
 
         <div className="flex items-center gap-3 2xsm:gap-7">
           <ul className="flex items-center gap-2 2xsm:gap-4">
-            {/* Marcas - Carrusel */}
-            <div className="flex flex-grow items-center justify-center gap-8 px-8">
-              {visibleBrands.map((brand, i) => (
-                <img
-                  key={`${brand.name}-${i}`}
-                  src={brand.logo}
-                  alt={brand.name}
-                  className="h-14 max-h-16 w-auto object-contain transition-opacity duration-500"
-                  style={{ maxWidth: '180px' }}
-                  title={brand.name}
-                />
-              ))}
+            {/* Marcas - Carrusel con flechas */}
+            <div
+              className="flex items-center gap-2 px-4"
+              onMouseEnter={() => setPaused(true)}
+              onMouseLeave={() => setPaused(false)}
+            >
+              {/* Flecha izquierda */}
+              <button
+                type="button"
+                onClick={goPrev}
+                className="flex-shrink-0 p-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-boxdark-2 dark:hover:bg-meta-4 text-gray-600 dark:text-gray-300 transition-colors"
+                title="Anterior"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+
+              {/* Logos */}
+              <div className="flex items-center gap-6">
+                {visibleBrands.map((brand, i) => (
+                  <img
+                    key={`${brand.name}-${i}`}
+                    src={brand.logo}
+                    alt={brand.name}
+                    className="h-14 max-h-16 w-auto object-contain transition-opacity duration-500"
+                    style={{ maxWidth: '180px' }}
+                    title={brand.name}
+                  />
+                ))}
+              </div>
+
+              {/* Flecha derecha */}
+              <button
+                type="button"
+                onClick={goNext}
+                className="flex-shrink-0 p-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-boxdark-2 dark:hover:bg-meta-4 text-gray-600 dark:text-gray-300 transition-colors"
+                title="Siguiente"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
             </div>
             {/* <!-- Dark Mode Toggler --> */}
             <DarkModeSwitcher />

@@ -1412,20 +1412,27 @@ const MessagesMe: React.FC = () => {
     recognition.lang = navigator.language || 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    recognition.continuous = false;
+    recognition.continuous = true; // Sigue escuchando hasta que el usuario pare manualmente
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setInputValue(prev => prev ? `${prev} ${transcript}` : transcript);
-      setTimeout(() => inputRef.current?.focus(), 0);
+      // Acumular todos los resultados nuevos en cada evento
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          transcript += event.results[i][0].transcript + ' ';
+        }
+      }
+      if (transcript.trim()) {
+        setInputValue(prev => prev ? `${prev.trimEnd()} ${transcript.trim()}` : transcript.trim());
+      }
     };
 
     recognition.start();
   };
-  
+
 
   // Handler para clic en superseded - envía mensaje "stock + superseded"
   const handleSupersededClicked = (superseded: string) => {

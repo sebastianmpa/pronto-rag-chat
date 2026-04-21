@@ -1259,6 +1259,8 @@ const MessagesMe: React.FC = () => {
   const [commandsOpen, setCommandsOpen] = useState(false);
   const commandsBtnRef = useRef<HTMLButtonElement>(null);
   const commandsMenuRef = useRef<HTMLDivElement>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Keyboard shortcut (Ctrl+Shift+I) to toggle commands menu and global click/esc handlers
   useEffect(() => {
@@ -1394,6 +1396,34 @@ const MessagesMe: React.FC = () => {
         handleSubmit(message);
       }
     }
+  };
+
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = navigator.language || 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInputValue(prev => prev ? `${prev} ${transcript}` : transcript);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    };
+
+    recognition.start();
   };
 
   // Handler para clic en superseded - envía mensaje "stock + superseded"
@@ -2053,6 +2083,33 @@ const MessagesMe: React.FC = () => {
                              )}
                            </div>
                          </div>
+                         {/* Voice input button */}
+                         {((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) && (
+                           <button
+                             type="button"
+                             onClick={handleVoiceInput}
+                             disabled={assistantTyping}
+                             title={isListening ? 'Detener grabación' : 'Hablar'}
+                             className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                               isListening
+                                 ? 'bg-red-100 border-red-400 text-red-600 dark:bg-red-900/30 dark:border-red-500 dark:text-red-400 animate-pulse'
+                                 : 'border-stroke bg-gray-2 dark:bg-boxdark-2 dark:border-strokedark text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-boxdark'
+                             }`}
+                           >
+                             {isListening ? (
+                               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                 <rect x="6" y="6" width="12" height="12" rx="2" />
+                               </svg>
+                             ) : (
+                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+                                 <rect x="9" y="2" width="6" height="11" rx="3" />
+                                 <path d="M5 10a7 7 0 0 0 14 0" />
+                                 <line x1="12" y1="19" x2="12" y2="22" />
+                                 <line x1="8" y1="22" x2="16" y2="22" />
+                               </svg>
+                             )}
+                           </button>
+                         )}
                          <button 
                            type="submit"
                            disabled={assistantTyping}

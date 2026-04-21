@@ -1,5 +1,6 @@
 
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import DropdownMessage from './DropdownMessage';
 import DropdownNotification from './DropdownNotification';
 import DropdownUser from './DropdownUser';
@@ -13,13 +14,37 @@ const brands = [
   { name: 'Toro', logo: '/images/toro.png' },
   { name: 'Hustler', logo: '/images/hulster.png' },
   { name: 'RedMax', logo: '/images/redmax.png' },
-  { name: 'STIHL', logo: '/images/stihl.png' }
+  { name: 'STIHL', logo: '/images/stihl.png' },
+  { name: 'BE', logo: '/images/be.png' },
+  { name: 'Billy Goat', logo: '/images/billygoat.png' },
+  { name: 'Husqvarna', logo: '/images/husqvarna.png' },
+  { name: 'Kawasaki', logo: '/images/kawasaki.png' },
+  { name: 'Kohler', logo: '/images/kohler.png' },
+  { name: 'Murray', logo: '/images/murray.png' },
+  { name: 'Snapper', logo: '/images/snapper.png' },
+  { name: 'YBravo', logo: '/images/ybravo.png' },
+  {name: 'Exmark', logo: '/images/exmark.png' },
 ];
+
+const ITEMS_PER_PAGE = 7;
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % brands.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const visibleBrands = Array.from({ length: ITEMS_PER_PAGE }, (_, i) =>
+    brands[(currentIndex + i) % brands.length]
+  );
+
   return (
     <header className="sticky top-0 z-999 flex w-full bg-white drop-shadow-1 dark:bg-boxdark dark:drop-shadow-none">
       <div className="flex flex-grow items-center justify-between px-4 py-4 shadow-2 md:px-6 2xl:px-11">
@@ -86,14 +111,14 @@ const Header = (props: {
 
         <div className="flex items-center gap-3 2xsm:gap-7">
           <ul className="flex items-center gap-2 2xsm:gap-4">
-            {/* Marcas */}
+            {/* Marcas - Carrusel */}
             <div className="flex flex-grow items-center justify-center gap-8 px-8">
-              {brands.map((brand) => (
+              {visibleBrands.map((brand, i) => (
                 <img
-                  key={brand.name}
+                  key={`${brand.name}-${i}`}
                   src={brand.logo}
                   alt={brand.name}
-                  className="h-14 max-h-16 w-auto object-contain transition-all"
+                  className="h-14 max-h-16 w-auto object-contain transition-opacity duration-500"
                   style={{ maxWidth: '180px' }}
                   title={brand.name}
                 />

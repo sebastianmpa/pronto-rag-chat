@@ -18,7 +18,7 @@ const brands = [
   { name: 'BE', logo: '/images/be.png' },
   { name: 'Billy Goat', logo: '/images/billygoat.png' },
   { name: 'Husqvarna', logo: '/images/husqvarna.png' },
-  { name: 'Kawasaki', logo: '/images/kawasaki.png' },
+  //{ name: 'Kawasaki', logo: '/images/kawasaki.png' },
   { name: 'Kohler', logo: '/images/kohler.png' },
   { name: 'Murray', logo: '/images/murray.png' },
   { name: 'Snapper', logo: '/images/snapper.png' },

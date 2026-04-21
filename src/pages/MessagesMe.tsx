@@ -1425,6 +1425,7 @@ const MessagesMe: React.FC = () => {
 
     recognition.start();
   };
+  
 
   // Handler para clic en superseded - envía mensaje "stock + superseded"
   const handleSupersededClicked = (superseded: string) => {

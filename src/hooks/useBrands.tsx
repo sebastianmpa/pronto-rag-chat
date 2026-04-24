@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BrandsResponse, Brand, ProductPartsQueryParams } from '../types/productParts';
+import {
+  BrandsResponse,
+  Brand,
+  ProductPartsQueryParams,
+} from '../types/productParts';
 import { getBrands, searchBrands } from '../libs/ProductPartsService';
 
 export interface UseBrandsResult {
@@ -14,13 +18,17 @@ export interface UseBrandsResult {
   clearSearch: () => void;
 }
 
-export const useBrands = (initialParams: ProductPartsQueryParams = {}): UseBrandsResult => {
+export const useBrands = (
+  initialParams: ProductPartsQueryParams = {}
+): UseBrandsResult => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalItems, setTotalItems] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(initialParams.page || 1);
+  const [currentPage, setCurrentPage] = useState<number>(
+    initialParams.page || 1
+  );
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [params, setParams] = useState<ProductPartsQueryParams>(initialParams);
 

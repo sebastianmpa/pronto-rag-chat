@@ -107,8 +107,8 @@
       "delete": "Eliminar",
       "showing_page": "Mostrando página {{current}} de {{total}} ({{records}} registros en total)",
       "page": "Página",
-  "loading": "Cargando...",
-  "records_per_page": "Registros por página"
+      "loading": "Cargando...",
+      "records_per_page": "Registros por página"
     },
     "modal": {
       "create_title": "Crear Nuevo Permiso",
@@ -268,10 +268,27 @@
     "chats": "Chats",
     "myMessages": "Mis Mensajes",
     "allMessages": "Todos los Mensajes",
+    "questionsAnswers": "Preguntas y respuestas",
     "parts": "Partes",
     "productParts": "Modelos por Marca",
     "terms": "Términos",
     "loading": "Cargando..."
+  },
+  "questionsAnswers": {
+    "form": {
+      "title": "Preguntas y respuestas",
+      "questionLabel": "Pregunta",
+      "questionPlaceholder": "Escribe una pregunta",
+      "answerLabel": "Respuesta",
+      "answerPlaceholder": "Escribe una respuesta",
+      "saveButton": "Guardar",
+      "success": "Pregunta y respuesta guardadas correctamente.",
+      "error": "No se pudo guardar la información. Intenta nuevamente.",
+      "errors": {
+        "required": "Este campo es obligatorio.",
+        "maxLength": "El máximo permitido es de {{max}} caracteres."
+      }
+    }
   },
   "header": {
     "logout": "Cerrar sesión",
@@ -381,8 +398,7 @@
     "delete_modal": {
       "title": "Eliminar Término",
       "message": "¿Estás seguro de que deseas eliminar este término? Esta acción no se puede deshacer."
-    }
-    ,
+    },
     "located": {
       "title": "Términos Localizados",
       "table": {

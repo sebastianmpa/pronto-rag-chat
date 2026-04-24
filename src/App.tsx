@@ -18,13 +18,17 @@ import { useUserProfile } from './hooks/useUser';
 import SignIn from './pages/Authentication/SignIn';
 import PartsPage from './pages/Pages/PartsPage';
 import ProductParts from './pages/Pages/ProductParts';
-
+import QuestionsAnswersPage from './pages/Pages/QuestionsAnswersPage';
 
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const { pathname } = useLocation();
   const isAuthRoute = pathname.startsWith('/auth');
-  const { roleInternalName, fetchProfile, loading: profileLoading } = useUserProfile();
+  const {
+    roleInternalName,
+    fetchProfile,
+    loading: profileLoading,
+  } = useUserProfile();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -47,7 +51,12 @@ function App() {
   // Redirección según rol (solo en rutas privadas)
   let defaultRoute;
   if (!isAuthRoute) {
-    if (roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') {
+    if (
+      roleInternalName === 'admin' ||
+      roleInternalName === 'supervisor' ||
+      roleInternalName === 'supervisorL4' ||
+      roleInternalName === 'supervisorL1'
+    ) {
       defaultRoute = <Navigate to="/messages/all" replace />;
     } else if (roleInternalName === 'user') {
       defaultRoute = <Navigate to="/messages/me" replace />;
@@ -61,7 +70,10 @@ function App() {
       <Routes>
         <Route element={<PrivateRoute />}>
           {/* Ruta principal: dashboard/estadísticas solo para admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
             <Route
               index
               element={
@@ -82,9 +94,26 @@ function App() {
               </>
             }
           />
-          
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
+            <Route
+              path="/questions-answers"
+              element={
+                <>
+                  <PageTitle title="Preguntas y respuestas | TailAdmin" />
+                  <QuestionsAnswersPage />
+                </>
+              }
+            />
+          )}
+
           {/* Ruta para todos los mensajes - SOLO admin y supervisor */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
             <Route
               path="/messages"
               element={
@@ -96,14 +125,17 @@ function App() {
             />
           )}
           {/* Ruta para la tabla de partes - admin, supervisor, supervisorL1, supervisorL4 */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
-            <Route
-              path="/parts"
-              element={<PartsPage />}
-            />
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
+            <Route path="/parts" element={<PartsPage />} />
           )}
           {/* Ruta para product parts (marcas y modelos) - admin, supervisor, supervisorL1, supervisorL4 */}
-          {(roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
             <Route
               path="/product-parts"
               element={
@@ -116,13 +148,12 @@ function App() {
           )}
           {/* Ruta para terms - SOLO administradores */}
           {roleInternalName === 'admin' && (
-            <Route
-              path="/terms"
-              element={<TermsPage />}
-            />
+            <Route path="/terms" element={<TermsPage />} />
           )}
           {/* Ruta para located-terms - SOLO supervisores */}
-          {(roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1') && (
+          {(roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
             <Route
               path="/terms/located"
               element={
@@ -133,14 +164,19 @@ function App() {
               }
             />
           )}
-          
+
           {/* Redirección de índice según rol */}
           <Route
             index
             element={
-              roleInternalName === 'admin' || roleInternalName === 'supervisor' || roleInternalName === 'supervisorL4' || roleInternalName === 'supervisorL1'
-                ? <Navigate to="/messages" replace />
-                : <Navigate to="/messages/me" replace />
+              roleInternalName === 'admin' ||
+              roleInternalName === 'supervisor' ||
+              roleInternalName === 'supervisorL4' ||
+              roleInternalName === 'supervisorL1' ? (
+                <Navigate to="/messages" replace />
+              ) : (
+                <Navigate to="/messages/me" replace />
+              )
             }
           />
           {/* Rutas de perfil solo para admin */}

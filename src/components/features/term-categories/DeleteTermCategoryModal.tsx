@@ -46,10 +46,14 @@ const DeleteTermCategoryModal = ({ isOpen, onClose, onSuccess, category }: Delet
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-boxdark">
-        <h3 className="mb-4 text-xl font-semibold text-black dark:text-white">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-boxdark shadow-lg">
+        <h3 className="mb-2 text-xl font-bold text-danger dark:text-red-400">
           {t('term_categories.delete_modal.title') || 'Eliminar Categoría'}
         </h3>
+        
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+          Esta acción no se puede deshacer
+        </p>
 
         <p className="mb-4 text-black dark:text-white">
           {t('term_categories.delete_modal.message') || '¿Estás seguro de que deseas eliminar esta categoría?'}
@@ -66,12 +70,12 @@ const DeleteTermCategoryModal = ({ isOpen, onClose, onSuccess, category }: Delet
           </div>
         )}
 
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end gap-3 pt-6 border-t border-stroke dark:border-strokedark">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded border border-stroke px-4 py-2 text-sm font-medium text-black hover:bg-gray-2 dark:border-strokedark dark:text-white dark:hover:bg-meta-4"
+            className="rounded border border-stroke px-6 py-2.5 text-sm font-medium text-black hover:bg-gray-2 dark:border-strokedark dark:text-white dark:hover:bg-meta-4 transition-colors"
           >
             {t('common.cancel') || 'Cancelar'}
           </button>
@@ -79,7 +83,7 @@ const DeleteTermCategoryModal = ({ isOpen, onClose, onSuccess, category }: Delet
             type="button"
             onClick={handleDelete} 
             disabled={loading} 
-            className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+            className="rounded bg-danger px-6 py-2.5 text-sm font-medium text-white hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading ? (t('common.loading') || 'Cargando...') : (t('common.delete') || 'Eliminar')}
           </button>

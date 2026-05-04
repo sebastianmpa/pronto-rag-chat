@@ -395,6 +395,7 @@
       "term": "Término",
       "created_by": "Creado por",
       "term_type": "Tipo de término",
+      "category": "Categoría",
       "definition": "Definición",
       "owned": "Propios",
       "search_user": "Buscar por usuario...",
@@ -410,7 +411,8 @@
     "create_modal": {
       "title": "Crear Nuevo Término",
       "term_placeholder": "Ingresa el nombre del término",
-      "definition_placeholder": "Ingresa la definición del término"
+      "definition_placeholder": "Ingresa la definición del término",
+      "select_category": "Seleccionar categoría (opcional)"
     },
     "edit_modal": {
       "title": "Editar Término"
@@ -457,7 +459,10 @@
     },
     "create_modal": {
       "title": "Crear Categoría",
-      "placeholder": "Ingresa el nombre de la categoría"
+      "placeholder": "Ingresa el nombre de la categoría",
+      "internal_name": "Nombre Interno (opcional)",
+      "internal_placeholder": "Se genera automáticamente si está vacío",
+      "internal_hint": "Se genera automáticamente a partir del nombre si no lo proporcionas"
     },
     "edit_modal": {
       "title": "Editar Categoría",

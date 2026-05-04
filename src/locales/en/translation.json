@@ -400,8 +400,7 @@
     "table": {
       "term": "Term",
       "created_by": "Created By",
-      "term_type": "Term type",
-      "definition": "Definition",
+      "term_type": "Term type",      "category": "Category",      "definition": "Definition",
       "owned": "Owned",
       "search_user": "Search by user...",
       "location": "Location",
@@ -416,7 +415,8 @@
     "create_modal": {
       "title": "Create New Term",
       "term_placeholder": "Enter the term name",
-      "definition_placeholder": "Enter the term definition"
+      "definition_placeholder": "Enter the term definition",
+      "select_category": "Select category (optional)"
     },
     "edit_modal": {
       "title": "Edit Term"
@@ -463,7 +463,10 @@
     },
     "create_modal": {
       "title": "Create Category",
-      "placeholder": "Enter the category name"
+      "placeholder": "Enter the category name",
+      "internal_name": "Internal Name (optional)",
+      "internal_placeholder": "Auto-generated if empty",
+      "internal_hint": "Auto-generated from the name if you don't provide it"
     },
     "edit_modal": {
       "title": "Edit Category",

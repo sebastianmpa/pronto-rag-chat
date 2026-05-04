@@ -558,8 +558,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
               )}
-              {/* Terms (solo admin) */}
-              {roleInternalName === 'admin' && (
+              {/* Terms (admin y supervisores) */}
+              {(roleInternalName === 'admin' ||
+                roleInternalName === 'supervisor' ||
+                roleInternalName === 'supervisorL4' ||
+                roleInternalName === 'supervisorL1') && (
                 <li>
                   <NavLink
                     to="/terms"

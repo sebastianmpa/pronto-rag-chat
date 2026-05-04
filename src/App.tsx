@@ -147,8 +147,11 @@ function App() {
               }
             />
           )}
-          {/* Ruta para terms - SOLO administradores */}
-          {roleInternalName === 'admin' && (
+          {/* Ruta para terms - administradores y supervisores */}
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
             <Route path="/terms" element={<TermsPage />} />
           )}
           {/* Ruta para term categories - SOLO administradores */}

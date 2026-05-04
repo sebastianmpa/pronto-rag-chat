@@ -4,6 +4,7 @@ export interface Term {
   definition: string;
   term_type?: string;
   location: string;
+  term_category_id?: string;
   // optional creator info (may be provided by the API)
   term_user?: {
     firstName?: string;
@@ -38,6 +39,7 @@ export interface TermCreateRequest {
   definition: string;
   term_type: string;
   location?: string;
+  term_category_id?: string;
 }
 
 export interface TermUpdateRequest {
@@ -45,6 +47,7 @@ export interface TermUpdateRequest {
   definition?: string;
   location?: string;
   term_type?: string;
+  term_category_id?: string;
 }
 
 export interface TermDefinitionResponse {

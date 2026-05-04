@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTermsPaginated } from '../../../libs/TermService';
+import { getAllTermCategories } from '../../../libs/TermCategoryService';
 import { Term, TermsResponse } from '../../../types/Term';
 import CreateTermModal from './CreateTermModal';
 import EditTermModal from './EditTermModal';
@@ -22,6 +23,7 @@ const TermTable = () => {
   const [termsResponse, setTermsResponse] = useState<TermsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Map<string, string>>(new Map()); // ID -> category_name
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -42,6 +44,23 @@ const TermTable = () => {
   };
 
   const { t } = useTranslation();
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllTermCategories();
+        const categoryMap = new Map<string, string>();
+        data.forEach((cat) => {
+          categoryMap.set(cat.id, cat.category_name);
+        });
+        setCategories(categoryMap);
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Fetch terms data - ONLY depends on page and limit
   const fetchTerms = async () => {
@@ -223,6 +242,9 @@ const TermTable = () => {
                   <th className="min-w-[140px] px-4 py-4 font-medium text-black dark:text-white align-top">
                     {t('terms.table.term_type')}
                   </th>
+                  <th className="min-w-[160px] px-4 py-4 font-medium text-black dark:text-white align-top">
+                    {t('terms.table.category') || 'Categoría'}
+                  </th>
                   <th className="min-w-[220px] px-4 py-4 font-medium text-black dark:text-white align-top">{t('terms.table.created_by') || 'Creado por'}</th>
                   <th className="min-w-[100px] px-4 py-4 font-medium text-black dark:text-white">
                     {t('terms.table.location')}
@@ -265,6 +287,11 @@ const TermTable = () => {
                       </td>
                       <td className="px-4 py-5 align-top">
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.term_type || '-'}</span>
+                      </td>
+                      <td className="px-4 py-5 align-top">
+                        <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {term.term_category_id ? categories.get(term.term_category_id) || '-' : '-'}
+                        </span>
                       </td>
                       <td className="px-4 py-5 align-top">
                         <p className="text-black dark:text-white">{(term as any).term_user ? `${(term as any).term_user.firstName || ''} ${(term as any).term_user.lastName || ''}`.trim() : (term as any).user_id || t('user_no_name')}</p>
@@ -336,7 +363,7 @@ const TermTable = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                       {t('common.no_results')}
                     </td>
                   </tr>

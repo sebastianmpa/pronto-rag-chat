@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateTerm } from '../../../hooks/useTerm';
+import { getAllTermCategories } from '../../../libs/TermCategoryService';
 import { Term } from '../../../types/Term';
+import { TermCategory } from '../../../types/TermCategory';
 
 interface EditTermModalProps {
   isOpen: boolean;
@@ -18,8 +20,29 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
     definition: '',
     location: '1',
     term_type: 'PARTNUMBER',
+    term_category_id: '',
   });
   const [localError, setLocalError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<TermCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // Cargar categorías al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const fetchCategories = async () => {
+        setLoadingCategories(true);
+        try {
+          const data = await getAllTermCategories();
+          setCategories(data);
+        } catch (err) {
+          console.error('Error loading categories:', err);
+        } finally {
+          setLoadingCategories(false);
+        }
+      };
+      fetchCategories();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (term) {
@@ -28,6 +51,7 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
         definition: term.definition,
         location: term.location,
         term_type: (term as any).term_type || 'PARTNUMBER',
+        term_category_id: term.term_category_id || '',
       });
       setLocalError(null);
     }
@@ -125,6 +149,24 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
             >
               <option value="1">Location 1</option>
               <option value="4">Location 4</option>
+            </select>
+          </div>
+
+          {/* Category Field */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.category')}</label>
+            <select
+              value={(formData as any).term_category_id}
+              onChange={(e) => setFormData({ ...formData, term_category_id: e.target.value })}
+              disabled={loadingCategories}
+              className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white disabled:opacity-50"
+            >
+              <option value="">{loadingCategories ? t('common.loading') : (t('terms.create_modal.select_category') || 'Seleccionar categoría (opcional)')}</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.category_name}
+                </option>
+              ))}
             </select>
           </div>
 

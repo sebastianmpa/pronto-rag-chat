@@ -16,8 +16,10 @@ export interface TermCategoriesResponse {
 
 export interface TermCategoryCreateRequest {
   category_name: string;
+  internal_category_name: string;
 }
 
 export interface TermCategoryUpdateRequest {
   category_name?: string;
+  internal_category_name?: string;
 }

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreateTerm } from '../../../hooks/useTerm';
+import { getAllTermCategories } from '../../../libs/TermCategoryService';
+import { TermCategory } from '../../../types/TermCategory';
 
 interface CreateTermModalProps {
   isOpen: boolean;
@@ -11,9 +13,29 @@ interface CreateTermModalProps {
 const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) => {
   const { t } = useTranslation();
   const { create, loading, error } = useCreateTerm();
-  const [formData, setFormData] = useState({ term: '', definition: '', term_type: 'PARTNUMBER', location: '1' });
+  const [formData, setFormData] = useState({ term: '', definition: '', term_type: 'PARTNUMBER', location: '1', term_category_id: '' });
   const [localError, setLocalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [categories, setCategories] = useState<TermCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // Cargar categorías al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const fetchCategories = async () => {
+        setLoadingCategories(true);
+        try {
+          const data = await getAllTermCategories();
+          setCategories(data);
+        } catch (err) {
+          console.error('Error loading categories:', err);
+        } finally {
+          setLoadingCategories(false);
+        }
+      };
+      fetchCategories();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +44,7 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
 
     try {
       await create(formData as any);
-      setFormData({ term: '', definition: '', term_type: 'PARTNUMBER' });
+      setFormData({ term: '', definition: '', term_type: 'PARTNUMBER', location: '1', term_category_id: '' });
       onSuccess();
     } catch (err: any) {
       let errorMessage = 'Error al crear el término';
@@ -111,6 +133,24 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
             >
               <option value="1">Location 1</option>
               <option value="4">Location 4</option>
+            </select>
+          </div>
+
+          {/* Category Field */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.category')}</label>
+            <select
+              value={(formData as any).term_category_id}
+              onChange={(e) => setFormData({ ...formData, term_category_id: e.target.value })}
+              disabled={loadingCategories}
+              className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white disabled:opacity-50"
+            >
+              <option value="">{loadingCategories ? t('common.loading') : (t('terms.create_modal.select_category') || 'Seleccionar categoría (opcional)')}</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.category_name}
+                </option>
+              ))}
             </select>
           </div>
 

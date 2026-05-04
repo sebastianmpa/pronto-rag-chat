@@ -11,16 +11,12 @@ interface CreateTermCategoryModalProps {
 const CreateTermCategoryModal = ({ isOpen, onClose, onSuccess }: CreateTermCategoryModalProps) => {
   const { t } = useTranslation();
   const { create, loading, error } = useCreateTermCategory();
-  const [formData, setFormData] = useState({ category_name: '', internal_category_name: '' });
+  const [formData, setFormData] = useState({ category_name: '' });
   const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-
-    // Si no hay internal_category_name, generar uno automáticamente
-    const internalName = formData.internal_category_name.trim() || 
-      formData.category_name.toLowerCase().replace(/\s+/g, '_');
 
     if (!formData.category_name.trim()) {
       setLocalError('El nombre de categoría es requerido');
@@ -29,11 +25,10 @@ const CreateTermCategoryModal = ({ isOpen, onClose, onSuccess }: CreateTermCateg
 
     try {
       const result = await create({
-        category_name: formData.category_name,
-        internal_category_name: internalName
+        category_name: formData.category_name
       });
       if (result) {
-        setFormData({ category_name: '', internal_category_name: '' });
+        setFormData({ category_name: '' });
         onSuccess();
       }
     } catch (err: any) {
@@ -77,22 +72,6 @@ const CreateTermCategoryModal = ({ isOpen, onClose, onSuccess }: CreateTermCateg
               placeholder={t('term_categories.create_modal.placeholder') || 'Ingresa el nombre de la categoría'}
               className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
             />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              {t('term_categories.create_modal.internal_name') || 'Nombre Interno (opcional)'}
-            </label>
-            <input
-              type="text"
-              value={formData.internal_category_name}
-              onChange={(e) => setFormData({ ...formData, internal_category_name: e.target.value })}
-              placeholder={t('term_categories.create_modal.internal_placeholder') || 'Se genera automáticamente si está vacío'}
-              className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
-            />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {t('term_categories.create_modal.internal_hint') || 'Se genera automáticamente a partir del nombre si no lo proporcionas'}
-            </p>
           </div>
 
           {displayError && (

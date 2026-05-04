@@ -278,6 +278,7 @@
     "parts": "Parts",
     "productParts": "Models by Brand",
     "terms": "Terms",
+    "termCategories": "Categories",
     "loading": "Loading..."
   },
   "questionsAnswers": {
@@ -332,7 +333,26 @@
     "manufacturer": "Manufacturer",
     "model": "Model",
     "serial": "Serial",
-    "component": "Component"
+    "component": "Component",
+    "categories": "Terms"
+  },
+  "commands": {
+    "available": "Available commands",
+    "system": "System",
+    "category": "Category",
+    "navigate": "Navigate",
+    "select": "Select",
+    "close": "Close"
+  },
+  "category_mode": {
+    "title": "Category Mode",
+    "select_category": "Select Category",
+    "choose_category": "Choose category...",
+    "enter_term": "Enter Term",
+    "term_placeholder": "e.g.: Oil Filter, Fuel Filter...",
+    "search": "Search",
+    "searching": "Searching...",
+    "activated": "Category mode activated. Please select a category and term to search."
   },
   "common": {
     "close": "Close",
@@ -427,6 +447,31 @@
         "message": "Are you sure you want to delete this located term? This action cannot be undone.",
         "deleting": "Deleting..."
       }
+    }
+  },
+  "term_categories": {
+    "title": "Term Categories",
+    "create": "Create Category",
+    "table": {
+      "category_name": "Category Name",
+      "internal_name": "Internal Name",
+      "created_at": "Created At",
+      "updated_at": "Updated At",
+      "actions": "Actions",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "create_modal": {
+      "title": "Create Category",
+      "placeholder": "Enter the category name"
+    },
+    "edit_modal": {
+      "title": "Edit Category",
+      "placeholder": "Enter the category name"
+    },
+    "delete_modal": {
+      "title": "Delete Category",
+      "message": "Are you sure you want to delete this category? This action cannot be undone."
     }
   }
 }

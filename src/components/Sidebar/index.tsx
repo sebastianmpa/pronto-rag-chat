@@ -587,6 +587,34 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </li>
               )}
 
+              {/* Term Categories (solo admin) */}
+              {roleInternalName === 'admin' && (
+                <li>
+                  <NavLink
+                    to="/terms/categories"
+                    className={({ isActive }) =>
+                      'group relative flex items-center gap-2.5 rounded-md px-4 py-2 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
+                      (isActive && '!text-white')
+                    }
+                  >
+                    <svg
+                      className="fill-current"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2 2h6v6H2V2zm0 8h6v6H2v-6zm8-8h6v6h-6V2zm0 8h6v6h-6v-6z"
+                        fill=""
+                      />
+                    </svg>
+                    {t('sidebar.termCategories') || 'Categorías'}
+                  </NavLink>
+                </li>
+              )}
+
               {/* Located Terms (solo supervisores) */}
               {(roleInternalName === 'supervisor' ||
                 roleInternalName === 'supervisorL4' ||

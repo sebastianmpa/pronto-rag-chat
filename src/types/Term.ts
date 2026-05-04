@@ -85,3 +85,31 @@ export interface ValidationErrorResponse {
   errors: ServerValidationError[];
 }
 
+// Terms by category
+export interface TermByCategory {
+  id: string;
+  term_category_id: string;
+  term: string;
+  term_type: 'PARTNUMBER' | 'GENERIC' | 'TECHNICAL' | 'COMMERCIAL';
+  normalized_term: string;
+  definition: string;
+  user_id: string;
+  location: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export type TermsByCategoryResponse = TermByCategory[];
+
+// Term autocomplete
+export interface TermAutocomplete {
+  id: string;
+  term: string;
+  term_category_id: string;
+  normalized_term: string;
+  definition?: string;
+}
+
+export type TermAutocompleteResponse = TermAutocomplete[];
+

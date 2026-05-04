@@ -69,10 +69,12 @@ export interface ConversationMessage {
   table_data?: {
     partInfo?: any[];
   };
+  category_data?: string;
   conversation_context?: {
     intent?: string;
     mfr?: string;
     model?: string;
+    serie?: string;
     serial?: string;
     part?: string;
   };

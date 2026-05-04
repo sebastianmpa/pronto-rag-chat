@@ -1352,6 +1352,18 @@ const Messages: React.FC = () => {
                                           }
                                         />
                                       ) : null}
+                                      {/* Mostrar category_data si existe */}
+                                      {msg.role === 'assistant' &&
+                                        msg.category_data && (
+                                          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-boxdark-3">
+                                            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                                              {t('conversation_context.categories') || 'Categorías:'}
+                                            </p>
+                                            <p className="text-sm text-blue-900 dark:text-blue-100">
+                                              {msg.category_data}
+                                            </p>
+                                          </div>
+                                        )}
                                     </div>
                                     <div
                                       className={`text-gray-500 dark:text-gray-400 mt-1 text-xs ${

@@ -15,6 +15,7 @@ import { useRating } from '../hooks/useRating';
 import { useStockTransfer } from '../hooks/useStockTransfer';
 import { usePricing } from '../hooks/usePricing';
 import { useCustomerSearch } from '../hooks/useCustomerSearch';
+import { useCommands } from '../hooks/useCommands';
 import QuestionsAnswersModal from '../components/features/questions-answers/QuestionsAnswersModal';
 
 // Helper functions
@@ -31,11 +32,7 @@ const parseMessageContent = (
 ): { text: string; tableData: any[] | null } => {
   // Si tenemos tableData estructurado del nuevo formato de respuesta, priorizarlo
   if (tableData?.partInfo && Array.isArray(tableData.partInfo)) {
-    console.log(
-      '[parseMessageContent] ✅ Using structured tableData with',
-      tableData.partInfo.length,
-      'items'
-    );
+    // console.log('[parseMessageContent] ✅ Using structured tableData with', tableData.partInfo.length, 'items');
     return { text: content, tableData: tableData.partInfo };
   }
 
@@ -1663,7 +1660,17 @@ const MessagesMe: React.FC = () => {
     }
   `;
   const { profile: userProfile } = useUserProfile();
-  // Commands available in the chat UI (like ChatGPT slash commands)
+  
+  // Commands from API
+  const { commands: apiCommands, filterCommands } = useCommands();
+  
+  // Commands dropdown state
+  const [showCommandsDropdown, setShowCommandsDropdown] = useState(false);
+  const [filteredApiCommands, setFilteredApiCommands] = useState<any[]>([]);
+  const [selectedCommandIdx, setSelectedCommandIdx] = useState(0);
+  const commandsDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Commands available in the chat UI (like ChatGPT slash commands) - LEGACY
   const commands = [
     {
       name: '/fix',
@@ -1715,6 +1722,7 @@ const MessagesMe: React.FC = () => {
       document.removeEventListener('click', clickHandler);
     };
   }, [commandsOpen]);
+
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
@@ -1828,7 +1836,48 @@ const MessagesMe: React.FC = () => {
     }, 0);
   };
 
+  // Handle command selection
+  const handleCommandSelection = (cmd: any) => {
+    // Both system and category commands just insert text
+    setInputValue(cmd.command + ' ');
+    setShowCommandsDropdown(false);
+    setSelectedCommandIdx(0);
+  };
+
   const handleTyping = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle commands dropdown navigation
+    if (showCommandsDropdown && filteredApiCommands.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedCommandIdx((prev) => 
+          prev < filteredApiCommands.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedCommandIdx((prev) => 
+          prev > 0 ? prev - 1 : filteredApiCommands.length - 1
+        );
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const selectedCmd = filteredApiCommands[selectedCommandIdx];
+        if (selectedCmd) {
+          handleCommandSelection(selectedCmd);
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowCommandsDropdown(false);
+        setSelectedCommandIdx(0);
+        return;
+      }
+    }
+    
+    // Handle message sending
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const message = inputValue.trim();
@@ -1837,6 +1886,42 @@ const MessagesMe: React.FC = () => {
       }
     }
   };
+
+  // Handle input change and detect commands
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+    
+    // Detect if user is typing a command
+    if (value.startsWith('/')) {
+      const searchTerm = value.slice(1); // Remove the leading /
+      const filtered = filterCommands(searchTerm);
+      setFilteredApiCommands(filtered);
+      setShowCommandsDropdown(filtered.length > 0);
+      setSelectedCommandIdx(0);
+    } else {
+      setShowCommandsDropdown(false);
+      setSelectedCommandIdx(0);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        commandsDropdownRef.current &&
+        !commandsDropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowCommandsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleVoiceInput = () => {
     const SpeechRecognition =
@@ -1881,6 +1966,24 @@ const MessagesMe: React.FC = () => {
   const handleSupersededClicked = (superseded: string) => {
     const message = `stock ${superseded}`;
     handleSubmit(message);
+  };
+
+  // Handler para clic en pronto-sku - escribe en el input sin enviar
+  const handleSkuClicked = (sku: string) => {
+    setInputValue(`stock ${sku}`);
+    // Focus en el input
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  };
+
+  // Handler para clic en términos de categoría - solo copia el término sin "stock"
+  const handleCategoryTermClicked = (term: string) => {
+    setInputValue(term);
+    // Focus en el input
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
   };
 
   // Enviar mensaje o crear conversación
@@ -2016,20 +2119,26 @@ const MessagesMe: React.FC = () => {
         }
       }
 
-      // Mostrar el mensaje del assistant si hay answer o table_data
-      if (apiResponse && (apiResponse.answer || apiResponse.table_data)) {
+      // Mostrar el mensaje del assistant si hay answer o table_data o category_data o conversation_context
+      // Validar que category_data tenga contenido real (no vacío)
+      const hasCategoryData = apiResponse.category_data && apiResponse.category_data.trim().length > 0;
+      const hasContent = apiResponse.answer || apiResponse.table_data || hasCategoryData || apiResponse.conversation_context;
+      
+      if (apiResponse && hasContent) {
         setLocalMessages((prev) => [
           ...prev,
           {
             id: `assistant-${Date.now()}`,
             role: 'assistant',
             content: apiResponse.answer || '',
+            conversation_context: apiResponse.conversation_context, // Agregar conversation_context
             table:
               apiResponse.table ||
               (apiResponse.table_data && apiResponse.table_data.partInfo
                 ? true
                 : false), // Boolean que indica si hay tabla
             table_data: apiResponse.table_data, // Nueva estructura de datos
+            category_data: apiResponse.category_data, // Datos de categorías
             createdAt: new Date().toISOString(),
           },
         ]);
@@ -2347,7 +2456,7 @@ const MessagesMe: React.FC = () => {
                                   ? renderMessageContent(
                                       localMessages[0].content,
                                       'assistant',
-                                      handleSupersededClicked
+                                      handleSkuClicked
                                     )
                                   : ''}
                               </p>
@@ -2398,22 +2507,36 @@ const MessagesMe: React.FC = () => {
                           ...localMessages,
                         ];
                         if (!allMessages.length) return null;
-                        // Filtrar mensajes del assistant con 'No answer found'
-                        const filteredMessages = allMessages.map((msg) => {
-                          if (
-                            msg.role === 'assistant' &&
-                            msg.content &&
-                            msg.content.trim().toLowerCase() ===
-                              'no answer found'
-                          ) {
-                            return {
-                              ...msg,
-                              content:
-                                'Thank you for your rating and feedback! Your input helps us improve our service.',
-                            };
-                          }
-                          return msg;
-                        });
+                        // Filtrar mensajes del assistant con 'No answer found' y mensajes vacíos
+                        const filteredMessages = allMessages
+                          .map((msg) => {
+                            if (
+                              msg.role === 'assistant' &&
+                              msg.content &&
+                              msg.content.trim().toLowerCase() ===
+                                'no answer found'
+                            ) {
+                              return {
+                                ...msg,
+                                content:
+                                  'Thank you for your rating and feedback! Your input helps us improve our service.',
+                              };
+                            }
+                            return msg;
+                          })
+                          .filter((msg) => {
+                            // Si es un mensaje del assistant, verificar que tenga contenido real
+                            if (msg.role === 'assistant') {
+                              const hasContent = msg.content && msg.content.trim().length > 0;
+                              const hasTable = msg.table_data || msg.table;
+                              const hasCategoryData = msg.category_data && msg.category_data.trim().length > 0;
+                              const hasContext = msg.conversation_context;
+                              // Solo mostrar si tiene al menos uno de estos
+                              return hasContent || hasTable || hasCategoryData || hasContext;
+                            }
+                            // Siempre mostrar mensajes del usuario
+                            return true;
+                          });
                         let lastDate = '';
                         return (
                           <>
@@ -2432,16 +2555,12 @@ const MessagesMe: React.FC = () => {
                                   Array.isArray(msg.table_data.partInfo)
                                 ) {
                                   hasTable = true;
-                                  console.log(
-                                    '[hasTable detection] ✅ New structured table_data format detected with partInfo array'
-                                  );
+                                  // console.log('[hasTable detection] ✅ New structured table_data format detected with partInfo array');
                                 }
                                 // 2. Si viene el flag table (formato legacy)
                                 else if (msg.table === true) {
                                   hasTable = true;
-                                  console.log(
-                                    '[hasTable detection] Flag msg.table === true (legacy)'
-                                  );
+                                  // console.log('[hasTable detection] Flag msg.table === true (legacy)');
                                 } else if (typeof msg.content === 'string') {
                                   const trimmed = msg.content.trim();
 
@@ -2451,16 +2570,12 @@ const MessagesMe: React.FC = () => {
                                     msg.content.includes('partInfo')
                                   ) {
                                     hasTable = true;
-                                    console.log(
-                                      '[hasTable detection] ✅ Embedded partInfo pattern detected (legacy)'
-                                    );
+                                    // console.log('[hasTable detection] ✅ Embedded partInfo pattern detected (legacy)');
                                   }
                                   // 3. Si incluye el separador antiguo
                                   else if (msg.content.includes('--------')) {
                                     hasTable = true;
-                                    console.log(
-                                      '[hasTable detection] Separator "--------" found (legacy)'
-                                    );
+                                    // console.log('[hasTable detection] Separator "--------" found (legacy)');
                                   }
                                   // 4. Si el string STARTS with [ (pure JSON array) - must start AND end with [ ]
                                   else if (
@@ -2470,9 +2585,7 @@ const MessagesMe: React.FC = () => {
                                     // Additional check: must contain { to be array of objects
                                     if (trimmed.includes('{')) {
                                       hasTable = true;
-                                      console.log(
-                                        '[hasTable detection] ✅ Array pattern detected (legacy)'
-                                      );
+                                      // console.log('[hasTable detection] ✅ Array pattern detected (legacy)');
                                     }
                                   }
                                   // 5. Si el string STARTS with { (pure JSON object) - must start AND end with { }
@@ -2489,15 +2602,10 @@ const MessagesMe: React.FC = () => {
                                       trimmed.includes('PARTNUMBER')
                                     ) {
                                       hasTable = true;
-                                      console.log(
-                                        '[hasTable detection] Object pattern detected (legacy)'
-                                      );
+                                      // console.log('[hasTable detection] Object pattern detected (legacy)');
                                     }
                                   } else {
-                                    console.log(
-                                      '[hasTable detection] ❌ No pattern match (legacy). Content starts with:',
-                                      trimmed.substring(0, 50)
-                                    );
+                                    // console.log('[hasTable detection] ❌ No pattern match (legacy). Content starts with:', trimmed.substring(0, 50));
                                   }
                                 }
                               }
@@ -2518,16 +2626,8 @@ const MessagesMe: React.FC = () => {
                                   !text.trim().startsWith('[') &&
                                   !text.trim().startsWith('{'));
 
-                              console.log(
-                                '[Render] hasTable:',
-                                hasTable,
-                                '| tableData type:',
-                                Array.isArray(tableData)
-                                  ? `Array[${tableData.length}]`
-                                  : typeof tableData,
-                                '| shouldRenderText:',
-                                shouldRenderText
-                              );
+                              // console.log('[Render] hasTable:', hasTable, '| tableData type:', Array.isArray(tableData) ? `Array[${tableData.length}]` : typeof tableData, '| shouldRenderText:', shouldRenderText);
+                              
                               const previousUserMessage = (() => {
                                 for (let i = msgIndex - 1; i >= 0; i -= 1) {
                                   if (filteredMessages[i]?.role === 'user') {
@@ -2623,7 +2723,7 @@ const MessagesMe: React.FC = () => {
                                             {renderMessageContent(
                                               text,
                                               msg.role,
-                                              handleSupersededClicked
+                                              handleSkuClicked
                                             )}
                                           </p>
                                         )}
@@ -2638,6 +2738,31 @@ const MessagesMe: React.FC = () => {
                                                 handleSupersededClicked
                                               }
                                             />
+                                          )}
+                                        {/* Mostrar category_data si existe */}
+                                        {msg.role === 'assistant' &&
+                                          msg.category_data && 
+                                          msg.category_data.trim().length > 0 && (
+                                            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-boxdark-3">
+                                              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                                                {t('conversation_context.categories') || 'Categorías:'}
+                                              </p>
+                                              <div className="flex flex-wrap gap-2">
+                                                {msg.category_data.split(',').map((term: string, idx: number) => {
+                                                  const trimmedTerm = term.trim();
+                                                  return (
+                                                    <span
+                                                      key={`category-term-${idx}`}
+                                                      onClick={() => handleCategoryTermClicked(trimmedTerm)}
+                                                      className="cursor-pointer rounded-md bg-blue-100 px-2.5 py-1 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                                                      title={`Click para buscar: ${trimmedTerm}`}
+                                                    >
+                                                      {trimmedTerm}
+                                                    </span>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
                                           )}
                                       </div>
                                       <div
@@ -2835,14 +2960,64 @@ const MessagesMe: React.FC = () => {
                               ref={inputRef}
                               type="text"
                               value={inputValue}
-                              onChange={(e) => setInputValue(e.target.value)}
+                              onChange={(e) => handleInputChange(e.target.value)}
                               placeholder={t('type_message')}
                               disabled={assistantTyping}
                               className="placeholder-gray-500 dark:placeholder-gray-400 h-12 w-full rounded-md border border-stroke bg-gray-2 pl-4 pr-12 text-sm text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:bg-boxdark-2 dark:text-white"
                               onKeyDown={handleTyping}
                             />
 
-                            {/* Floating vertical commands menu (appears above the input) */}
+                            {/* Commands autocomplete dropdown */}
+                            {showCommandsDropdown && filteredApiCommands.length > 0 && (
+                              <div
+                                ref={commandsDropdownRef}
+                                className="absolute bottom-full left-0 z-50 mb-2 max-h-60 w-80 overflow-y-auto rounded-lg border border-blue-300 bg-white shadow-xl dark:border-blue-700 dark:bg-boxdark"
+                              >
+                                <div className="p-2">
+                                  <div className="mb-2 px-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                    {t('commands.available') || 'Comandos disponibles'}
+                                  </div>
+                                  <ul className="space-y-1">
+                                    {filteredApiCommands.map((cmd, idx) => (
+                                      <li key={cmd.command}>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleCommandSelection(cmd);
+                                            setTimeout(() => {
+                                              inputRef.current?.focus();
+                                            }, 0);
+                                          }}
+                                          className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors ${
+                                            idx === selectedCommandIdx
+                                              ? 'bg-blue-100 dark:bg-blue-900'
+                                              : 'hover:bg-gray-100 dark:hover:bg-boxdark-2'
+                                          }`}
+                                        >
+                                          <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                            {cmd.command}
+                                          </span>
+                                          <span className={`rounded-full px-2 py-0.5 text-xs ${
+                                            cmd.type === 'system'
+                                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                                              : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                          }`}>
+                                            {cmd.type === 'system' ? 'Sistema' : 'Categoría'}
+                                          </span>
+                                        </button>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <div className="mt-2 border-t border-gray-200 px-2 pt-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                                    <span className="font-semibold">↑↓</span> Navegar{' '}
+                                    <span className="font-semibold">Enter</span> Seleccionar{' '}
+                                    <span className="font-semibold">Esc</span> Cerrar
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Floating vertical commands menu (appears above the input) - LEGACY */}
                             {commandsOpen && (
                               <div
                                 ref={commandsMenuRef}

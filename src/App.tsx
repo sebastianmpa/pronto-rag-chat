@@ -9,6 +9,7 @@ import Roles from './pages/Pages/Roles';
 import Permissions from './pages/Pages/Permissions';
 import UsersPage from './pages/Pages/UsersPage';
 import TermsPage from './pages/Pages/TermsPage';
+import TermCategoriesPage from './pages/Pages/TermCategoriesPage';
 import LocatedTermsPage from './pages/Pages/LocatedTermsPage';
 
 import Loader from './common/Loader';
@@ -149,6 +150,18 @@ function App() {
           {/* Ruta para terms - SOLO administradores */}
           {roleInternalName === 'admin' && (
             <Route path="/terms" element={<TermsPage />} />
+          )}
+          {/* Ruta para term categories - SOLO administradores */}
+          {roleInternalName === 'admin' && (
+            <Route 
+              path="/terms/categories" 
+              element={
+                <>
+                  <PageTitle title="Categorías de Términos | TailAdmin" />
+                  <TermCategoriesPage />
+                </>
+              } 
+            />
           )}
           {/* Ruta para located-terms - SOLO supervisores */}
           {(roleInternalName === 'supervisor' ||

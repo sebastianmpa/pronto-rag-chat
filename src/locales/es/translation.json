@@ -272,6 +272,7 @@
     "parts": "Partes",
     "productParts": "Modelos por Marca",
     "terms": "Términos",
+    "termCategories": "Categorías",
     "loading": "Cargando..."
   },
   "questionsAnswers": {
@@ -326,7 +327,26 @@
     "manufacturer": "Fabricante",
     "model": "Modelo",
     "serial": "Serial",
-    "component": "Componente"
+    "component": "Componente",
+    "categories": "Términos"
+  },
+  "commands": {
+    "available": "Comandos disponibles",
+    "system": "Sistema",
+    "category": "Categoría",
+    "navigate": "Navegar",
+    "select": "Seleccionar",
+    "close": "Cerrar"
+  },
+  "category_mode": {
+    "title": "Modo Categoría",
+    "select_category": "Seleccionar Categoría",
+    "choose_category": "Elegir categoría...",
+    "enter_term": "Ingresar Término",
+    "term_placeholder": "Ej: Oil Filter, Fuel Filter...",
+    "search": "Buscar",
+    "searching": "Buscando...",
+    "activated": "Modo categoría activado. Por favor, selecciona una categoría y un término para buscar."
   },
   "common": {
     "close": "Cerrar",
@@ -421,6 +441,31 @@
         "message": "¿Estás seguro de que deseas eliminar este término localizado? Esta acción no se puede deshacer.",
         "deleting": "Eliminando..."
       }
+    }
+  },
+  "term_categories": {
+    "title": "Categorías de Términos",
+    "create": "Crear Categoría",
+    "table": {
+      "category_name": "Nombre de Categoría",
+      "internal_name": "Nombre Interno",
+      "created_at": "Creado el",
+      "updated_at": "Actualizado el",
+      "actions": "Acciones",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "create_modal": {
+      "title": "Crear Categoría",
+      "placeholder": "Ingresa el nombre de la categoría"
+    },
+    "edit_modal": {
+      "title": "Editar Categoría",
+      "placeholder": "Ingresa el nombre de la categoría"
+    },
+    "delete_modal": {
+      "title": "Eliminar Categoría",
+      "message": "¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer."
     }
   }
 }

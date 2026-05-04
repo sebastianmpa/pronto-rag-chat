@@ -1,5 +1,14 @@
 import axiosInstance from '../interceptor/axiosInstance';
-import { Term, TermsResponse, TermDetailResponse, TermCreateRequest, TermUpdateRequest, TermDefinitionResponse } from '../types/Term';
+import { 
+  Term, 
+  TermsResponse, 
+  TermDetailResponse, 
+  TermCreateRequest, 
+  TermUpdateRequest, 
+  TermDefinitionResponse,
+  TermsByCategoryResponse,
+  TermAutocompleteResponse
+} from '../types/Term';
 
 const API_VERSION_V0 = import.meta.env.VITE_API_VERSION_V0 || 'v0';
 const API_VERSION_V1 = import.meta.env.VITE_API_VERSION_V1 || 'v1';
@@ -79,4 +88,30 @@ export const updateTerm = async (termId: string, data: TermUpdateRequest): Promi
  */
 export const deleteTerm = async (termId: string): Promise<void> => {
   await axiosInstance.delete(`/terms/${API_VERSION_V0}/${termId}`);
+};
+
+/**
+ * Get terms by category ID
+ * GET /terms/v0/categories/:categoryId/terms
+ */
+export const getTermsByCategory = async (categoryId: string): Promise<TermsByCategoryResponse> => {
+  const response = await axiosInstance.get(`/terms/${API_VERSION_V0}/categories/${categoryId}/terms`);
+  return response.data;
+};
+
+/**
+ * Get term autocomplete suggestions
+ * GET /terms/autocomplete?q=search_term&category_id=xxx
+ */
+export const getTermsAutocomplete = async (
+  searchTerm: string,
+  categoryId?: string
+): Promise<TermAutocompleteResponse> => {
+  const params: any = { q: searchTerm };
+  if (categoryId) params.category_id = categoryId;
+  
+  const response = await axiosInstance.get('/terms/autocomplete', {
+    params
+  });
+  return response.data;
 };

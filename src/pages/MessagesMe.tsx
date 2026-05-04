@@ -44,7 +44,8 @@ const parseMessageContent = (
 const renderMessageContent = (
   content: string,
   role?: string,
-  onSkuClick?: (sku: string) => void
+  onSkuClick?: (sku: string) => void,
+  onTermClick?: (term: string) => void
 ) => {
   // Try to parse as JSON if it looks like JSON
   let displayContent = content;
@@ -100,6 +101,8 @@ const renderMessageContent = (
     const urlRegex = /(https?:\/\/[^\s)]+[\w/])/g;
     // Regex for HTML tags: <b class='pronto-sku'>text</b>
     const htmlTagRegex = /<b\s+class=['"]pronto-sku['"]\s*>([^<]+)<\/b>/g;
+    // Regex for HTML tags: <b class='pronto-term'>text</b>
+    const termTagRegex = /<b\s+class=['"]pronto-term['"]\s*>([^<]+)<\/b>/g;
 
     // Split by line breaks first
     return displayContent.split(/\n|\r\n/).map((line, idx) => {
@@ -130,6 +133,39 @@ const renderMessageContent = (
       if (lastIdx < line.length) {
         parts.push(line.slice(lastIdx));
       }
+
+      // Then, process TERM tags <b class='pronto-term'>text</b>
+      parts = parts.flatMap((part, i) => {
+        if (typeof part !== 'string') return [part];
+        
+        let subParts: (string | JSX.Element)[] = [];
+        let subLastIdx = 0;
+        let termMatch;
+        
+        termTagRegex.lastIndex = 0;
+        while ((termMatch = termTagRegex.exec(part)) !== null) {
+          if (termMatch.index > subLastIdx) {
+            subParts.push(part.slice(subLastIdx, termMatch.index));
+          }
+          const termText = termMatch[1];
+          subParts.push(
+            <span
+              key={`pronto-term-${idx}-${i}-${termMatch.index}`}
+              className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
+              onClick={() => onTermClick && onTermClick(termText)}
+              title={`Click to search: ${termText}`}
+            >
+              {termText}
+            </span>
+          );
+          subLastIdx = termMatch.index + termMatch[0].length;
+        }
+        if (subLastIdx < part.length) {
+          subParts.push(part.slice(subLastIdx));
+        }
+        
+        return subParts;
+      });
 
       // Then, replace Markdown links with anchor tags
       parts = parts.flatMap((part, i) => {
@@ -2456,7 +2492,8 @@ const MessagesMe: React.FC = () => {
                                   ? renderMessageContent(
                                       localMessages[0].content,
                                       'assistant',
-                                      handleSkuClicked
+                                      handleSkuClicked,
+                                      handleCategoryTermClicked
                                     )
                                   : ''}
                               </p>
@@ -2723,7 +2760,8 @@ const MessagesMe: React.FC = () => {
                                             {renderMessageContent(
                                               text,
                                               msg.role,
-                                              handleSkuClicked
+                                              handleSkuClicked,
+                                              handleCategoryTermClicked
                                             )}
                                           </p>
                                         )}

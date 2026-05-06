@@ -279,6 +279,7 @@
     "productParts": "Models by Brand",
     "terms": "Terms",
     "termCategories": "Categories",
+    "locatedTerms": "Located Terms",
     "loading": "Loading..."
   },
   "questionsAnswers": {
@@ -398,9 +399,9 @@
   "terms": {
     "title": "Terms",
     "table": {
-      "term": "Term",
+      "term": "Description",
       "created_by": "Created By",
-      "term_type": "Term type",      "category": "Category",      "definition": "Definition",
+      "term_type": "Term type",      "category": "Category",      "definition": "Information",
       "owned": "Owned",
       "search_user": "Search by user...",
       "location": "Location",
@@ -415,8 +416,8 @@
     "create_modal": {
       "title": "Create New Term",
       "term_placeholder": "Enter the term name",
-      "definition_placeholder": "Enter the term definition",
-      "select_category": "Select category (optional)"
+      "definition_placeholder": "Enter the term information",
+      "select_category": "Select category (required)"
     },
     "edit_modal": {
       "title": "Edit Term"
@@ -434,7 +435,7 @@
       "create_modal": {
         "title": "Create Located Term",
         "term_placeholder": "Enter the term name",
-        "definition_placeholder": "Enter the term definition",
+        "definition_placeholder": "Enter the term information",
         "user_placeholder": "Select a user",
         "creating": "Creating..."
       },

@@ -154,8 +154,11 @@ function App() {
             roleInternalName === 'supervisorL1') && (
             <Route path="/terms" element={<TermsPage />} />
           )}
-          {/* Ruta para term categories - SOLO administradores */}
-          {roleInternalName === 'admin' && (
+          {/* Ruta para term categories - administradores y supervisores */}
+          {(roleInternalName === 'admin' ||
+            roleInternalName === 'supervisor' ||
+            roleInternalName === 'supervisorL4' ||
+            roleInternalName === 'supervisorL1') && (
             <Route 
               path="/terms/categories" 
               element={

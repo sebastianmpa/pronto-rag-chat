@@ -23,19 +23,21 @@ export const getLocatedV0 = async (term?: string): Promise<LocatedTerm[]> => {
 };
 
 /**
- * GET /terms/v1/located?page=1&limit=10&owned=true&user_id=...&term=...
+ * GET /terms/v1/located?page=1&limit=10&owned=true&user_id=...&term=...&category_id=...
  */
 export const getLocatedV1Paginated = async (
   page: number = 1,
   limit: number = 10,
   owned?: boolean,
   user_id?: string,
-  term?: string
+  term?: string,
+  category_id?: string
 ): Promise<LocatedTermsResponse> => {
   const params: any = { page, limit };
   if (typeof owned !== 'undefined') params.owned = owned;
   if (user_id) params.user_id = user_id;
   if (term) params.term = term;
+  if (category_id) params.category_data = category_id;
 
   const response = await axiosInstance.get(`/terms/${API_VERSION_V1}/located`, { params });
   return response.data;

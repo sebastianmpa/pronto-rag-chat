@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateTerm } from '../../../hooks/useTerm';
 import { LocatedTerm } from '../../../types/Term';
+import { getAllTermCategories } from '../../../libs/TermCategoryService';
 
 interface EditLocatedTermModalProps {
   isOpen: boolean;
@@ -13,12 +14,31 @@ interface EditLocatedTermModalProps {
 const EditLocatedTermModal = ({ isOpen, onClose, onSuccess, term }: EditLocatedTermModalProps) => {
   const { t } = useTranslation();
   const { update, loading, error } = useUpdateTerm();
-  const [formData, setFormData] = useState({ term: '', definition: '', location: '1', term_type: 'PARTNUMBER' });
+  const [formData, setFormData] = useState({ term: '', definition: '', location: '1', term_type: 'PARTNUMBER', term_category_id: '' });
   const [localError, setLocalError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Map<string, string>>(new Map());
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllTermCategories();
+        const categoryMap = new Map<string, string>();
+        data.forEach((cat) => {
+          categoryMap.set(cat.id, cat.category_name);
+        });
+        setCategories(categoryMap);
+      } catch (err: any) {
+        console.warn('Could not load categories:', err?.message);
+        setCategories(new Map());
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (term) {
-      setFormData({ term: term.term, definition: term.definition, location: term.location, term_type: term.term_type || 'PARTNUMBER' });
+      setFormData({ term: term.term, definition: term.definition, location: String(term.location), term_type: term.term_type || 'PARTNUMBER', term_category_id: term.term_category_id || '' });
       setLocalError(null);
     }
   }, [term, isOpen]);
@@ -71,6 +91,17 @@ const EditLocatedTermModal = ({ isOpen, onClose, onSuccess, term }: EditLocatedT
             <select value={(formData as any).term_type} onChange={(e) => setFormData({ ...formData, term_type: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
               <option value="PARTNUMBER">PARTNUMBER</option>
               <option value="OTHER">OTHER</option>
+            </select>
+          </div>
+
+          {/* Category Field */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.category') || 'Categoría'}</label>
+            <select value={(formData as any).term_category_id} onChange={(e) => setFormData({ ...formData, term_category_id: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
+              <option value="">{t('common.select')} {t('terms.table.category')}</option>
+              {Array.from(categories).map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
             </select>
           </div>
 

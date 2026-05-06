@@ -42,6 +42,13 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
     setLocalError(null);
     setFieldErrors({});
 
+    // Validación de categoría obligatoria
+    if (!formData.term_category_id) {
+      setFieldErrors({ term_category_id: 'La categoría es obligatoria' });
+      setLocalError('Debes seleccionar una categoría');
+      return;
+    }
+
     try {
       await create(formData as any);
       setFormData({ term: '', definition: '', term_type: 'PARTNUMBER', location: '1', term_category_id: '' });
@@ -79,8 +86,8 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
   const displayError = localError || error;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-boxdark">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 dark:bg-boxdark">
         <h3 className="mb-4 text-xl font-semibold text-black dark:text-white">{t('terms.create_modal.title')}</h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +152,7 @@ const CreateTermModal = ({ isOpen, onClose, onSuccess }: CreateTermModalProps) =
               disabled={loadingCategories}
               className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white disabled:opacity-50"
             >
-              <option value="">{loadingCategories ? t('common.loading') : (t('terms.create_modal.select_category') || 'Seleccionar categoría (opcional)')}</option>
+              <option value="">{loadingCategories ? t('common.loading') : (t('terms.create_modal.select_category') || 'Seleccionar categoría (obligatoria)')}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.category_name}

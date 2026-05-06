@@ -590,8 +590,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </li>
               )}
 
-              {/* Term Categories (solo admin) */}
-              {roleInternalName === 'admin' && (
+              {/* Term Categories (admin y supervisores) */}
+              {(roleInternalName === 'admin' ||
+                roleInternalName === 'supervisor' ||
+                roleInternalName === 'supervisorL4' ||
+                roleInternalName === 'supervisorL1') && (
                 <li>
                   <NavLink
                     to="/terms/categories"
@@ -644,7 +647,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                       />
                       <path d="M8.5 5h1v4h-1zm0 5h1v1h-1z" fill="" />
                     </svg>
-                    {t('sidebar.terms')}
+                    {t('sidebar.locatedTerms') || 'Términos Ubicados'}
                   </NavLink>
                 </li>
               )}

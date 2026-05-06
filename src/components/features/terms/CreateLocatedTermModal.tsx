@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreateLocatedTerm } from '../../../hooks/useTermLocated';
+import { getAllTermCategories } from '../../../libs/TermCategoryService';
 
 interface CreateLocatedTermModalProps {
   isOpen: boolean;
@@ -11,9 +12,28 @@ interface CreateLocatedTermModalProps {
 const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTermModalProps) => {
   const { t } = useTranslation();
   const { create, loading, error } = useCreateLocatedTerm();
-  const [formData, setFormData] = useState({ term: '', definition: '', term_type: 'PARTNUMBER' });
+  const [formData, setFormData] = useState({ term: '', definition: '', term_type: 'PARTNUMBER', term_category_id: '' });
   const [localError, setLocalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [categories, setCategories] = useState<Map<string, string>>(new Map());
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllTermCategories();
+        const categoryMap = new Map<string, string>();
+        data.forEach((cat) => {
+          categoryMap.set(cat.id, cat.category_name);
+        });
+        setCategories(categoryMap);
+      } catch (err: any) {
+        console.warn('Could not load categories:', err?.message);
+        setCategories(new Map());
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +41,7 @@ const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTer
     setFieldErrors({});
     try {
       await create(formData as any);
-      setFormData({ term: '', definition: '', term_type: 'PARTNUMBER' });
+      setFormData({ term: '', definition: '', term_type: 'PARTNUMBER', term_category_id: '' });
       onSuccess();
     } catch (err: any) {
       let errorMessage = 'Error al crear el término ubicado';
@@ -82,6 +102,20 @@ const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTer
             </select>
             {fieldErrors.term_type && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-300">{fieldErrors.term_type}</p>
+            )}
+          </div>
+
+          {/* Category Field */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.category') || 'Categoría'}</label>
+            <select value={(formData as any).term_category_id} onChange={(e) => setFormData({ ...formData, term_category_id: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
+              <option value="">{t('common.select')} {t('terms.table.category')}</option>
+              {Array.from(categories).map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+            {fieldErrors.term_category_id && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-300">{fieldErrors.term_category_id}</p>
             )}
           </div>
 

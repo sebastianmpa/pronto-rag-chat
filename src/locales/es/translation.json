@@ -273,6 +273,7 @@
     "productParts": "Modelos por Marca",
     "terms": "Términos",
     "termCategories": "Categorías",
+    "locatedTerms": "Términos Ubicados",
     "loading": "Cargando..."
   },
   "questionsAnswers": {
@@ -392,11 +393,11 @@
   "terms": {
     "title": "Términos",
     "table": {
-      "term": "Término",
+      "term": "Descripción",
       "created_by": "Creado por",
       "term_type": "Tipo de término",
       "category": "Categoría",
-      "definition": "Definición",
+      "definition": "Información",
       "owned": "Propios",
       "search_user": "Buscar por usuario...",
       "location": "Ubicación",
@@ -411,8 +412,8 @@
     "create_modal": {
       "title": "Crear Nuevo Término",
       "term_placeholder": "Ingresa el nombre del término",
-      "definition_placeholder": "Ingresa la definición del término",
-      "select_category": "Seleccionar categoría (opcional)"
+      "definition_placeholder": "Ingresa la información del término",
+      "select_category": "Seleccionar categoría (obligatoria)"
     },
     "edit_modal": {
       "title": "Editar Término"
@@ -430,7 +431,7 @@
       "create_modal": {
         "title": "Crear Término Localizado",
         "term_placeholder": "Ingresa el nombre del término",
-        "definition_placeholder": "Ingresa la definición del término",
+        "definition_placeholder": "Ingresa la información del término",
         "user_placeholder": "Selecciona un usuario",
         "creating": "Creando..."
       },

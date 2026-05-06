@@ -41,8 +41,8 @@ const DeleteTermModal = ({ isOpen, onClose, onSuccess, termId }: DeleteTermModal
   const displayError = localError || error;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 dark:bg-boxdark">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 dark:bg-boxdark">
         <h3 className="mb-4 text-xl font-semibold text-black dark:text-white">
           {t('terms.delete_modal.title')}
         </h3>

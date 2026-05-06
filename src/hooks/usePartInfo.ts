@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PartInfo, PartInfoResponse } from '../types/partInfo';
 import { ManufacturerService } from '../libs/ManufacturerService';
 
@@ -25,6 +25,16 @@ export function usePartInfo(partNumber: string) {
       setLoading(false);
     }
   }, [partNumber]);
+
+  // Automatically fetch part info when partNumber changes
+  useEffect(() => {
+    if (partNumber && partNumber.trim()) {
+      fetchPartInfo();
+    } else {
+      setPartInfoList([]);
+      setError(null);
+    }
+  }, [partNumber, fetchPartInfo]);
 
   return { partInfoList, loading, error, fetchPartInfo };
 }

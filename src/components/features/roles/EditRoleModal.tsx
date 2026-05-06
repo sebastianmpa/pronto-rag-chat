@@ -162,8 +162,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
       errors.internalName = t('roles.modal.validation.internal_name_required');
     } else if (formData.internalName.length < 3) {
       errors.internalName = t('roles.modal.validation.internal_name_min');
-    } else if (!/^[a-z0-9_-]+$/.test(formData.internalName)) {
-      errors.internalName = t('roles.modal.validation.internal_name_pattern');
     }
 
     if (!formData.description?.trim()) {

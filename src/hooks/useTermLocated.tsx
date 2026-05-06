@@ -52,7 +52,8 @@ export const useLocatedV1Paginated = (
   limit: number = 10,
   owned?: boolean,
   user_id?: string,
-  term?: string
+  term?: string,
+  category_id?: string
 ) => {
   const [data, setData] = useState<LocatedTermsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -62,14 +63,14 @@ export const useLocatedV1Paginated = (
     setLoading(true);
     setError(null);
     try {
-      const result = await getLocatedV1Paginated(page, limit, owned, user_id, term);
+      const result = await getLocatedV1Paginated(page, limit, owned, user_id, term, category_id);
       setData(result);
     } catch (err: any) {
       setError(err?.message || 'Error fetching located terms (v1)');
     } finally {
       setLoading(false);
     }
-  }, [page, limit, owned, user_id, term]);
+  }, [page, limit, owned, user_id, term, category_id]);
 
   return { data, loading, error, fetch };
 };

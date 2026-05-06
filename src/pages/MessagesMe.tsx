@@ -2004,22 +2004,15 @@ const MessagesMe: React.FC = () => {
     handleSubmit(message);
   };
 
-  // Handler para clic en pronto-sku - escribe en el input sin enviar
+  // Handler para clic en pronto-sku - envía mensaje directamente
   const handleSkuClicked = (sku: string) => {
-    setInputValue(`stock ${sku}`);
-    // Focus en el input
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
+    const message = `stock ${sku}`;
+    handleSubmit(message);
   };
 
-  // Handler para clic en términos de categoría - solo copia el término sin "stock"
+  // Handler para clic en términos de categoría - envía el término directamente
   const handleCategoryTermClicked = (term: string) => {
-    setInputValue(term);
-    // Focus en el input
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
+    handleSubmit(term);
   };
 
   // Enviar mensaje o crear conversación
@@ -2786,7 +2779,7 @@ const MessagesMe: React.FC = () => {
                                                 {t('conversation_context.categories') || 'Categorías:'}
                                               </p>
                                               <div className="flex flex-wrap gap-2">
-                                                {msg.category_data.split(',').map((term: string, idx: number) => {
+                                                {msg.category_data.split(';').map((term: string, idx: number) => {
                                                   const trimmedTerm = term.trim();
                                                   return (
                                                     <span

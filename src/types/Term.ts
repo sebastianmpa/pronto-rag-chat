@@ -60,6 +60,7 @@ export interface LocatedTerm {
   term: string;
   definition: string;
   term_type?: string; // e.g. PARTNUMBER, SKU, etc.
+  term_category_id?: string;
   owner_id?: string | null;
   location?: string | number;
   createdAt?: string;

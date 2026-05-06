@@ -37,7 +37,7 @@ export const getLocatedV1Paginated = async (
   if (typeof owned !== 'undefined') params.owned = owned;
   if (user_id) params.user_id = user_id;
   if (term) params.term = term;
-  if (category_id) params.category_data = category_id;
+  if (category_id) params.category_name = category_id;
 
   const response = await axiosInstance.get(`/terms/${API_VERSION_V1}/located`, { params });
   return response.data;

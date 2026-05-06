@@ -58,7 +58,7 @@ function App() {
       roleInternalName === 'supervisorL4' ||
       roleInternalName === 'supervisorL1'
     ) {
-      defaultRoute = <Navigate to="/messages/all" replace />;
+      defaultRoute = <Navigate to="/" replace />;
     } else if (roleInternalName === 'user') {
       defaultRoute = <Navigate to="/messages/me" replace />;
     } else {
@@ -71,20 +71,22 @@ function App() {
       <Routes>
         <Route element={<PrivateRoute />}>
           {/* Ruta principal: dashboard/estadísticas solo para admin y supervisor */}
-          {(roleInternalName === 'admin' ||
-            roleInternalName === 'supervisor' ||
-            roleInternalName === 'supervisorL4' ||
-            roleInternalName === 'supervisorL1') && (
-            <Route
-              index
-              element={
+          <Route
+            index
+            element={
+              (roleInternalName === 'admin' ||
+              roleInternalName === 'supervisor' ||
+              roleInternalName === 'supervisorL4' ||
+              roleInternalName === 'supervisorL1') ? (
                 <>
                   <PageTitle title="eCommerce Dashboard | TailAdmin" />
                   <ECommerce />
                 </>
-              }
-            />
-          )}
+              ) : (
+                <Navigate to="/messages/me" replace />
+              )
+            }
+          />
           {/* Ruta para mis mensajes - accesible para TODOS los roles */}
           <Route
             path="/messages/me"
@@ -147,57 +149,52 @@ function App() {
               }
             />
           )}
-          {/* Ruta para terms - administradores y supervisores */}
-          {(roleInternalName === 'admin' ||
-            roleInternalName === 'supervisor' ||
-            roleInternalName === 'supervisorL4' ||
-            roleInternalName === 'supervisorL1') && (
-            <Route path="/terms" element={<TermsPage />} />
-          )}
-          {/* Ruta para term categories - administradores y supervisores */}
-          {(roleInternalName === 'admin' ||
-            roleInternalName === 'supervisor' ||
-            roleInternalName === 'supervisorL4' ||
-            roleInternalName === 'supervisorL1') && (
-            <Route 
-              path="/terms/categories" 
-              element={
-                <>
-                  <PageTitle title="Categorías de Términos | TailAdmin" />
-                  <TermCategoriesPage />
-                </>
-              } 
-            />
-          )}
-          {/* Ruta para located-terms - SOLO supervisores */}
-          {(roleInternalName === 'supervisor' ||
-            roleInternalName === 'supervisorL4' ||
-            roleInternalName === 'supervisorL1') && (
-            <Route
-              path="/terms/located"
-              element={
-                <>
-                  <PageTitle title="Located Terms | TailAdmin" />
-                  <LocatedTermsPage />
-                </>
-              }
-            />
-          )}
-
-          {/* Redirección de índice según rol */}
-          <Route
-            index
+          {/* Ruta para terms - SOLO administrador */}
+          <Route 
+            path="/terms" 
+            element={
+              roleInternalName === 'admin' ? (
+                <TermsPage />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } 
+          />
+          {/* Ruta para term categories - admin y supervisores */}
+          <Route 
+            path="/terms/categories" 
             element={
               roleInternalName === 'admin' ||
               roleInternalName === 'supervisor' ||
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1' ? (
-                <Navigate to="/messages" replace />
+                <>
+                  <PageTitle title="Categorías de Términos | TailAdmin" />
+                  <TermCategoriesPage />
+                </>
               ) : (
-                <Navigate to="/messages/me" replace />
+                <Navigate to="/" replace />
+              )
+            } 
+          />
+          {/* Ruta para located-terms - supervisores y admin */}
+          <Route
+            path="/terms/located"
+            element={
+              roleInternalName === 'admin' ||
+              roleInternalName === 'supervisor' ||
+              roleInternalName === 'supervisorL4' ||
+              roleInternalName === 'supervisorL1' ? (
+                <>
+                  <PageTitle title="Located Terms | TailAdmin" />
+                  <LocatedTermsPage />
+                </>
+              ) : (
+                <Navigate to="/" replace />
               )
             }
           />
+
           {/* Rutas de perfil solo para admin */}
           {roleInternalName === 'admin' && (
             <>

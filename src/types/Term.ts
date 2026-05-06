@@ -8,7 +8,12 @@ export interface Term {
   // optional creator info (may be provided by the API)
   term_user?: {
     firstName?: string;
+    first_name?: string;
     lastName?: string;
+    last_name?: string;
+    name?: string;
+    email?: string;
+    username?: string;
   };
   user_id?: string;
   createdAt?: string;
@@ -62,6 +67,15 @@ export interface LocatedTerm {
   term_type?: string; // e.g. PARTNUMBER, SKU, etc.
   term_category_id?: string;
   owner_id?: string | null;
+  term_user?: {
+    firstName?: string;
+    first_name?: string;
+    lastName?: string;
+    last_name?: string;
+    name?: string;
+    email?: string;
+    username?: string;
+  };
   location?: string | number;
   createdAt?: string;
   updatedAt?: string;

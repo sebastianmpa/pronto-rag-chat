@@ -257,6 +257,138 @@ const renderMessageContent = (
   return displayContent;
 };
 
+
+
+const CategoriesAccordion: React.FC<{
+  data: any[];
+  messageId: string;
+  onTermClick?: (term: string) => void;
+}> = ({ data, messageId: _messageId, onTermClick }) => {
+  const { t } = useTranslation();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+
+  // Helper para extraer el texto limpio de un HTML tag pronto-term o pronto-sku
+  const extractText = (htmlString: string, tagClass: 'pronto-term' | 'pronto-sku'): string => {
+    const regex = new RegExp(`<b\\s+class=['"]${tagClass}['"]\\s*>([^<]+)<\\/b>`, 'i');
+    const match = htmlString.match(regex);
+    return match ? match[1] : htmlString;
+  };
+
+  // Helper para renderizar items con soporte para pronto-sku clickeable
+  const renderItemWithSku = (itemText: string): React.ReactNode => {
+    const skuRegex = /<b\s+class=['"]pronto-sku['"\s]*>([^<]+)<\/b>/g;
+    const parts: (string | JSX.Element)[] = [];
+    let lastIdx = 0;
+    let match;
+
+    while ((match = skuRegex.exec(itemText)) !== null) {
+      if (match.index > lastIdx) {
+        parts.push(itemText.slice(lastIdx, match.index));
+      }
+      const skuText = match[1];
+      parts.push(
+        <span
+          key={`sku-${match.index}`}
+          className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
+          onClick={() => {
+            if (onTermClick) {
+              // Enviar "stock " + SKU para pronto-sku
+              onTermClick(`stock ${skuText}`);
+            }
+          }}
+          title={`Click para enviar: stock ${skuText}`}
+        >
+          {skuText}
+        </span>
+      );
+      lastIdx = match.index + match[0].length;
+    }
+
+    if (lastIdx < itemText.length) {
+      parts.push(itemText.slice(lastIdx));
+    }
+
+    return parts.length > 0 ? parts : itemText;
+  };
+
+  return (
+    <div className="mx-auto mt-3 w-full space-y-3">
+      {data.map((categoryObj, idx) => {
+        const category = categoryObj.category || `Category ${idx}`;
+        
+        // Detectar formato: array de array (nested) vs array directo
+        let isNestedFormat = false;
+        let items: string[] = [];
+
+        if (categoryObj.items && Array.isArray(categoryObj.items)) {
+          // Verificar si primer elemento es un array (nested format con pronto-term)
+          if (categoryObj.items.length > 0 && Array.isArray(categoryObj.items[0])) {
+            isNestedFormat = true;
+            items = categoryObj.items[0]; // Extraer array anidado
+          } else {
+            // Formato directo (con pronto-sku)
+            isNestedFormat = false;
+            items = categoryObj.items;
+          }
+        }
+
+        return (
+          <div key={idx}>
+            {/* Category Title */}
+            <p className="mb-2 text-xs font-semibold text-blue-800 dark:text-blue-300">
+              {category}
+            </p>
+
+            {/* Render según formato */}
+            <div className={isNestedFormat ? "flex flex-wrap gap-2" : "flex flex-col gap-2"}>
+              {items && items.length > 0 ? (
+                items.map((item: string, itemIdx: number) => {
+                  if (isNestedFormat) {
+                    // Formato con pronto-term: botones clickeables
+                    const termText = extractText(item, 'pronto-term');
+                    return (
+                      <button
+                        key={itemIdx}
+                        onClick={() => {
+                          if (onTermClick) {
+                            // Enviar el término limpio sin "stock" para pronto-term
+                            onTermClick(termText);
+                          }
+                        }}
+                        className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-200 active:bg-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 dark:active:bg-blue-700"
+                        title={`Click para buscar: ${termText}`}
+                      >
+                        {termText}
+                      </button>
+                    );
+                  } else {
+                    // Formato con pronto-sku: items con SKU clickeable
+                    return (
+                      <div
+                        key={itemIdx}
+                        className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+                      >
+                        {renderItemWithSku(item)}
+                      </div>
+                    );
+                  }
+                })
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t('common.no_results') || 'No hay términos'}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // Nuevo componente: PartsAccordion
 const PartsAccordion: React.FC<{
   data: any[];
@@ -1715,13 +1847,11 @@ const MessagesMe: React.FC = () => {
     // Add more commands here as needed
   ];
   const inputRef = useRef<HTMLInputElement>(null);
-  const [commandsOpen, setCommandsOpen] = useState(false);
   const commandsBtnRef = useRef<HTMLButtonElement>(null);
-  const commandsMenuRef = useRef<HTMLDivElement>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  // Keyboard shortcut (Ctrl+Shift+I) to toggle commands menu and global click/esc handlers
+  // Keyboard shortcut (Ctrl+Shift+I) to toggle commands menu
   useEffect(() => {
     const keyHandler = (e: KeyboardEvent) => {
       if (
@@ -1730,34 +1860,22 @@ const MessagesMe: React.FC = () => {
         (e.key === 'I' || e.key === 'i')
       ) {
         e.preventDefault();
-        setCommandsOpen((s) => !s);
+        setInputValue('/');
+        setShowCommandsDropdown(true);
+        setFilteredApiCommands(filterCommands(''));
+        setSelectedCommandIdx(0);
+        setTimeout(() => inputRef.current?.focus(), 0);
       }
       if (e.key === 'Escape') {
-        setCommandsOpen(false);
-      }
-    };
-
-    const clickHandler = (ev: MouseEvent) => {
-      const target = ev.target as Node;
-      if (commandsOpen) {
-        if (
-          commandsMenuRef.current &&
-          commandsBtnRef.current &&
-          !commandsMenuRef.current.contains(target) &&
-          !commandsBtnRef.current.contains(target)
-        ) {
-          setCommandsOpen(false);
-        }
+        setShowCommandsDropdown(false);
       }
     };
 
     document.addEventListener('keydown', keyHandler);
-    document.addEventListener('click', clickHandler);
     return () => {
       document.removeEventListener('keydown', keyHandler);
-      document.removeEventListener('click', clickHandler);
     };
-  }, [commandsOpen]);
+  }, [filterCommands]);
 
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [limit, setLimit] = useState(10);
@@ -2149,8 +2267,8 @@ const MessagesMe: React.FC = () => {
       }
 
       // Mostrar el mensaje del assistant si hay answer o table_data o category_data o conversation_context
-      // Validar que category_data tenga contenido real (no vacío)
-      const hasCategoryData = apiResponse.category_data && apiResponse.category_data.trim().length > 0;
+      // Validar que category_data tenga contenido real (no vacío) - ahora es un array
+      const hasCategoryData = apiResponse.category_data && Array.isArray(apiResponse.category_data) && apiResponse.category_data.length > 0;
       const hasContent = apiResponse.answer || apiResponse.table_data || hasCategoryData || apiResponse.conversation_context;
       
       if (apiResponse && hasContent) {
@@ -2235,7 +2353,7 @@ const MessagesMe: React.FC = () => {
     }
     // Clear input and close commands when switching conversations so leftover commands (eg. /fix) don't persist
     setInputValue('');
-    setCommandsOpen(false);
+    setShowCommandsDropdown(false);
     // If assistantTyping está activo, don't clear local messages or typing animation
   }, [conversationId]);
 
@@ -2559,7 +2677,7 @@ const MessagesMe: React.FC = () => {
                             if (msg.role === 'assistant') {
                               const hasContent = msg.content && msg.content.trim().length > 0;
                               const hasTable = msg.table_data || msg.table;
-                              const hasCategoryData = msg.category_data && msg.category_data.trim().length > 0;
+                              const hasCategoryData = msg.category_data && Array.isArray(msg.category_data) && msg.category_data.length > 0;
                               const hasContext = msg.conversation_context;
                               // Solo mostrar si tiene al menos uno de estos
                               return hasContent || hasTable || hasCategoryData || hasContext;
@@ -2770,30 +2888,16 @@ const MessagesMe: React.FC = () => {
                                               }
                                             />
                                           )}
-                                        {/* Mostrar category_data si existe */}
+                                        {/* Mostrar category_data si existe (nuevo formato array) */}
                                         {msg.role === 'assistant' &&
-                                          msg.category_data && 
-                                          msg.category_data.trim().length > 0 && (
-                                            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-boxdark-3">
-                                              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                                                {t('conversation_context.categories') || 'Categorías:'}
-                                              </p>
-                                              <div className="flex flex-wrap gap-2">
-                                                {msg.category_data.split(';').map((term: string, idx: number) => {
-                                                  const trimmedTerm = term.trim();
-                                                  return (
-                                                    <span
-                                                      key={`category-term-${idx}`}
-                                                      onClick={() => handleCategoryTermClicked(trimmedTerm)}
-                                                      className="cursor-pointer rounded-md bg-blue-100 px-2.5 py-1 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
-                                                      title={`Click para buscar: ${trimmedTerm}`}
-                                                    >
-                                                      {trimmedTerm}
-                                                    </span>
-                                                  );
-                                                })}
-                                              </div>
-                                            </div>
+                                          msg.category_data &&
+                                          Array.isArray(msg.category_data) &&
+                                          msg.category_data.length > 0 && (
+                                            <CategoriesAccordion
+                                              data={msg.category_data}
+                                              messageId={msg.id}
+                                              onTermClick={handleCategoryTermClicked}
+                                            />
                                           )}
                                       </div>
                                       <div
@@ -2950,9 +3054,14 @@ const MessagesMe: React.FC = () => {
                           <button
                             ref={commandsBtnRef}
                             type="button"
-                            aria-expanded={commandsOpen}
-                            title="Abrir comandos (Ctrl/Cmd+Shift+I)"
-                            onClick={() => setCommandsOpen((s) => !s)}
+                            aria-expanded={showCommandsDropdown}
+                            onClick={() => {
+                              setInputValue('/');
+                              setShowCommandsDropdown(true);
+                              setFilteredApiCommands(filterCommands(''));
+                              setSelectedCommandIdx(0);
+                              setTimeout(() => inputRef.current?.focus(), 0);
+                            }}
                             className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white transition-all hover:bg-primary/90"
                           >
                             <svg
@@ -3045,47 +3154,6 @@ const MessagesMe: React.FC = () => {
                                     <span className="font-semibold">Esc</span> Cerrar
                                   </div>
                                 </div>
-                              </div>
-                            )}
-
-                            {/* Floating vertical commands menu (appears above the input) - LEGACY */}
-                            {commandsOpen && (
-                              <div
-                                ref={commandsMenuRef}
-                                className="absolute bottom-full left-0 z-50 mb-2 w-48 rounded-md border border-stroke bg-white shadow-lg dark:border-strokedark dark:bg-boxdark"
-                              >
-                                <ul className="p-1">
-                                  {commands.map((cmd) => (
-                                    <li key={cmd.name}>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const insert = `${cmd.name} `;
-                                          setInputValue((prev) =>
-                                            prev ? `${insert}${prev}` : insert
-                                          );
-                                          setCommandsOpen(false);
-                                          setTimeout(() => {
-                                            const el = inputRef.current;
-                                            if (el) {
-                                              const pos = insert.length;
-                                              el.focus();
-                                              el.setSelectionRange(pos, pos);
-                                            }
-                                          }, 0);
-                                        }}
-                                        className="hover:bg-gray-100 flex w-full items-center gap-3 px-3 py-2 text-left transition-colors dark:hover:bg-boxdark-2"
-                                      >
-                                        <span className="font-mono text-sm text-blue-600">
-                                          {cmd.name}
-                                        </span>
-                                        <span className="text-gray-500 dark:text-gray-400 text-xs">
-                                          {cmd.description}
-                                        </span>
-                                      </button>
-                                    </li>
-                                  ))}
-                                </ul>
                               </div>
                             )}
                           </div>
@@ -3213,6 +3281,7 @@ const MessagesMe: React.FC = () => {
         initialAnswer={qaInitialAnswer}
         onClose={() => setQaModalOpen(false)}
       />
+
     </DefaultLayout>
   );
 };

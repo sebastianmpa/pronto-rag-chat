@@ -60,8 +60,19 @@ const LocatedTermTable = () => {
 
   const { data, loading: hookLoading, fetch } = useLocatedV1Paginated(page, limit, owned ? true : undefined, selectedUserId || undefined, termFilter || undefined, categoryFilter || undefined);
 
-  // debounce timer for user search
   const userSearchTimer = useRef<number | null>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Part info hook
   const { partInfoList, loading: loadingPart, error: partError } = usePartInfo(partNumberFilter);
@@ -381,7 +392,7 @@ const LocatedTermTable = () => {
                     <span className="text-sm">{t('terms.table.owned')}</span>
                   </label>
 
-                  <div className="relative">
+                  <div className="relative" ref={userDropdownRef}>
                     {selectedUserId ? (
                       <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm dark:bg-boxdark-4 border border-stroke">
                         <span className="text-black dark:text-white">{selectedUserName || selectedUserId}</span>
@@ -509,9 +520,12 @@ const LocatedTermTable = () => {
                         </span>
                       </td>
                       <td className="px-4 py-5 align-top">
-                        <div className="flex flex-col">
-                          <p className="text-black dark:text-white">{term.owner_id || t('user_no_name')}</p>
-                        </div>
+                        <p className="text-black dark:text-white">{(() => {
+                          const u = (term as any).term_user;
+                          if (!u) return term.owner_id || t('user_no_name');
+                          const full = `${u.firstName || u.first_name || u.name || ''} ${u.lastName || u.last_name || ''}`.trim();
+                          return full || u.email || u.username || term.owner_id || t('user_no_name');
+                        })()}</p>
                       </td>
                       <td className="px-4 py-5">
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.location}</span>

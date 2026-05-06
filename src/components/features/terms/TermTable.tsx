@@ -24,6 +24,7 @@ const TermTable = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
   const userSearchTimer = useRef<number | null>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const [termsResponse, setTermsResponse] = useState<TermsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,6 +238,17 @@ const TermTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricingForm.customerName]);
 
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -290,7 +302,7 @@ const TermTable = () => {
               <div className="mt-2">
                 <div className="flex items-center gap-3 bg-gray-50 dark:bg-boxdark-3 rounded-md px-3 py-2">
                   {/* User filter (loads all users on focus, local filtering, remote fallback) */}
-                  <div className="relative">
+                  <div className="relative" ref={userDropdownRef}>
                     {selectedUserId ? (
                       <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm dark:bg-boxdark-4 border border-stroke">
                         <span className="text-black dark:text-white">{selectedUserName || selectedUserId}</span>
@@ -486,7 +498,12 @@ const TermTable = () => {
                         </span>
                       </td>
                       <td className="px-4 py-5 align-top">
-                        <p className="text-black dark:text-white">{(term as any).term_user ? `${(term as any).term_user.firstName || ''} ${(term as any).term_user.lastName || ''}`.trim() : (term as any).user_id || t('user_no_name')}</p>
+                        <p className="text-black dark:text-white">{(() => {
+                          const u = (term as any).term_user;
+                          if (!u) return (term as any).user_id || t('user_no_name');
+                          const full = `${u.firstName || u.first_name || u.name || ''} ${u.lastName || u.last_name || ''}`.trim();
+                          return full || u.email || u.username || (term as any).user_id || t('user_no_name');
+                        })()}</p>
                       </td>
                       <td className="px-4 py-5">
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">

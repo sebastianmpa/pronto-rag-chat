@@ -31,6 +31,54 @@ const parseMessageContent = (
   return { text: content, tableData: null };
 };
 
+// Nuevo componente: CategoriesAccordion para mostrar términos por categoría (sin dropdown)
+const CategoriesAccordion: React.FC<{
+  data: any[];
+  messageId: string;
+}> = ({ data, messageId: _messageId }) => {
+  const { t } = useTranslation();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mx-auto mt-3 w-full space-y-3">
+      {data.map((categoryObj, idx) => {
+        const category = categoryObj.category || `Category ${idx}`;
+        // items es un array directo de strings
+        const items = Array.isArray(categoryObj.items) ? categoryObj.items : [];
+
+        return (
+          <div key={idx}>
+            {/* Category Title */}
+            <p className="mb-2 text-xs font-semibold text-blue-800 dark:text-blue-300">
+              {category}
+            </p>
+
+            {/* Terms/Items */}
+            <div className="flex flex-col gap-2">
+              {items && items.length > 0 ? (
+                items.map((item: string, itemIdx: number) => (
+                  <div
+                    key={itemIdx}
+                    className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+                    dangerouslySetInnerHTML={{ __html: item }}
+                  />
+                ))
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t('common.no_results') || 'No hay términos'}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // PartsAccordion component - nuevo formato de visualización de partes
 const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
   data,
@@ -1352,17 +1400,15 @@ const Messages: React.FC = () => {
                                           }
                                         />
                                       ) : null}
-                                      {/* Mostrar category_data si existe */}
+                                      {/* Mostrar category_data si existe (nuevo formato array) */}
                                       {msg.role === 'assistant' &&
-                                        msg.category_data && (
-                                          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-boxdark-3">
-                                            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                                              {t('conversation_context.categories') || 'Categorías:'}
-                                            </p>
-                                            <p className="text-sm text-blue-900 dark:text-blue-100">
-                                              {msg.category_data}
-                                            </p>
-                                          </div>
+                                        msg.category_data &&
+                                        Array.isArray(msg.category_data) &&
+                                        msg.category_data.length > 0 && (
+                                          <CategoriesAccordion
+                                            data={msg.category_data}
+                                            messageId={msg.id}
+                                          />
                                         )}
                                     </div>
                                     <div

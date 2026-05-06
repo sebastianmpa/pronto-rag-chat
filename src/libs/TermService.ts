@@ -47,7 +47,7 @@ export const getTermsPaginated = async (
   if (term) params.term = term;
   if (location !== undefined && location !== null) params.location = location;
   if (user_id) params.user_id = user_id;
-  if (category_id) params.category_data = category_id;
+  if (category_id) params.category_name = category_id;
 
   const response = await axiosInstance.get(`/terms/${API_VERSION_V1}/`, {
     params

@@ -121,7 +121,7 @@ const renderMessageContent = (
         parts.push(
           <span
             key={`pronto-sku-${idx}-${match.index}`}
-            className="cursor-pointer font-bold text-primary hover:underline"
+            className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
             onClick={() => onSkuClick && onSkuClick(skuText)}
             title={`Click to check stock for ${skuText}`}
           >
@@ -151,7 +151,7 @@ const renderMessageContent = (
           subParts.push(
             <span
               key={`pronto-term-${idx}-${i}-${termMatch.index}`}
-              className="cursor-pointer font-bold text-primary hover:underline"
+              className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
               onClick={() => onTermClick && onTermClick(termText)}
               title={`Click to search: ${termText}`}
             >
@@ -292,7 +292,7 @@ const CategoriesAccordion: React.FC<{
       parts.push(
         <span
           key={`sku-${match.index}`}
-          className="cursor-pointer font-bold text-primary hover:underline"
+          className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
           onClick={() => {
             if (onTermClick) {
               // Enviar "stock " + SKU para pronto-sku
@@ -358,7 +358,7 @@ const CategoriesAccordion: React.FC<{
                             onTermClick(termText);
                           }
                         }}
-                        className="rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-primary/20 active:bg-primary/30 dark:bg-primary/20 dark:text-black dark:hover:bg-primary/30"
+                        className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200 active:bg-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
                         title={`Click para buscar: ${termText}`}
                       >
                         {termText}
@@ -2876,6 +2876,17 @@ const MessagesMe: React.FC = () => {
                                             )}
                                           </p>
                                         )}
+                                        {/* Mostrar category_data primero si existe (nuevo formato array) */}
+                                        {msg.role === 'assistant' &&
+                                          msg.category_data &&
+                                          Array.isArray(msg.category_data) &&
+                                          msg.category_data.length > 0 && (
+                                            <CategoriesAccordion
+                                              data={msg.category_data}
+                                              messageId={msg.id}
+                                              onTermClick={handleCategoryTermClicked}
+                                            />
+                                          )}
                                         {/* Mostrar acordeón si tableData es array */}
                                         {msg.role === 'assistant' &&
                                           tableData &&
@@ -2886,17 +2897,6 @@ const MessagesMe: React.FC = () => {
                                               onSupersededClick={
                                                 handleSupersededClicked
                                               }
-                                            />
-                                          )}
-                                        {/* Mostrar category_data si existe (nuevo formato array) */}
-                                        {msg.role === 'assistant' &&
-                                          msg.category_data &&
-                                          Array.isArray(msg.category_data) &&
-                                          msg.category_data.length > 0 && (
-                                            <CategoriesAccordion
-                                              data={msg.category_data}
-                                              messageId={msg.id}
-                                              onTermClick={handleCategoryTermClicked}
                                             />
                                           )}
                                       </div>

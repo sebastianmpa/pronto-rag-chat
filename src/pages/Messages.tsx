@@ -64,7 +64,7 @@ const CategoriesAccordion: React.FC<{
       parts.push(
         <span
           key={`sku-${match.index}`}
-          className="cursor-pointer font-bold text-primary hover:underline"
+          className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
           title={`SKU: ${skuText}`}
         >
           {skuText}
@@ -115,7 +115,7 @@ const CategoriesAccordion: React.FC<{
                     return (
                       <span
                         key={itemIdx}
-                        className="rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-black dark:bg-primary/20 dark:text-black"
+                        className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                       >
                         {termText}
                       </span>
@@ -923,7 +923,7 @@ const Messages: React.FC = () => {
           parts.push(
             <span
               key={`pronto-sku-${idx}-${match.index}`}
-              className="font-bold text-primary"
+              className="font-bold text-blue-600 dark:text-blue-400"
             >
               {match[1]}
             </span>
@@ -1440,6 +1440,16 @@ const Messages: React.FC = () => {
                                           {renderMessageContent(text, msg.role)}
                                         </p>
                                       )}
+                                      {/* Mostrar category_data primero si existe (nuevo formato array) */}
+                                      {msg.role === 'assistant' &&
+                                        msg.category_data &&
+                                        Array.isArray(msg.category_data) &&
+                                        msg.category_data.length > 0 && (
+                                          <CategoriesAccordion
+                                            data={msg.category_data}
+                                            messageId={msg.id}
+                                          />
+                                        )}
                                       {/* Mostrar acordeón si tableData es array, si no usar tabla legacy */}
                                       {msg.role === 'assistant' &&
                                       tableData &&
@@ -1465,16 +1475,6 @@ const Messages: React.FC = () => {
                                           }
                                         />
                                       ) : null}
-                                      {/* Mostrar category_data si existe (nuevo formato array) */}
-                                      {msg.role === 'assistant' &&
-                                        msg.category_data &&
-                                        Array.isArray(msg.category_data) &&
-                                        msg.category_data.length > 0 && (
-                                          <CategoriesAccordion
-                                            data={msg.category_data}
-                                            messageId={msg.id}
-                                          />
-                                        )}
                                     </div>
                                     <div
                                       className={`text-gray-500 dark:text-gray-400 mt-1 text-xs ${

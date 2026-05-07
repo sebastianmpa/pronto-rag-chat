@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import LogoPronto from '../../images/logo/logo-pronto.svg';
-import LogoProntoDark from '../../images/logo/logo-pronto-dark.svg';
+import LogoPronto from '../../images/logo/logo-PROTO-PRO.svg';
+import LogoProntoDark from '../../images/logo/logo-PROTO-PRO.svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -85,33 +85,9 @@ const SignIn: React.FC = () => {
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="py-17.5 px-26 text-center">
               <Link className="mb-5.5 inline-block" to="/">
-                <img className="hidden dark:block h-24 w-auto" src={LogoPronto} alt="Logo Pronto Pro" />
-                <img className="dark:hidden h-24 w-auto" src={LogoProntoDark} alt="Logo Pronto Pro" />
+                <img className="hidden dark:block h-56 w-auto" src={LogoPronto} alt="Logo Pronto Pro" />
+                <img className="dark:hidden h-56 w-auto" src={LogoProntoDark} alt="Logo Pronto Pro" />
               </Link>
-
-              <p className="mb-8 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {t('brand.tagline')}
-              </p>
-
-              <div className="space-y-6 text-left max-h-80 overflow-y-auto pr-4">
-                <div>
-                  <h3 className="text-lg font-bold text-primary dark:text-primary mb-2">
-                    {t('brand.mission_title')}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {t('brand.mission_text')}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-primary dark:text-primary mb-2">
-                    {t('brand.vision_title')}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {t('brand.vision_text')}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 

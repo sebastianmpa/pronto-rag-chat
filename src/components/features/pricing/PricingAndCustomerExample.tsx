@@ -116,7 +116,7 @@ const PricingAndCustomerExample = () => {
               <button
                 type="submit"
                 disabled={pricingLoading}
-                className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-70 disabled:opacity-50"
+                className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-black hover:bg-opacity-70 disabled:opacity-50"
               >
                 {pricingLoading ? 'Loading...' : 'Get Pricing'}
               </button>
@@ -180,7 +180,7 @@ const PricingAndCustomerExample = () => {
               <button
                 type="submit"
                 disabled={customersLoading}
-                className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-70 disabled:opacity-50"
+                className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-black hover:bg-opacity-70 disabled:opacity-50"
               >
                 {customersLoading ? 'Searching...' : 'Search Customers'}
               </button>

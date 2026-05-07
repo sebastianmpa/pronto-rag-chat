@@ -61,7 +61,7 @@ const TermCategoryTable = () => {
         <div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+            className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-black hover:bg-opacity-90"
           >
             {t('term_categories.create') || 'Crear Categoría'}
           </button>
@@ -116,7 +116,7 @@ const TermCategoryTable = () => {
                         <p className="text-black dark:text-white font-medium">{category.category_name}</p>
                       </td>
                       <td className="px-4 py-5">
-                        <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">
+                        <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-black dark:bg-primary/20 dark:text-white">
                           {category.internal_category_name}
                         </span>
                       </td>
@@ -145,7 +145,7 @@ const TermCategoryTable = () => {
                             onClick={() => handleEdit(category)}
                             title={t('term_categories.table.edit') || 'Editar'}
                             aria-label={t('term_categories.table.edit') || 'Editar'}
-                            className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-white shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-black shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                               <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />

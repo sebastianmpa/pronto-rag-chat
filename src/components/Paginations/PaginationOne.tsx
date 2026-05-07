@@ -15,7 +15,7 @@ const PaginationOne: React.FC = () => {
           <ul className="flex flex-wrap items-center">
             <li>
               <Link
-                className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary hover:text-black"
                 to="#"
               >
                 <svg
@@ -35,7 +35,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 1
@@ -43,7 +43,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 2
@@ -51,7 +51,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 3
@@ -59,7 +59,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 4
@@ -67,7 +67,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 5
@@ -75,7 +75,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex h-9 w-7.5 items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex h-9 w-7.5 items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 <svg
@@ -95,7 +95,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 10
@@ -103,7 +103,7 @@ const PaginationOne: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary hover:text-black"
                 to="#"
               >
                 <svg

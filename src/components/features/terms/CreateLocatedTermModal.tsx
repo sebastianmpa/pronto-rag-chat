@@ -125,7 +125,7 @@ const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTer
 
           <div className="flex justify-end space-x-3 pt-4">
             <button type="button" onClick={onClose} disabled={loading} className="rounded border border-stroke px-4 py-2 text-sm font-medium text-black hover:bg-gray-2 dark:border-strokedark dark:text-white dark:hover:bg-meta-4">{t('common.cancel')}</button>
-            <button type="submit" disabled={loading} className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90 disabled:opacity-50">{loading ? t('common.loading') : t('common.create')}</button>
+            <button type="submit" disabled={loading} className="rounded bg-primary px-4 py-2 text-sm font-medium text-black hover:bg-opacity-90 disabled:opacity-50">{loading ? t('common.loading') : t('common.create')}</button>
           </div>
         </form>
       </div>

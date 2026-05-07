@@ -197,7 +197,7 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
             <button
               type="submit"
               disabled={loading}
-              className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
+              className="rounded bg-primary px-4 py-2 text-sm font-medium text-black hover:bg-opacity-90 disabled:opacity-50"
             >
               {loading ? t('common.loading') : t('common.update')}
             </button>

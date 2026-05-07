@@ -15,7 +15,7 @@ const ButtonsGroupTwo: React.FC = () => {
           <div className="flex flex-wrap items-center">
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 border border-primary bg-primary py-1 px-2 font-medium text-white hover:border-primary hover:bg-primary hover:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 border border-primary bg-primary py-1 px-2 font-medium text-white hover:border-primary hover:bg-primary hover:text-black dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -38,7 +38,7 @@ const ButtonsGroupTwo: React.FC = () => {
             </Link>
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 border-y border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 border-y border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -77,7 +77,7 @@ const ButtonsGroupTwo: React.FC = () => {
             </Link>
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 border border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 border border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -115,7 +115,7 @@ const ButtonsGroupTwo: React.FC = () => {
           <div className="flex flex-wrap items-center rounded-lg">
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 rounded-l-lg border border-primary bg-primary py-1 px-2 font-medium text-white hover:border-primary hover:bg-primary hover:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 rounded-l-lg border border-primary bg-primary py-1 px-2 font-medium text-white hover:border-primary hover:bg-primary hover:text-black dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -138,7 +138,7 @@ const ButtonsGroupTwo: React.FC = () => {
             </Link>
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 border-y border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 border-y border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -177,7 +177,7 @@ const ButtonsGroupTwo: React.FC = () => {
             </Link>
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 rounded-r-lg border border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 rounded-r-lg border border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -215,7 +215,7 @@ const ButtonsGroupTwo: React.FC = () => {
           <div className="flex flex-wrap items-center rounded-full">
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 rounded-l-full border border-primary bg-primary py-1 px-2 font-medium text-white hover:border-primary hover:bg-primary hover:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 rounded-l-full border border-primary bg-primary py-1 px-2 font-medium text-white hover:border-primary hover:bg-primary hover:text-black dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -238,7 +238,7 @@ const ButtonsGroupTwo: React.FC = () => {
             </Link>
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 border-y border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 border-y border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"
@@ -277,7 +277,7 @@ const ButtonsGroupTwo: React.FC = () => {
             </Link>
             <Link
               to="#"
-              className="inline-flex items-center gap-2.5 rounded-r-full border border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
+              className="inline-flex items-center gap-2.5 rounded-r-full border border-stroke py-1 px-2 font-medium text-black hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:text-white dark:hover:border-primary sm:py-3 sm:px-6"
             >
               <svg
                 className="fill-current"

@@ -241,7 +241,7 @@ const QuestionsAnswersForm = ({
           <button
             type="submit"
             disabled={isDisabled || saving}
-            className="inline-flex rounded-md bg-primary px-6 py-2.5 text-center font-medium text-white hover:bg-opacity-90 disabled:cursor-not-allowed disabled:bg-opacity-60"
+            className="inline-flex rounded-md bg-primary px-6 py-2.5 text-center font-medium text-black hover:bg-opacity-90 disabled:cursor-not-allowed disabled:bg-opacity-60"
           >
             {saving
               ? t('common.loading')

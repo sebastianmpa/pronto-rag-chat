@@ -43,7 +43,7 @@ const UnderMaintenance: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <Link
                     to="#"
-                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:hover:border-primary"
+                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:hover:border-primary"
                   >
                     <svg
                       className="fill-current"
@@ -62,7 +62,7 @@ const UnderMaintenance: React.FC = () => {
 
                   <Link
                     to="#"
-                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:hover:border-primary"
+                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:hover:border-primary"
                   >
                     <svg
                       className="fill-current"
@@ -93,7 +93,7 @@ const UnderMaintenance: React.FC = () => {
 
                   <Link
                     to="#"
-                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:hover:border-primary"
+                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:hover:border-primary"
                   >
                     <svg
                       className="fill-current"
@@ -124,7 +124,7 @@ const UnderMaintenance: React.FC = () => {
 
                   <Link
                     to="#"
-                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:hover:border-primary"
+                    className="size-10 flex items-center justify-center rounded-full border border-[#DFE4EA] hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:hover:border-primary"
                   >
                     <svg
                       className="fill-current"

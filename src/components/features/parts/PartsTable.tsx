@@ -6,6 +6,9 @@ import { usePricing } from '../../../hooks/usePricing';
 import { useCustomerSearch } from '../../../hooks/useCustomerSearch';
 import { PartInfo } from '../../../types/partInfo';
 import { Customer } from '../../../types/customers';
+import { getAllTermCategories } from '../../../libs/TermCategoryService';
+import { TermCategory } from '../../../types/TermCategory';
+import axiosInstance from '../../../interceptor/axiosInstance';
 
 const PartsTable = () => {
   const { t } = useTranslation();
@@ -316,6 +319,34 @@ const PartsTable = () => {
     }
   }, [pricingModalIdx, pricingRelatedIdx]);
 
+  // Category filter states
+  const [allCategories, setAllCategories] = useState<TermCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<TermCategory | null>(null);
+  const [categoryTerms, setCategoryTerms] = useState<Array<{ id: string; term: string; definition: string; term_type?: string }> | null>(null);
+  const [loadingCategoryTerms, setLoadingCategoryTerms] = useState(false);
+
+  // Load categories on mount
+  useEffect(() => {
+    getAllTermCategories()
+      .then(setAllCategories)
+      .catch(() => setAllCategories([]));
+  }, []);
+
+  // Fetch terms when category is selected
+  useEffect(() => {
+    if (!selectedCategory) {
+      setCategoryTerms(null);
+      return;
+    }
+    const internalName = selectedCategory.internal_category_name.replace(/^\//, '');
+    setLoadingCategoryTerms(true);
+    axiosInstance
+      .get(`/terms/v0/categories/${internalName}/terms`)
+      .then(resp => setCategoryTerms(resp.data || []))
+      .catch(() => setCategoryTerms([]))
+      .finally(() => setLoadingCategoryTerms(false));
+  }, [selectedCategory]);
+
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
       {/* Page title (use translation key if available, fallback to literal) */}
@@ -327,29 +358,76 @@ const PartsTable = () => {
         className="w-full px-8 py-6 bg-white dark:bg-boxdark-2 border-x border-b border-stroke dark:border-strokedark rounded-b-lg shadow-sm"
         onSubmit={handleSubmit}
       >
-        <div>
-          <label htmlFor="partNumberFilter" className="block text-sm font-medium text-gray-700 mb-4">
-            {t('parts_table.part_number')}
-          </label>
-          <div className="relative">
-            <input
-              id="partNumberFilter"
-              type="text"
-              value={partNumberFilter}
-              onChange={e => setPartNumberFilter(e.target.value)}
-              className="w-full rounded-md border border-stroke bg-gray-50 dark:bg-transparent px-4 py-3 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-strokedark dark:focus:border-primary"
-              placeholder={t('parts_table.enter_part_number')}
-            />
-            <button
-              type="submit"
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent focus:outline-none text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loadingPart}
-              title={t('parts_table.search')}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
+          {/* Part number search */}
+          <div className="flex-1">
+            <label htmlFor="partNumberFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('parts_table.part_number')}
+            </label>
+            <div className="relative">
+              <input
+                id="partNumberFilter"
+                type="text"
+                value={partNumberFilter}
+                disabled={!!selectedCategory}
+                onChange={e => setPartNumberFilter(e.target.value)}
+                className={`w-full rounded-md border border-stroke bg-gray-50 dark:bg-transparent px-4 py-3 pr-12 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-strokedark dark:focus:border-primary ${selectedCategory ? 'opacity-50 cursor-not-allowed' : ''}`}
+                placeholder={t('parts_table.enter_part_number')}
+              />
+              <button
+                type="submit"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent focus:outline-none text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loadingPart || !!selectedCategory}
+                title={t('parts_table.search')}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 sm:pb-3">
+            <span className="hidden sm:block w-px h-8 bg-stroke dark:bg-strokedark" />
+            <span>o</span>
+            <span className="hidden sm:block w-px h-8 bg-stroke dark:bg-strokedark" />
+          </div>
+
+          {/* Category filter (mutually exclusive with part number search) */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('terms.table.category') || 'Categoría'}
+            </label>
+            {selectedCategory ? (
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 px-4 py-2.5 text-sm">
+                <span className="text-blue-800 dark:text-blue-200 font-medium">{selectedCategory.category_name}</span>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedCategory(null); setCategoryTerms(null); }}
+                  className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 ml-1 text-base leading-none"
+                >×</button>
+              </div>
+            ) : (
+              <select
+                value=""
+                disabled={!!partNumberFilter.trim()}
+                onChange={(e) => {
+                  const cat = allCategories.find(c => c.id === e.target.value);
+                  if (cat) {
+                    setSelectedCategory(cat);
+                    setPartNumberFilter('');
+                    setShowTable(false);
+                  }
+                }}
+                className={`w-full rounded-md border border-stroke bg-gray-50 dark:bg-transparent px-4 py-3 text-sm text-black dark:text-white outline-none focus:border-primary dark:border-strokedark dark:focus:border-primary ${partNumberFilter.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <option value="">{t('terms.table.category') || 'Filtrar por categoría...'}</option>
+                {allCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </form>
@@ -357,6 +435,64 @@ const PartsTable = () => {
       {/* Errores */}
       {error && (
         <div className="text-center text-red-500 py-6 px-8">{error}</div>
+      )}
+
+      {/* Category terms results */}
+      {selectedCategory && (
+        <div className="mt-6 px-8">
+          {loadingCategoryTerms && (
+            <div className="flex justify-center py-8">
+              <span className="text-gray-500 dark:text-gray-400">{t('common.loading')}</span>
+            </div>
+          )}
+          {!loadingCategoryTerms && categoryTerms !== null && categoryTerms.length === 0 && (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">{t('common.no_results')}</div>
+          )}
+          {!loadingCategoryTerms && categoryTerms && categoryTerms.length > 0 && (
+            <div className="overflow-x-auto rounded-lg border border-stroke dark:border-strokedark">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-2 dark:bg-meta-4 text-left">
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('terms.table.term')}</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('terms.table.definition')}</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('terms.table.term_type')}</th>
+                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('parts_table.search')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categoryTerms.map((term) => (
+                    <tr key={term.id} className="border-t border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-meta-4">
+                      <td className="px-4 py-3 text-black dark:text-white font-medium">{term.term}</td>
+                      <td className="px-4 py-3 text-black dark:text-white">{term.definition}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex rounded-full bg-gray-100 dark:bg-meta-9 px-2 py-0.5 text-xs font-medium text-black dark:text-white">
+                          {term.term_type || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(null);
+                            setCategoryTerms(null);
+                            setPartNumberFilter(term.definition);
+                            setShowTable(true);
+                          }}
+                          className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
+                          title={`Buscar ${term.definition}`}
+                        >
+                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Sin resultados */}
@@ -457,7 +593,7 @@ const PartsTable = () => {
                             <button
                               type="button"
                               onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 1 }))}
-                              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-black shadow' : 'text-gray-600 dark:text-gray-400'}`}
                               title={`${t('parts_accordion.view_location')} 1`}
                               aria-pressed={currentLocation === 1}
                             >
@@ -467,7 +603,7 @@ const PartsTable = () => {
                             <button
                               type="button"
                               onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 4 }))}
-                              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-black shadow' : 'text-gray-600 dark:text-gray-400'}`}
                               title={`${t('parts_accordion.view_location')} 4`}
                               aria-pressed={currentLocation === 4}
                             >

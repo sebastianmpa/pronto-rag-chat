@@ -121,7 +121,7 @@ const renderMessageContent = (
         parts.push(
           <span
             key={`pronto-sku-${idx}-${match.index}`}
-            className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
+            className="cursor-pointer font-bold text-primary hover:underline"
             onClick={() => onSkuClick && onSkuClick(skuText)}
             title={`Click to check stock for ${skuText}`}
           >
@@ -151,7 +151,7 @@ const renderMessageContent = (
           subParts.push(
             <span
               key={`pronto-term-${idx}-${i}-${termMatch.index}`}
-              className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
+              className="cursor-pointer font-bold text-primary hover:underline"
               onClick={() => onTermClick && onTermClick(termText)}
               title={`Click to search: ${termText}`}
             >
@@ -185,7 +185,7 @@ const renderMessageContent = (
               href={mdMatch[2]}
               target="_blank"
               rel="noopener noreferrer"
-              className="break-all text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="break-all text-primary underline hover:opacity-80"
             >
               {mdMatch[1]}
             </a>
@@ -223,7 +223,7 @@ const renderMessageContent = (
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="break-all text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="break-all text-primary underline hover:opacity-80"
               >
                 {isPdf ? 'Download file' : 'Open link'}
               </a>
@@ -292,7 +292,7 @@ const CategoriesAccordion: React.FC<{
       parts.push(
         <span
           key={`sku-${match.index}`}
-          className="cursor-pointer font-bold text-blue-600 hover:underline dark:text-blue-400"
+          className="cursor-pointer font-bold text-primary hover:underline"
           onClick={() => {
             if (onTermClick) {
               // Enviar "stock " + SKU para pronto-sku
@@ -338,7 +338,7 @@ const CategoriesAccordion: React.FC<{
         return (
           <div key={idx}>
             {/* Category Title */}
-            <p className="mb-2 text-xs font-semibold text-blue-800 dark:text-blue-300">
+            <p className="mb-2 text-xs font-semibold text-black dark:text-white">
               {category}
             </p>
 
@@ -358,7 +358,7 @@ const CategoriesAccordion: React.FC<{
                             onTermClick(termText);
                           }
                         }}
-                        className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-200 active:bg-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 dark:active:bg-blue-700"
+                        className="rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-primary/20 active:bg-primary/30 dark:bg-primary/20 dark:text-black dark:hover:bg-primary/30"
                         title={`Click para buscar: ${termText}`}
                       >
                         {termText}
@@ -369,7 +369,7 @@ const CategoriesAccordion: React.FC<{
                     return (
                       <div
                         key={itemIdx}
-                        className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+                        className="rounded-md bg-gray-50 px-3 py-2 text-sm text-black dark:bg-meta-4 dark:text-white"
                       >
                         {renderItemWithSku(item)}
                       </div>
@@ -787,7 +787,7 @@ const PartsAccordion: React.FC<{
                           <button
                             type="button"
                             onClick={() => handleSupersededClick(superseded)}
-                            className="ml-1 cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400"
+                            className="ml-1 cursor-pointer font-medium text-primary hover:underline"
                             title={`Click to search for stock ${superseded}`}
                           >
                             {superseded}
@@ -801,14 +801,14 @@ const PartsAccordion: React.FC<{
                         superseded !== '-' && (
                           <button
                             type="button"
-                            className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                            className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                             title={t('parts_accordion.copy_part_number')}
                             onClick={() =>
                               handleCopy(superseded, `superseded-${idx}`)
                             }
                           >
                             <svg
-                              className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+                              className="h-3.5 w-3.5 text-primary"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -868,7 +868,7 @@ const PartsAccordion: React.FC<{
                         }
                         className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                           currentLocation === 1
-                            ? 'bg-primary text-white shadow'
+                            ? 'bg-primary text-black shadow'
                             : 'text-gray-600 dark:text-gray-400'
                         }`}
                         title={`${t('parts_accordion.view_location')} 1`}
@@ -884,7 +884,7 @@ const PartsAccordion: React.FC<{
                         }
                         className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                           currentLocation === 4
-                            ? 'bg-primary text-white shadow'
+                            ? 'bg-primary text-black shadow'
                             : 'text-gray-600 dark:text-gray-400'
                         }`}
                         title={`${t('parts_accordion.view_location')} 4`}
@@ -933,7 +933,7 @@ const PartsAccordion: React.FC<{
                 {currentLocation === 4 && (
                   <button
                     type="button"
-                    className="rounded border border-transparent p-1 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                    className="rounded border border-transparent p-1 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                     title={t('stock_transfer.request') || 'Request transfer'}
                     onClick={() => {
                       setTransferForm({
@@ -949,7 +949,7 @@ const PartsAccordion: React.FC<{
                     }}
                   >
                     <svg
-                      className="h-5 w-5 text-blue-600 dark:text-blue-400"
+                      className="h-5 w-5 text-primary"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -966,12 +966,12 @@ const PartsAccordion: React.FC<{
                 {/* Copy button */}
                 <button
                   type="button"
-                  className="rounded border border-transparent p-1 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                  className="rounded border border-transparent p-1 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                   title={t('parts_accordion.copy_part_number')}
                   onClick={() => handleCopy(partNumber, idx)}
                 >
                   <svg
-                    className="h-5 w-5 text-blue-600 dark:text-blue-400"
+                    className="h-5 w-5 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1099,7 +1099,7 @@ const PartsAccordion: React.FC<{
                                     onSupersededClick &&
                                     onSupersededClick(part.PARTNUMBER)
                                   }
-                                  className="cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                  className="cursor-pointer font-medium text-primary hover:underline"
                                   title={`Click to check stock for ${part.PARTNUMBER}`}
                                 >
                                   {part.PARTNUMBER || '-'}
@@ -1108,7 +1108,7 @@ const PartsAccordion: React.FC<{
                                   <>
                                     <button
                                       type="button"
-                                      className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                                      className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                                       title={t(
                                         'parts_accordion.copy_part_number'
                                       )}
@@ -1121,7 +1121,7 @@ const PartsAccordion: React.FC<{
                                       }
                                     >
                                       <svg
-                                        className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+                                        className="h-3.5 w-3.5 text-primary"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -1238,10 +1238,10 @@ const PartsAccordion: React.FC<{
           }}
         >
           <div
-            className="relative w-full max-w-sm rounded-2xl border border-blue-300 bg-white px-7 py-5 text-black shadow-xl dark:bg-boxdark dark:text-white"
+            className="relative w-full max-w-sm rounded-2xl border border-stroke bg-white px-7 py-5 text-black shadow-xl dark:bg-boxdark dark:text-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-1 text-xs font-semibold text-white shadow-md">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-black shadow-md">
               {t('stock_transfer.request') || 'Stock Transfer'}
             </div>
 
@@ -1250,7 +1250,7 @@ const PartsAccordion: React.FC<{
               <div className="text-center">
                 <div className="mb-4">
                   <svg
-                    className="mx-auto h-12 w-12 text-blue-600 dark:text-blue-400"
+                    className="mx-auto h-12 w-12 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1263,13 +1263,13 @@ const PartsAccordion: React.FC<{
                     />
                   </svg>
                 </div>
-                <p className="mb-4 text-base font-semibold text-blue-700 dark:text-blue-300">
+                <p className="mb-4 text-base font-semibold text-black dark:text-white">
                   {t('stock_transfer.success_message') ||
                     'Transfer request submitted successfully!'}
                 </p>
                 <button
                   type="button"
-                  className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white shadow-md transition-all duration-150 hover:bg-blue-700 active:bg-blue-800"
+                  className="w-full rounded-lg bg-primary py-2 font-semibold text-black shadow-md transition-all duration-150 hover:bg-opacity-90 active:bg-opacity-80"
                   onClick={() => {
                     setTransferModalIdx(null);
                     setTransferSuccess(false);
@@ -1288,7 +1288,7 @@ const PartsAccordion: React.FC<{
             ) : (
               // Form state
               <>
-                <p className="mb-4 text-center text-base font-semibold text-blue-700 dark:text-blue-300">
+                <p className="mb-4 text-center text-base font-semibold text-black dark:text-white">
                   {t('stock_transfer.request_transfer') ||
                     'Request Stock Transfer'}
                 </p>
@@ -1411,7 +1411,7 @@ const PartsAccordion: React.FC<{
                   </button>
                   <button
                     type="button"
-                    className={`flex-1 rounded-lg bg-blue-600 py-2 font-semibold text-white shadow-md transition-all duration-150 hover:bg-blue-700 active:bg-blue-800 ${
+                    className={`flex-1 rounded-lg bg-primary py-2 font-semibold text-black shadow-md transition-all duration-150 hover:bg-opacity-90 active:bg-opacity-80 ${
                       !transferForm.quantity ||
                       !transferForm.order ||
                       transferLoading
@@ -2409,7 +2409,7 @@ const MessagesMe: React.FC = () => {
           className="h-full w-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex"
         >
           {/* Chat List */}
-          <div className="hidden h-full flex-col border-r-2 border-blue-300 bg-white dark:bg-boxdark xl:flex xl:w-72">
+          <div className="hidden h-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:flex xl:w-72">
             {/* Header */}
             <div className="border-b border-stroke px-4 py-4 dark:border-strokedark sm:px-6">
               <div className="flex items-center justify-between gap-2">
@@ -2419,7 +2419,7 @@ const MessagesMe: React.FC = () => {
                 </h4>
                 <button
                   onClick={handleNewChat}
-                  className="inline-flex items-center justify-center rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-white transition-all hover:bg-opacity-90 sm:px-4"
+                  className="inline-flex items-center justify-center rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-black transition-all hover:bg-opacity-90 sm:px-4"
                 >
                   <svg
                     className="h-4 w-4 sm:mr-2"
@@ -2596,7 +2596,7 @@ const MessagesMe: React.FC = () => {
                             <p className="text-gray-600 dark:text-gray-400 mb-2 text-xs font-medium">
                               {t('assistant')}
                             </p>
-                            <div className="rounded-2xl border border-blue-300 bg-white px-4 py-3 text-black dark:bg-boxdark dark:text-white">
+                            <div className="rounded-2xl border border-stroke bg-white px-4 py-3 text-black dark:bg-boxdark dark:text-white">
                               <p className="break-words text-[105%] text-sm">
                                 {localMessages.length > 0 &&
                                 localMessages[0].role === 'assistant'
@@ -2617,7 +2617,7 @@ const MessagesMe: React.FC = () => {
                           .map((msg) => (
                             <div className="flex justify-end" key={msg.id}>
                               <div className="max-w-xs">
-                                <div className="rounded-2xl border border-blue-700 bg-blue-600 px-4 py-3 text-white">
+                                <div className="rounded-2xl border border-primary bg-primary px-4 py-3 text-black">
                                   <p className="break-words text-[105%] text-sm">
                                     {msg.content}
                                   </p>
@@ -2810,14 +2810,14 @@ const MessagesMe: React.FC = () => {
                                     >
                                       {msg.role !== 'user' && (
                                         <div className="mb-2 flex items-center justify-between gap-2">
-                                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                          <p className="text-xs font-medium text-black dark:text-white">
                                             {t('assistant')}
                                           </p>
                                           {text.trim().length > 0 && (
                                             <button
                                               type="button"
                                               title="Guardar"
-                                              className="rounded p-1 text-blue-700 transition hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-boxdark"
+                                              className="rounded p-1 text-black dark:text-white transition hover:bg-gray-100 dark:hover:bg-boxdark"
                                               onClick={() => {
                                                 setQaInitialAnswer(text || '');
                                                 setQaInitialQuestion(
@@ -2862,8 +2862,8 @@ const MessagesMe: React.FC = () => {
                                       <div
                                         className={`rounded-2xl border px-4 py-3 shadow-md ${
                                           msg.role === 'user'
-                                            ? 'border-blue-700 bg-blue-600 text-white'
-                                            : 'border-blue-300 bg-white text-blue-900 dark:bg-boxdark-2 dark:text-white'
+                                            ? 'border-primary bg-primary text-black'
+                                            : 'border-stroke bg-white text-black dark:bg-boxdark-2 dark:text-white'
                                         }`}
                                       >
                                         {shouldRenderText && (
@@ -3028,7 +3028,7 @@ const MessagesMe: React.FC = () => {
                     {showRatingBubble && (
                       <div className="flex justify-start">
                         <div className="max-w-xs">
-                          <div className="rounded-2xl border border-blue-300 bg-white px-4 py-3 text-black dark:bg-boxdark dark:text-white">
+                          <div className="rounded-2xl border border-stroke bg-white px-4 py-3 text-black dark:bg-boxdark dark:text-white">
                             <RatingBubble
                               onSubmit={handleRatingSubmit}
                               loading={ratingLoading}
@@ -3062,7 +3062,7 @@ const MessagesMe: React.FC = () => {
                               setSelectedCommandIdx(0);
                               setTimeout(() => inputRef.current?.focus(), 0);
                             }}
-                            className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white transition-all hover:bg-primary/90"
+                            className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-black transition-all hover:bg-primary/90"
                           >
                             <svg
                               width="16"
@@ -3111,7 +3111,7 @@ const MessagesMe: React.FC = () => {
                             {showCommandsDropdown && filteredApiCommands.length > 0 && (
                               <div
                                 ref={commandsDropdownRef}
-                                className="absolute bottom-full left-0 z-50 mb-2 max-h-60 w-80 overflow-y-auto rounded-lg border border-blue-300 bg-white shadow-xl dark:border-blue-700 dark:bg-boxdark"
+                                className="absolute bottom-full left-0 z-50 mb-2 max-h-60 w-80 overflow-y-auto rounded-lg border border-stroke bg-white shadow-xl dark:border-strokedark dark:bg-boxdark"
                               >
                                 <div className="p-2">
                                   <div className="mb-2 px-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
@@ -3130,11 +3130,11 @@ const MessagesMe: React.FC = () => {
                                           }}
                                           className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors ${
                                             idx === selectedCommandIdx
-                                              ? 'bg-blue-100 dark:bg-blue-900'
+                                              ? 'bg-primary/10 dark:bg-primary/20'
                                               : 'hover:bg-gray-100 dark:hover:bg-boxdark-2'
                                           }`}
                                         >
-                                          <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                          <span className="font-mono text-sm font-semibold text-primary">
                                             {cmd.command}
                                           </span>
                                           <span className={`rounded-full px-2 py-0.5 text-xs ${
@@ -3217,7 +3217,7 @@ const MessagesMe: React.FC = () => {
                         <button
                           type="submit"
                           disabled={assistantTyping}
-                          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-primary text-white transition-all hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md bg-primary text-black transition-all hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <svg
                             width="20"
@@ -3228,14 +3228,14 @@ const MessagesMe: React.FC = () => {
                           >
                             <path
                               d="M22 2L11 13"
-                              stroke="white"
+                              stroke="currentColor"
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             />
                             <path
                               d="M22 2L15 22L11 13L2 9L22 2Z"
-                              stroke="white"
+                              stroke="currentColor"
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"

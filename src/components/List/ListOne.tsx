@@ -18,7 +18,7 @@ const ListOne: React.FC = () => {
       <ul className="flex flex-col">
         {listItems.map((item, index) => (
           <li key={index} className="flex items-center gap-2.5 border-b border-stroke px-5 py-3 last:border-b-0 dark:border-strokedark">
-            <span className="max-w-6.5 flex h-6.5 w-full items-center justify-center rounded-full bg-primary text-white">
+            <span className="max-w-6.5 flex h-6.5 w-full items-center justify-center rounded-full bg-primary text-black">
               {index + 1}
             </span>
             <span> {item.text} </span>

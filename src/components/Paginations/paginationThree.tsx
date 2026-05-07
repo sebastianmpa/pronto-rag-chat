@@ -15,7 +15,7 @@ const PaginationThree: React.FC = () => {
           <ul className="flex flex-wrap items-center gap-2">
             <li>
               <Link
-                className="flex items-center justify-center rounded bg-[#EDEFF1] py-1.5 px-3 text-xs font-medium text-black hover:bg-primary hover:text-white dark:bg-graydark dark:text-white dark:hover:bg-primary dark:hover:text-white"
+                className="flex items-center justify-center rounded bg-[#EDEFF1] py-1.5 px-3 text-xs font-medium text-black hover:bg-primary hover:text-black dark:bg-graydark dark:text-white dark:hover:bg-primary dark:hover:text-black"
                 to="#"
               >
                 Previous
@@ -23,7 +23,7 @@ const PaginationThree: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 1
@@ -31,7 +31,7 @@ const PaginationThree: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 2
@@ -39,7 +39,7 @@ const PaginationThree: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 3
@@ -47,7 +47,7 @@ const PaginationThree: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 4
@@ -55,7 +55,7 @@ const PaginationThree: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-white"
+                className="flex items-center justify-center rounded py-1.5 px-3 font-medium hover:bg-primary hover:text-black"
                 to="#"
               >
                 5
@@ -63,7 +63,7 @@ const PaginationThree: React.FC = () => {
             </li>
             <li>
               <Link
-                className="flex items-center justify-center rounded bg-[#EDEFF1] py-1.5 px-3 text-xs font-medium text-black hover:bg-primary hover:text-white dark:bg-graydark dark:text-white dark:hover:bg-primary dark:hover:text-white"
+                className="flex items-center justify-center rounded bg-[#EDEFF1] py-1.5 px-3 text-xs font-medium text-black hover:bg-primary hover:text-black dark:bg-graydark dark:text-white dark:hover:bg-primary dark:hover:text-black"
                 to="#"
               >
                 Next

@@ -40,7 +40,7 @@ const BrandsTable: React.FC<BrandsTableProps> = ({ onBrandSelect, selectedBrandI
         <div className="text-red-600 mb-4">Error loading brands: {error}</div>
         <button
           onClick={refetch}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 bg-primary text-black rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           Try Again
         </button>
@@ -71,7 +71,7 @@ const BrandsTable: React.FC<BrandsTableProps> = ({ onBrandSelect, selectedBrandI
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+            className="px-6 py-3 bg-primary text-black rounded-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           >
             Search
           </button>

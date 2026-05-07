@@ -159,17 +159,17 @@ span.flatpickr-weekday,
 .flatpickr-day.selected.nextMonthDay,
 .flatpickr-day.startRange.nextMonthDay,
 .flatpickr-day.endRange.nextMonthDay {
-  background: #3c50e0;
+  background: #fab702;
   @apply !border-primary !bg-primary hover:!border-primary hover:!bg-primary;
 }
 .flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n + 1)),
 .flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n + 1)),
 .flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n + 1)) {
-  box-shadow: -10px 0 0 #3c50e0;
+  box-shadow: -10px 0 0 #fab702;
 }
 
 .map-btn .jvm-zoom-btn {
-  @apply flex h-7.5 w-7.5 items-center justify-center rounded border border-stroke bg-white px-0 pb-0.5 pt-0 text-2xl leading-none text-body hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark dark:bg-meta-4 dark:text-bodydark dark:hover:border-primary dark:hover:bg-primary dark:hover:text-white;
+  @apply flex h-7.5 w-7.5 items-center justify-center rounded border border-stroke bg-white px-0 pb-0.5 pt-0 text-2xl leading-none text-body hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark dark:bg-meta-4 dark:text-bodydark dark:hover:border-primary dark:hover:bg-primary dark:hover:text-black;
 }
 .mapOne .jvm-zoom-btn {
   @apply bottom-0 left-auto top-auto;
@@ -304,10 +304,10 @@ span.flatpickr-weekday,
   @apply !m-0;
 }
 .data-table-common .datatable-pagination a {
-  @apply flex h-8 w-8 cursor-pointer items-center justify-center rounded p-0 font-medium text-body hover:bg-primary hover:text-white dark:text-bodydark;
+  @apply flex h-8 w-8 cursor-pointer items-center justify-center rounded p-0 font-medium text-body hover:bg-primary hover:text-black dark:text-bodydark;
 }
 .data-table-common .datatable-pagination .datatable-active a {
-  @apply bg-primary text-white;
+  @apply bg-primary text-black;
 }
 .data-table-common .datatable-pagination li.datatable-hidden {
   @apply !visible;

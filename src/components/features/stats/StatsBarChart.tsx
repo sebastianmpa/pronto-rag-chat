@@ -12,7 +12,7 @@ interface StatsBarChartProps {
   endDate?: string;
 }
 
-const StatsBarChart: React.FC<StatsBarChartProps> = ({ title, categories, data, color = '#3C50E0', height = 350, startDate, endDate }) => {
+const StatsBarChart: React.FC<StatsBarChartProps> = ({ title, categories, data, color = '#fab702', height = 350, startDate, endDate }) => {
   const options: ApexOptions = {
     colors: [color],
     chart: {

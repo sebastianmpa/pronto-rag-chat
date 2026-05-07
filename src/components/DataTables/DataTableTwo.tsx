@@ -384,7 +384,7 @@ const DataTableTwo = () => {
         </p>
         <div className="flex">
           <button
-            className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-white"
+            className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-black"
             onClick={() => previousPage()}
             disabled={!canPreviousPage}
           >
@@ -410,15 +410,15 @@ const DataTableTwo = () => {
                 gotoPage(index);
               }}
               className={`${
-                pageIndex === index && 'bg-primary text-white'
-              } mx-1 flex cursor-pointer items-center justify-center rounded-md p-1 px-3 hover:bg-primary hover:text-white`}
+                pageIndex === index && 'bg-primary text-black'
+              } mx-1 flex cursor-pointer items-center justify-center rounded-md p-1 px-3 hover:bg-primary hover:text-black`}
             >
               {index + 1}
             </button>
           ))}
 
           <button
-            className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-white"
+            className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-black"
             onClick={() => nextPage()}
             disabled={!canNextPage}
           >

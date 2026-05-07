@@ -30,7 +30,7 @@ const FaqOne: React.FC = () => {
     <div className="grid grid-cols-1 gap-x-7.5 gap-y-7.5 sm:gap-y-12.5 xl:grid-cols-2 xl:gap-y-17.5">
       {faqItems.map((item, index) => (
         <div key={index} className="flex gap-6">
-          <div className="flex h-15 w-full max-w-15 items-center justify-center rounded-xl bg-primary text-white">
+          <div className="flex h-15 w-full max-w-15 items-center justify-center rounded-xl bg-primary text-black">
             <svg
               className="fill-current"
               width="33"

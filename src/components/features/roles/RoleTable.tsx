@@ -95,7 +95,7 @@ const RoleTable = () => {
               onClick={() => handleEdit(value)}
               title={t('roles.table.edit')}
               aria-label={t('roles.table.edit')}
-              className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-white shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-black shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
@@ -267,7 +267,7 @@ const RoleTable = () => {
             <button
               ref={createButtonRef}
               onClick={handleCreate}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-center font-medium text-white hover:bg-opacity-90"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-center font-medium text-black hover:bg-opacity-90"
             >
               <svg
                 className="fill-current"
@@ -399,7 +399,7 @@ const RoleTable = () => {
           </p>
           <div className="flex gap-2">
             <button
-              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => previousPage()}
               disabled={!canGoPrev || loading}
             >
@@ -423,7 +423,7 @@ const RoleTable = () => {
             </span>
 
             <button
-              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => nextPage()}
               disabled={!canGoNext || loading}
             >

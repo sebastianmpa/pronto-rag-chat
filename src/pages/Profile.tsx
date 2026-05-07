@@ -55,7 +55,7 @@ const Profile = () => {
               <img src={userSix} alt="profile" />
               <label
                 htmlFor="profile"
-                className="absolute bottom-0 right-0 flex h-8.5 w-8.5 cursor-pointer items-center justify-center rounded-full bg-primary text-white hover:bg-opacity-90 sm:bottom-2 sm:right-2"
+                className="absolute bottom-0 right-0 flex h-8.5 w-8.5 cursor-pointer items-center justify-center rounded-full bg-primary text-black hover:bg-opacity-90 sm:bottom-2 sm:right-2"
               >
                 <svg
                   className="fill-current"

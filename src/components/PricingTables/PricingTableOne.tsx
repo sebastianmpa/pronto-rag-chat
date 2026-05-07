@@ -30,7 +30,7 @@ const PricingTableOne: React.FC = () => {
           <li className="font-medium">Lifetime Free Updates</li>
         </ul>
 
-        <button className="mt-9 flex rounded-md border border-primary py-3 px-9 font-medium text-primary hover:bg-primary hover:text-white">
+        <button className="mt-9 flex rounded-md border border-primary py-3 px-9 font-medium text-primary hover:bg-primary hover:text-black">
           Purchase Now
         </button>
       </div>
@@ -85,7 +85,7 @@ const PricingTableOne: React.FC = () => {
           <li className="font-medium">Lifetime Free Updates</li>
         </ul>
 
-        <button className="mt-9 flex rounded-md border border-primary py-3 px-9 font-medium text-primary hover:bg-primary hover:text-white">
+        <button className="mt-9 flex rounded-md border border-primary py-3 px-9 font-medium text-primary hover:bg-primary hover:text-black">
           Purchase Now
         </button>
       </div>
@@ -117,7 +117,7 @@ const PricingTableOne: React.FC = () => {
           <li className="font-medium">Lifetime Free Updates</li>
         </ul>
 
-        <button className="mt-9 flex rounded-md border border-primary py-3 px-9 font-medium text-primary hover:bg-primary hover:text-white">
+        <button className="mt-9 flex rounded-md border border-primary py-3 px-9 font-medium text-primary hover:bg-primary hover:text-black">
           Purchase Now
         </button>
       </div>

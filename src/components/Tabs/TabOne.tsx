@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const TabOne: React.FC = () => {
   const [openTab, setOpenTab] = useState(1);
 
-  const activeClasses = 'bg-primary text-white';
+  const activeClasses = 'bg-primary text-black';
   const inactiveClasses = 'bg-gray dark:bg-meta-4 text-black dark:text-white';
 
   return (
@@ -12,7 +12,7 @@ const TabOne: React.FC = () => {
       <div className="mb-7.5 flex flex-wrap gap-3 rounded-lg border border-stroke py-3 px-4 dark:border-strokedark">
         <Link
           to="#"
-          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-white dark:hover:bg-primary md:text-base lg:px-6 ${
+          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-black dark:hover:bg-primary md:text-base lg:px-6 ${
             openTab === 1 ? activeClasses : inactiveClasses
           }`}
           onClick={() => setOpenTab(1)}
@@ -21,7 +21,7 @@ const TabOne: React.FC = () => {
         </Link>
         <Link
           to="#"
-          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-white dark:hover:bg-primary md:text-base lg:px-6 ${
+          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-black dark:hover:bg-primary md:text-base lg:px-6 ${
             openTab === 2 ? activeClasses : inactiveClasses
           }`}
           onClick={() => setOpenTab(2)}
@@ -30,7 +30,7 @@ const TabOne: React.FC = () => {
         </Link>
         <Link
           to="#"
-          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-white dark:hover:bg-primary md:text-base lg:px-6 ${
+          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-black dark:hover:bg-primary md:text-base lg:px-6 ${
             openTab === 3 ? activeClasses : inactiveClasses
           }`}
           onClick={() => setOpenTab(3)}
@@ -39,7 +39,7 @@ const TabOne: React.FC = () => {
         </Link>
         <Link
           to="#"
-          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-white dark:hover:bg-primary md:text-base lg:px-6 ${
+          className={`rounded-md py-3 px-4 text-sm font-medium hover:bg-primary hover:text-black dark:hover:bg-primary md:text-base lg:px-6 ${
             openTab === 4 ? activeClasses : inactiveClasses
           }`}
           onClick={() => setOpenTab(4)}

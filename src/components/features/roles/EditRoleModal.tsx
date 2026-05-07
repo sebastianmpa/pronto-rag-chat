@@ -297,11 +297,11 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="block w-full rounded border border-primary bg-primary p-3 text-center font-medium text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="block w-full rounded border border-primary bg-primary p-3 text-center font-medium text-black transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-white border-t-transparent"></div>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-black border-t-transparent"></div>
                       {t('roles.modal.updating')}
                     </div>
                   ) : (

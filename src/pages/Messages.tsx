@@ -42,30 +42,95 @@ const CategoriesAccordion: React.FC<{
     return null;
   }
 
+  // Helper para extraer el texto limpio de un HTML tag pronto-term o pronto-sku
+  const extractText = (htmlString: string, tagClass: 'pronto-term' | 'pronto-sku'): string => {
+    const regex = new RegExp(`<b\\s+class=['"]${tagClass}['"]\\s*>([^<]+)<\\/b>`, 'i');
+    const match = htmlString.match(regex);
+    return match ? match[1] : htmlString;
+  };
+
+  // Helper para renderizar items con soporte para pronto-sku
+  const renderItemWithSku = (itemText: string): React.ReactNode => {
+    const skuRegex = /<b\s+class=['"]pronto-sku['"\s]*>([^<]+)<\/b>/g;
+    const parts: (string | JSX.Element)[] = [];
+    let lastIdx = 0;
+    let match;
+
+    while ((match = skuRegex.exec(itemText)) !== null) {
+      if (match.index > lastIdx) {
+        parts.push(itemText.slice(lastIdx, match.index));
+      }
+      const skuText = match[1];
+      parts.push(
+        <span
+          key={`sku-${match.index}`}
+          className="cursor-pointer font-bold text-primary hover:underline"
+          title={`SKU: ${skuText}`}
+        >
+          {skuText}
+        </span>
+      );
+      lastIdx = match.index + match[0].length;
+    }
+
+    if (lastIdx < itemText.length) {
+      parts.push(itemText.slice(lastIdx));
+    }
+
+    return parts.length > 0 ? parts : itemText;
+  };
+
   return (
     <div className="mx-auto mt-3 w-full space-y-3">
       {data.map((categoryObj, idx) => {
         const category = categoryObj.category || `Category ${idx}`;
-        // items es un array directo de strings
-        const items = Array.isArray(categoryObj.items) ? categoryObj.items : [];
+
+        // Detectar formato: array de array (nested) vs array directo
+        let isNestedFormat = false;
+        let items: string[] = [];
+
+        if (categoryObj.items && Array.isArray(categoryObj.items)) {
+          if (categoryObj.items.length > 0 && Array.isArray(categoryObj.items[0])) {
+            isNestedFormat = true;
+            items = categoryObj.items[0];
+          } else {
+            isNestedFormat = false;
+            items = categoryObj.items;
+          }
+        }
 
         return (
           <div key={idx}>
             {/* Category Title */}
-            <p className="mb-2 text-xs font-semibold text-blue-800 dark:text-blue-300">
+            <p className="mb-2 text-xs font-semibold text-black dark:text-white">
               {category}
             </p>
 
-            {/* Terms/Items */}
-            <div className="flex flex-col gap-2">
+            {/* Render según formato */}
+            <div className={isNestedFormat ? 'flex flex-wrap gap-2' : 'flex flex-col gap-2'}>
               {items && items.length > 0 ? (
-                items.map((item: string, itemIdx: number) => (
-                  <div
-                    key={itemIdx}
-                    className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
-                    dangerouslySetInnerHTML={{ __html: item }}
-                  />
-                ))
+                items.map((item: string, itemIdx: number) => {
+                  if (isNestedFormat) {
+                    const termText = extractText(item, 'pronto-term');
+                    return (
+                      <span
+                        key={itemIdx}
+                        className="rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-black dark:bg-primary/20 dark:text-black"
+                      >
+                        {termText}
+                      </span>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={itemIdx}
+                        className="rounded-md bg-gray-50 px-3 py-2 text-sm text-black dark:bg-meta-4 dark:text-white"
+                      >
+                        {renderItemWithSku(item)}
+                      </div>
+                    );
+                  }
+                })
               ) : (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {t('common.no_results') || 'No hay términos'}
@@ -229,14 +294,14 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                         superseded !== '-' && (
                           <button
                             type="button"
-                            className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                            className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                             title={t('parts_accordion.copy_part_number')}
                             onClick={() =>
                               handleCopy(superseded, `superseded-${idx}`)
                             }
                           >
                             <svg
-                              className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+                              className="h-3.5 w-3.5 text-primary"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -289,7 +354,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                       }
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                         currentLocation === 1
-                          ? 'bg-primary text-white shadow'
+                          ? 'bg-primary text-black shadow'
                           : 'text-gray-600 dark:text-gray-400'
                       }`}
                       title={`${t('parts_accordion.view_location')} 1`}
@@ -305,7 +370,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                       }
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                         currentLocation === 4
-                          ? 'bg-primary text-white shadow'
+                          ? 'bg-primary text-black shadow'
                           : 'text-gray-600 dark:text-gray-400'
                       }`}
                       title={`${t('parts_accordion.view_location')} 4`}
@@ -318,12 +383,12 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                 {/* Copy button */}
                 <button
                   type="button"
-                  className="rounded border border-transparent p-1 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                  className="rounded border border-transparent p-1 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                   title={t('parts_accordion.copy_part_number')}
                   onClick={() => handleCopy(partNumber, idx)}
                 >
                   <svg
-                    className="h-5 w-5 text-blue-600 dark:text-blue-400"
+                    className="h-5 w-5 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -450,7 +515,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                                 {part.PARTNUMBER && (
                                   <button
                                     type="button"
-                                    className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-blue-100 focus:outline-none dark:hover:bg-blue-900"
+                                    className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
                                     title={t(
                                       'parts_accordion.copy_part_number'
                                     )}
@@ -463,7 +528,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                                     }
                                   >
                                     <svg
-                                      className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+                                      className="h-3.5 w-3.5 text-primary"
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -606,7 +671,7 @@ const TableCollapsible: React.FC<{
                       {generalInfo.DESCRIPTION || '-'}
                     </td>
                     {generalInfo.SUPERCEDETO && (
-                      <td className="text-gray-900 px-2 py-2 font-medium text-blue-600 dark:text-blue-400 dark:text-white">
+                      <td className="text-gray-900 px-2 py-2 font-medium text-primary dark:text-white">
                         {generalInfo.SUPERCEDETO}
                       </td>
                     )}
@@ -858,7 +923,7 @@ const Messages: React.FC = () => {
           parts.push(
             <span
               key={`pronto-sku-${idx}-${match.index}`}
-              className="font-bold text-blue-600 dark:text-blue-400"
+              className="font-bold text-primary"
             >
               {match[1]}
             </span>
@@ -967,7 +1032,7 @@ const Messages: React.FC = () => {
       >
         <div className="h-full min-h-0 rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
           {/* Chat List */}
-          <div className="hidden h-full min-h-0 flex-col border-r-2 border-blue-300 bg-white dark:bg-boxdark xl:flex xl:w-72">
+          <div className="hidden h-full min-h-0 flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:flex xl:w-72">
             {/* Header */}
             <div className="border-b border-stroke px-6 py-4 dark:border-strokedark">
               <div className="flex items-center justify-between gap-2">
@@ -1311,7 +1376,7 @@ const Messages: React.FC = () => {
                                     )}
                                     {msg.role === 'assistant' && (
                                       <div className="mb-2 flex items-center justify-between gap-2">
-                                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                        <p className="text-xs font-medium text-black dark:text-white">
                                           {t('assistant')}
                                         </p>
                                         {(content || text || '').trim().length >
@@ -1319,7 +1384,7 @@ const Messages: React.FC = () => {
                                           <button
                                             type="button"
                                             title="Guardar"
-                                            className="rounded p-1 text-blue-700 transition hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-boxdark"
+                                            className="rounded p-1 text-black dark:text-white transition hover:bg-gray-100 dark:hover:bg-boxdark"
                                             onClick={() => {
                                               setQaInitialAnswer(
                                                 content || text || ''
@@ -1366,8 +1431,8 @@ const Messages: React.FC = () => {
                                     <div
                                       className={`rounded-2xl border px-4 py-3 shadow-md ${
                                         msg.role === 'user'
-                                          ? 'border-blue-700 bg-blue-600 text-white'
-                                          : 'border-blue-300 bg-white text-blue-900 dark:bg-boxdark-2 dark:text-white'
+                                          ? 'border-primary bg-primary text-black'
+                                          : 'border-stroke bg-white text-black dark:bg-boxdark-2 dark:text-white'
                                       }`}
                                     >
                                       {shouldRenderText && (

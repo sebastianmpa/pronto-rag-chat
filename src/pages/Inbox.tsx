@@ -240,7 +240,7 @@ const Inbox: React.FC = () => {
                 1-5 of 29
               </p>
               <div className="flex items-center justify-end space-x-3">
-                <button className="dark:bg-whiten/30 flex h-7.5 w-7.5 items-center justify-center rounded border border-stroke bg-whiten hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark">
+                <button className="dark:bg-whiten/30 flex h-7.5 w-7.5 items-center justify-center rounded border border-stroke bg-whiten hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark">
                   <svg
                     width="18"
                     height="18"
@@ -254,7 +254,7 @@ const Inbox: React.FC = () => {
                     />
                   </svg>
                 </button>
-                <button className="dark:bg-whiten/30 flex h-7.5 w-7.5 items-center justify-center rounded border border-stroke bg-whiten hover:border-primary hover:bg-primary hover:text-white dark:border-strokedark">
+                <button className="dark:bg-whiten/30 flex h-7.5 w-7.5 items-center justify-center rounded border border-stroke bg-whiten hover:border-primary hover:bg-primary hover:text-black dark:border-strokedark">
                   <svg
                     width="18"
                     height="18"

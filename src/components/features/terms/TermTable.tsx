@@ -408,7 +408,7 @@ const TermTable = () => {
           <button
             ref={createButtonRef}
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+            className="inline-flex rounded-md bg-primary px-4 py-2 text-center font-medium text-black hover:bg-opacity-90"
           >
             {t('terms.table.create_term')}
           </button>
@@ -483,7 +483,7 @@ const TermTable = () => {
                             className="p-1 rounded hover:bg-gray-100 dark:hover:bg-boxdark-3 border border-transparent focus:outline-none"
                             title={t('common.search') || 'Search'}
                           >
-                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-primary dark:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                           </button>
@@ -493,7 +493,7 @@ const TermTable = () => {
                         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-black dark:bg-meta-9 dark:text-white">{term.term_type || '-'}</span>
                       </td>
                       <td className="px-4 py-5 align-top">
-                        <span className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-black dark:bg-primary/20 dark:text-white">
                           {term.term_category_id ? categories.get(term.term_category_id) || '-' : '-'}
                         </span>
                       </td>
@@ -526,7 +526,7 @@ const TermTable = () => {
                             onClick={() => handleEdit(term.id)}
                             title={t('terms.table.edit')}
                             aria-label={t('terms.table.edit')}
-                            className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-white shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="p-2 rounded-md bg-white dark:bg-boxdark-2 text-primary hover:bg-primary hover:text-black shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                               <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
@@ -634,12 +634,12 @@ const TermTable = () => {
           onClick={() => setShowPartModal(false)}
         >
           <div
-            className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-5xl max-h-[88vh] overflow-y-auto relative flex flex-col"
+            className="rounded-2xl border border-primary bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-5xl max-h-[88vh] overflow-y-auto relative flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 pb-4 border-b border-blue-200 dark:border-blue-800">
-              <h2 className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                {t('parts.related_parts_information') || 'Related Parts Information'}
+            <div className="mb-4 pb-4 border-b border-primary/20 dark:border-primary/30">
+              <h2 className="text-lg font-bold text-primary dark:text-primary">
+                {t('parts.related_parts_information') || 'Información de Partes Relacionadas'}
               </h2>
             </div>
             
@@ -699,8 +699,8 @@ const TermTable = () => {
                           )}
                           <div className="flex flex-col min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                              <span className="truncate text-blue-600 dark:text-blue-400 font-bold">{item.mfrId}</span>
-                              <span className="truncate text-blue-600 dark:text-blue-400 font-bold">{item.partNumber}</span>
+                              <span className="truncate text-primary dark:text-primary font-bold">{item.mfrId}</span>
+                              <span className="truncate text-primary dark:text-primary font-bold">{item.partNumber}</span>
                               <span className="truncate flex-1 text-gray-700 dark:text-gray-300">{general.DESCRIPTION || item.description || '-'}</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
@@ -731,14 +731,14 @@ const TermTable = () => {
                                 <button
                                   type="button"
                                   onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 1 }))}
-                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 1 ? 'bg-primary text-black shadow' : 'text-gray-600 dark:text-gray-400'}`}
                                 >
                                   1
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setViewingLocation(prev => ({ ...prev, [idx]: 4 }))}
-                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLocation === 4 ? 'bg-primary text-black shadow' : 'text-gray-600 dark:text-gray-400'}`}
                                 >
                                   4
                                 </button>
@@ -812,9 +812,9 @@ const TermTable = () => {
                                   </thead>
                                   <tbody className="bg-white dark:bg-boxdark">
                                     {relatedParts.map((part, pidx) => (
-                                      <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-blue-50 dark:hover:bg-boxdark-2">
+                                      <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-100 dark:hover:bg-boxdark-2">
                                         <td className="px-3 py-2 text-gray-900 dark:text-white">{part.MFRID}</td>
-                                        <td className="px-3 py-2 text-gray-900 dark:text-white font-semibold text-blue-600 dark:text-blue-400">{part.PARTNUMBER}</td>
+                                        <td className="px-3 py-2 text-gray-900 dark:text-white font-semibold text-primary dark:text-primary">{part.PARTNUMBER}</td>
                                         <td className="px-3 py-2 text-gray-900 dark:text-white">{part.DESCRIPTION}</td>
                                         <td className="px-3 py-2 text-right text-gray-900 dark:text-white font-medium">{part.QUANTITYLOC}</td>
                                       </tr>
@@ -854,12 +854,12 @@ const TermTable = () => {
       {showPricingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowPricingModal(false)}>
           <div
-            className="rounded-2xl border border-blue-300 bg-white dark:bg-boxdark py-5 px-7 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg"
+            className="rounded-2xl border border-primary bg-white dark:bg-boxdark py-5 px-7 w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-stroke dark:border-strokedark mb-4">
-              <h2 className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+              <h2 className="text-lg font-semibold text-primary dark:text-primary">
                 {pricingStep === 'search' ? t('pricing.get_info') : t('pricing.details')}
               </h2>
               <button
@@ -878,7 +878,7 @@ const TermTable = () => {
                 {/* Part Number Display */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t('parts.part_number') || 'Part Number'}
+                    {t('pricing.part_number') || 'Part Number'}
                   </label>
                   <input
                     type="text"
@@ -891,7 +891,7 @@ const TermTable = () => {
                 {/* Manufacturer Display */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {t('parts.manufacturer') || 'Manufacturer'}
+                    {t('pricing.manufacturer') || 'Manufacturer'}
                   </label>
                   <input
                     type="text"
@@ -917,7 +917,7 @@ const TermTable = () => {
                           setSelectedCustomer(null);
                         }
                       }}
-                      placeholder={t('pricing.min_3_chars') || 'Type at least 3 characters...'}
+                      placeholder={t('pricing.search_placeholder') || 'Type at least 3 characters...'}
                       className="w-full px-4 py-2 border border-stroke dark:border-strokedark rounded-lg bg-white dark:bg-boxdark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary"
                     />
                     {isSearching && (
@@ -939,7 +939,7 @@ const TermTable = () => {
                               setSelectedCustomer(customer);
                               setPricingForm(prev => ({ ...prev, customerName: customer.NAME }));
                             }}
-                            className="px-4 py-2 hover:bg-blue-50 dark:hover:bg-boxdark-2 cursor-pointer border-b border-stroke dark:border-strokedark last:border-0"
+                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-boxdark-2 cursor-pointer border-b border-stroke dark:border-strokedark last:border-0"
                           >
                             <div className="font-semibold text-gray-900 dark:text-white">{customer.NAME}</div>
                             <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -957,8 +957,8 @@ const TermTable = () => {
 
                 {/* Selected Customer Info */}
                 {selectedCustomer && (
-                  <div className="p-3 bg-blue-50 dark:bg-boxdark-2 rounded-lg border border-blue-200 dark:border-blue-700">
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">{selectedCustomer.NAME}</p>
+                  <div className="p-3 bg-primary/10 dark:bg-primary/20 rounded-lg border border-primary/20 dark:border-primary/30">
+                    <p className="text-sm font-semibold text-black dark:text-white">{selectedCustomer.NAME}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">ID: {selectedCustomer.CUSTOMERID}</p>
                   </div>
                 )}
@@ -1034,7 +1034,7 @@ const TermTable = () => {
                     </div>
                     <div className="bg-white dark:bg-boxdark p-3 rounded border border-stroke dark:border-strokedark">
                       <span className="text-gray-500 dark:text-gray-400">{t('pricing.net_price') || 'Net Price'}</span>
-                      <p className="text-lg font-bold text-blue-600 dark:text-blue-400">${pricingResult.net_price?.toFixed(2) || '0.00'}</p>
+                      <p className="text-lg font-bold text-primary dark:text-primary">${pricingResult.net_price?.toFixed(2) || '0.00'}</p>
                     </div>
                   </div>
                 </div>
@@ -1043,8 +1043,8 @@ const TermTable = () => {
                 <div className="bg-gray-50 dark:bg-boxdark-2 p-4 rounded-lg border border-stroke dark:border-strokedark">
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('parts.info') || 'Part Information'}</h3>
                   <div className="space-y-2 text-sm">
-                    <div><span className="text-gray-500 dark:text-gray-400">{t('parts.part_number')}:</span> <span className="font-semibold text-gray-900 dark:text-white">{pricingForm.partNumber}</span></div>
-                    <div><span className="text-gray-500 dark:text-gray-400">{t('parts.manufacturer')}:</span> <span className="font-semibold text-gray-900 dark:text-white">{pricingForm.mfr}</span></div>
+                    <div><span className="text-gray-500 dark:text-gray-400">{t('pricing.part_number')}:</span> <span className="font-semibold text-gray-900 dark:text-white">{pricingForm.partNumber}</span></div>
+                    <div><span className="text-gray-500 dark:text-gray-400">{t('pricing.manufacturer')}:</span> <span className="font-semibold text-gray-900 dark:text-white">{pricingForm.mfr}</span></div>
                   </div>
                 </div>
 

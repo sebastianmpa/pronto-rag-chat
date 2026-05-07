@@ -1,6 +1,6 @@
 {
   "auth": {
-    "title": "Sign In to TailAdmin",
+    "title": "Sign In to Pronto Pro",
     "email": "Email",
     "emailPlaceholder": "Enter your email",
     "password": "Password",
@@ -21,6 +21,18 @@
     "errorGeneric": "Error signing in. Please try again later.",
     "showPassword": "Show password",
     "hidePassword": "Hide password"
+  },
+  "brand": {
+    "tagline": "MISSION, VISION AND VALUES – PRONTO MOWERS",
+    "mission_title": "Mission",
+    "mission_text": "Drive the growth of our clients by providing them with the best commercial cutting equipment solutions, expert advice, reliable service and immediate attention, backed by over 50 years of market experience.",
+    "vision_title": "Vision",
+    "vision_text": "Be the leading and reference company in commercial mower solutions in South Florida, recognized for our innovation, service excellence and genuine commitment to our clients' success.",
+    "values_title": "Values",
+    "value_innovation": "Innovation: We continuously improve our products and services",
+    "value_excellence": "Excellence: Committed to the highest quality in everything we do",
+    "value_commitment": "Commitment: Dedicated to the genuine success of our clients",
+    "value_experience": "Experience: Over 50 years serving the market"
   },
   "dashboard": {
     "analytics": "Dashboard Analytics",
@@ -371,7 +383,8 @@
     "of": "of",
     "previous": "Previous",
     "next": "Next",
-    "no_results": "No results found"
+    "no_results": "No results found",
+    "searching_for": "Searching for"
   },
   "pricing": {
     "title": "Pricing Information",

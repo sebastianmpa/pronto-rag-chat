@@ -386,7 +386,7 @@ const ProductPartsTable = () => {
                                     </div>
                                     <button
                                       onClick={() => handleDownloadManual(manual.downloadLink)}
-                                      className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                      className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-black hover:bg-primary/90 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                                       title={t('productParts.table.download_manual')}
                                     >
                                       <svg
@@ -435,7 +435,7 @@ const ProductPartsTable = () => {
           <div className="flex gap-2">
             <button
               onClick={handlePreviousPage}
-              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
               disabled={currentPage <= 1 || modelsLoading}
             >
               <svg
@@ -459,7 +459,7 @@ const ProductPartsTable = () => {
 
             <button
               onClick={handleNextPage}
-              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex cursor-pointer items-center justify-center rounded-md p-1 px-2 hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
               disabled={currentPage >= totalPages || modelsLoading}
             >
               <svg

@@ -82,7 +82,7 @@ const ModelsByBrandTable: React.FC<ModelsByBrandTableProps> = ({
           <div className="text-red-600 mb-4">Error loading models: {error}</div>
           <button
             onClick={refetch}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 bg-primary text-black rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             Try Again
           </button>
@@ -114,7 +114,7 @@ const ModelsByBrandTable: React.FC<ModelsByBrandTableProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+            className="px-6 py-3 bg-primary text-black rounded-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           >
             Search
           </button>
@@ -264,7 +264,7 @@ const ModelsByBrandTable: React.FC<ModelsByBrandTableProps> = ({
                   className={`
                     px-3 py-1 rounded-md transition-colors
                     ${pageNumber === currentPage 
-                      ? 'bg-primary text-white' 
+                      ? 'bg-primary text-black' 
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                     }
                   `}

@@ -1,6 +1,6 @@
 {
   "auth": {
-    "title": "Iniciar sesión en TailAdmin",
+    "title": "Iniciar sesión en Pronto Pro",
     "email": "Email",
     "emailPlaceholder": "Ingresa tu email",
     "password": "Contraseña",
@@ -21,6 +21,18 @@
     "errorGeneric": "Error al iniciar sesión. Por favor, intenta de nuevo más tarde.",
     "showPassword": "Mostrar contraseña",
     "hidePassword": "Ocultar contraseña"
+  },
+  "brand": {
+    "tagline": "MISIÓN, VISIÓN Y VALORES – PRONTO MOWERS",
+    "mission_title": "Misión",
+    "mission_text": "Impulsar el crecimiento de nuestros clientes brindándoles las mejores soluciones en equipos de corte comercial, con asesoría experta, servicio confiable y atención inmediata, respaldados por más de 50 años de experiencia en el mercado.",
+    "vision_title": "Visión",
+    "vision_text": "Ser la empresa líder y referente en soluciones de mowers comerciales en el sur de Florida, reconocida por nuestra innovación, excelencia en servicio y compromiso genuino con el éxito de nuestros clientes.",
+    "values_title": "Valores",
+    "value_innovation": "Innovación: Continuamente mejoramos nuestros productos y servicios",
+    "value_excellence": "Excelencia: Comprometidos con la máxima calidad en todo lo que hacemos",
+    "value_commitment": "Compromiso: Dedicados al éxito genuino de nuestros clientes",
+    "value_experience": "Experiencia: Más de 50 años sirviendo al mercado"
   },
   "dashboard": {
     "analytics": "Analítica del Tablero",
@@ -365,7 +377,8 @@
     "of": "de",
     "previous": "Anterior",
     "next": "Siguiente",
-    "no_results": "No se encontraron resultados"
+    "no_results": "No se encontraron resultados",
+    "searching_for": "Buscando"
   },
   "pricing": {
     "title": "Información de Precios",

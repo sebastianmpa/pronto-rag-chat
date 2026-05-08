@@ -378,7 +378,7 @@ const ProductPartsTable = () => {
                                   >
                                     <div className="flex flex-col">
                                       <span className="text-sm font-medium text-black dark:text-white">
-                                        Manual #{manualIndex + 1}
+                                        #{manualIndex + 1}
                                       </span>
                                       <span className="text-xs text-gray-600 dark:text-gray-400">
                                         {t('productParts.table.serial_number')}: {manual.serial_number || 'N/A'}

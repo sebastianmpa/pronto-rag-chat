@@ -79,7 +79,7 @@ function App() {
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1') ? (
                 <>
-                  <PageTitle title="eCommerce Dashboard | TailAdmin" />
+                  <PageTitle title="eCommerce Dashboard | Pronto Pro" />
                   <ECommerce />
                 </>
               ) : (
@@ -92,7 +92,7 @@ function App() {
             path="/messages/me"
             element={
               <>
-                <PageTitle title="Mis Mensajes | TailAdmin" />
+                <PageTitle title="Mis Mensajes | Pronto Pro" />
                 <MessagesMe />
               </>
             }
@@ -105,7 +105,7 @@ function App() {
               path="/questions-answers"
               element={
                 <>
-                  <PageTitle title="Preguntas y respuestas | TailAdmin" />
+                  <PageTitle title="Preguntas y respuestas | Pronto Pro" />
                   <QuestionsAnswersPage />
                 </>
               }
@@ -121,7 +121,7 @@ function App() {
               path="/messages"
               element={
                 <>
-                  <PageTitle title="Todos los Mensajes | TailAdmin" />
+                  <PageTitle title="Todos los Mensajes | Pronto Pro" />
                   <Messages />
                 </>
               }
@@ -143,7 +143,7 @@ function App() {
               path="/product-parts"
               element={
                 <>
-                  <PageTitle title="Product Parts | TailAdmin" />
+                  <PageTitle title="Product Parts | Pronto Pro" />
                   <ProductParts />
                 </>
               }
@@ -169,7 +169,7 @@ function App() {
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1' ? (
                 <>
-                  <PageTitle title="Categorías de Términos | TailAdmin" />
+                  <PageTitle title="Categorías de Términos | Pronto Pro" />
                   <TermCategoriesPage />
                 </>
               ) : (
@@ -186,7 +186,7 @@ function App() {
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1' ? (
                 <>
-                  <PageTitle title="Located Terms | TailAdmin" />
+                  <PageTitle title="Located Terms | Pronto Pro" />
                   <LocatedTermsPage />
                 </>
               ) : (
@@ -212,7 +212,7 @@ function App() {
           path="/auth/signin"
           element={
             <>
-              <PageTitle title="Signin | TailAdmin" />
+              <PageTitle title="Signin | Pronto Pro" />
               <SignIn />
             </>
           }

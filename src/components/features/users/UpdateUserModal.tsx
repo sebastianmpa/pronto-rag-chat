@@ -308,7 +308,7 @@ const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="block w-full rounded border border-primary bg-primary p-3 text-center font-medium text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="block w-full rounded border border-primary bg-primary p-3 text-center font-medium text-black transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">

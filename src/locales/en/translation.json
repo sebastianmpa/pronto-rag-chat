@@ -289,9 +289,9 @@
     "questionsAnswers": "Questions and Answers",
     "parts": "Parts",
     "productParts": "Models by Brand",
-    "terms": "Terms",
+    "terms": "Admin Terms",
     "termCategories": "Categories",
-    "locatedTerms": "Located Terms",
+    "locatedTerms": "Terms",
     "loading": "Loading..."
   },
   "questionsAnswers": {
@@ -384,7 +384,8 @@
     "previous": "Previous",
     "next": "Next",
     "no_results": "No results found",
-    "searching_for": "Searching for"
+    "searching_for": "Searching for",
+    "clear_filters": "Clear filters"
   },
   "pricing": {
     "title": "Pricing Information",

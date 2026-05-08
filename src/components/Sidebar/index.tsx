@@ -84,7 +84,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       {/* <!-- SIDEBAR HEADER --> */}
       <div className="relative flex items-center justify-center">
         <NavLink to="/" className="w-full">
-          <img src="/images/logo-PROTO-PRO.jpg" alt="Logo" className="w-full h-auto object-contain block" />
+          <img src="/images/logo-PROTO-PRO.jpg" alt="Logo" className="w-full h-28 object-fill block" />
         </NavLink>
 
         <button

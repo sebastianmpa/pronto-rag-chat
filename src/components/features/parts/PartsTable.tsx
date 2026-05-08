@@ -6,9 +6,8 @@ import { usePricing } from '../../../hooks/usePricing';
 import { useCustomerSearch } from '../../../hooks/useCustomerSearch';
 import { PartInfo } from '../../../types/partInfo';
 import { Customer } from '../../../types/customers';
-import { getAllTermCategories } from '../../../libs/TermCategoryService';
+import { getAllTermCategories, getTermsByCategory } from '../../../libs/TermCategoryService';
 import { TermCategory } from '../../../types/TermCategory';
-import axiosInstance from '../../../interceptor/axiosInstance';
 
 const PartsTable = () => {
   const { t } = useTranslation();
@@ -338,11 +337,11 @@ const PartsTable = () => {
       setCategoryTerms(null);
       return;
     }
-    const internalName = selectedCategory.internal_category_name.replace(/^\//, '');
+    // Pasar el internal_category_name completo incluyendo el "/" inicial
+    const internalName = selectedCategory.internal_category_name;
     setLoadingCategoryTerms(true);
-    axiosInstance
-      .get(`/terms/v0/categories/${internalName}/terms`)
-      .then(resp => setCategoryTerms(resp.data || []))
+    getTermsByCategory(internalName)
+      .then(data => setCategoryTerms(data))
       .catch(() => setCategoryTerms([]))
       .finally(() => setLoadingCategoryTerms(false));
   }, [selectedCategory]);
@@ -430,6 +429,27 @@ const PartsTable = () => {
             )}
           </div>
         </div>
+
+        {/* Botón limpiar filtros */}
+        {(partNumberFilter.trim() || selectedCategory) && (
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setPartNumberFilter('');
+                setSelectedCategory(null);
+                setCategoryTerms(null);
+                setShowTable(false);
+              }}
+              className="inline-flex items-center gap-2 rounded-md border border-stroke bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:border-strokedark dark:bg-meta-4 dark:text-gray-300 dark:hover:bg-boxdark-2"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {t('common.clear_filters') || 'Limpiar filtros'}
+            </button>
+          </div>
+        )}
       </form>
 
       {/* Errores */}

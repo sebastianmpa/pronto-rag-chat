@@ -748,6 +748,7 @@ const TableCollapsible: React.FC<{
 
 const Messages: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
   const { t } = useTranslation();
   const [qaModalOpen, setQaModalOpen] = useState(false);
   const [qaInitialQuestion, setQaInitialQuestion] = useState('');
@@ -1032,7 +1033,7 @@ const Messages: React.FC = () => {
       >
         <div className="h-full min-h-0 rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
           {/* Chat List */}
-          <div className="hidden h-full min-h-0 flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:flex xl:w-72">
+          <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} xl:flex h-full min-h-0 w-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:w-72`}>
             {/* Header */}
             <div className="border-b border-stroke px-6 py-4 dark:border-strokedark">
               <div className="flex items-center justify-between gap-2">
@@ -1145,7 +1146,7 @@ const Messages: React.FC = () => {
                           ? 'bg-gray-2 dark:bg-boxdark-2'
                           : ''
                       }`}
-                      onClick={() => setSelectedChat(chat)}
+                      onClick={() => { setSelectedChat(chat); setMobileView('chat'); }}
                     >
                       <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 relative mr-3.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border">
                         <span className="text-sm font-medium text-black dark:text-white">
@@ -1169,11 +1170,21 @@ const Messages: React.FC = () => {
           </div>
 
           {/* Chat Box */}
-          <div className="flex h-full min-h-0 w-full flex-1 flex-col border-l border-stroke dark:border-strokedark">
+          <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} xl:flex h-full min-h-0 w-full flex-1 flex-col border-l border-stroke dark:border-strokedark`}>
             {selectedChat?.id && chatDetail ? (
               <>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stroke bg-white px-6 py-3 text-black dark:border-strokedark dark:bg-boxdark dark:text-white">
                   <div className="flex items-center">
+                    {/* Back button - mobile only */}
+                    <button
+                      className="mr-3 flex items-center justify-center rounded-lg p-1.5 text-black hover:bg-gray-2 dark:text-white dark:hover:bg-boxdark-2 xl:hidden"
+                      onClick={() => setMobileView('list')}
+                      aria-label="Back to chats"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
                     <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 mr-3.5 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border">
                       <span className="text-lg font-medium text-black dark:text-white">
                         {customerData?.name?.charAt(0)?.toUpperCase()}

@@ -1878,6 +1878,7 @@ const MessagesMe: React.FC = () => {
   }, [filterCommands]);
 
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   // typing: true solo mientras espera respuesta del backend
@@ -1977,6 +1978,7 @@ const MessagesMe: React.FC = () => {
     setSelectedChat(null);
     setLocalMessages([]);
     setAssistantTyping(false);
+    setMobileView('chat');
     setTimeout(() => {
       setSelectedChat({ id: 'new', isNew: true });
       setLocalMessages([
@@ -1993,9 +1995,17 @@ const MessagesMe: React.FC = () => {
   // Handle command selection
   const handleCommandSelection = (cmd: any) => {
     // Both system and category commands just insert text
-    setInputValue(cmd.command + ' ');
+    const newValue = cmd.command + ' ';
+    setInputValue(newValue);
     setShowCommandsDropdown(false);
     setSelectedCommandIdx(0);
+    // Move cursor to end after React re-renders
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.setSelectionRange(newValue.length, newValue.length);
+      }
+    }, 0);
   };
 
   const handleTyping = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -2401,15 +2411,12 @@ const MessagesMe: React.FC = () => {
           {error}
         </div>
       )}
-      <div className="min-h-0">
+      <div className="min-h-0 h-full">
         <div
-          style={
-            pageOffset ? { height: `calc(100vh - ${pageOffset}px)` } : undefined
-          }
-          className="h-full w-full rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex"
+          className="flex h-full w-full flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex-row"
         >
           {/* Chat List */}
-          <div className="hidden h-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:flex xl:w-72">
+          <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} xl:flex h-full w-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:w-72`}>
             {/* Header */}
             <div className="border-b border-stroke px-4 py-4 dark:border-strokedark sm:px-6">
               <div className="flex items-center justify-between gap-2">
@@ -2528,7 +2535,7 @@ const MessagesMe: React.FC = () => {
                           ? 'bg-gray-2 dark:bg-boxdark-2'
                           : ''
                       }`}
-                      onClick={() => setSelectedChat(chat)}
+                      onClick={() => { setSelectedChat(chat); setMobileView('chat'); }}
                     >
                       <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 relative mr-3.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border">
                         <span className="text-sm font-medium text-black dark:text-white">
@@ -2551,11 +2558,21 @@ const MessagesMe: React.FC = () => {
             </div>
           </div>
           {/* Chat Box */}
-          <div className="flex h-full min-h-0 w-full flex-1 flex-col border-l border-stroke bg-white dark:border-strokedark dark:bg-boxdark">
+          <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} xl:flex h-full min-h-0 w-full flex-1 flex-col border-l border-stroke bg-white dark:border-strokedark dark:bg-boxdark`}>
             {selectedChat?.id ? (
               <>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stroke bg-white px-6 py-3 text-black dark:border-strokedark dark:bg-boxdark dark:text-white">
                   <div className="flex items-center">
+                    {/* Back button - mobile only */}
+                    <button
+                      className="mr-3 flex items-center justify-center rounded-lg p-1.5 text-black hover:bg-gray-2 dark:text-white dark:hover:bg-boxdark-2 xl:hidden"
+                      onClick={() => setMobileView('list')}
+                      aria-label="Back to chats"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
                     <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 mr-3.5 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border">
                       <span className="text-lg font-medium text-black dark:text-white">
                         A
@@ -3124,9 +3141,6 @@ const MessagesMe: React.FC = () => {
                                           type="button"
                                           onClick={() => {
                                             handleCommandSelection(cmd);
-                                            setTimeout(() => {
-                                              inputRef.current?.focus();
-                                            }, 0);
                                           }}
                                           className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors ${
                                             idx === selectedCommandIdx
@@ -3134,7 +3148,7 @@ const MessagesMe: React.FC = () => {
                                               : 'hover:bg-gray-100 dark:hover:bg-boxdark-2'
                                           }`}
                                         >
-                                          <span className="font-mono text-sm font-semibold text-primary">
+                                          <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
                                             {cmd.command}
                                           </span>
                                           <span className={`rounded-full px-2 py-0.5 text-xs ${

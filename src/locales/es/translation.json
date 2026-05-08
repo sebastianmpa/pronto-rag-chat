@@ -283,9 +283,9 @@
     "questionsAnswers": "Preguntas y respuestas",
     "parts": "Partes",
     "productParts": "Modelos por Marca",
-    "terms": "Términos",
+    "terms": "Términos Admin",
     "termCategories": "Categorías",
-    "locatedTerms": "Términos Ubicados",
+    "locatedTerms": "Términos",
     "loading": "Cargando..."
   },
   "questionsAnswers": {
@@ -378,7 +378,8 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "no_results": "No se encontraron resultados",
-    "searching_for": "Buscando"
+    "searching_for": "Buscando",
+    "clear_filters": "Limpiar filtros"
   },
   "pricing": {
     "title": "Información de Precios",

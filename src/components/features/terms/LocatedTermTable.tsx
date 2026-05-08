@@ -29,6 +29,7 @@ const LocatedTermTable = () => {
   const [partNumberFilter, setPartNumberFilter] = useState('');
   const [showPartModal, setShowPartModal] = useState(false);
   const [expandedPartIdx, setExpandedPartIdx] = useState<number | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
   const [viewingLocation, setViewingLocation] = useState<{ [key: string]: 1 | 4 }>({});
   
   // Pricing modal states
@@ -57,6 +58,12 @@ const LocatedTermTable = () => {
   const [termFilter, setTermFilter] = useState<string>('');
   const [categoryFilter, setcategoryFilter] = useState<string>('');
   const [categories, setCategories] = useState<Map<string, string>>(new Map());
+  // category searchable dropdown states
+  const [categoryQuery, setCategoryQuery] = useState<string>('');
+  const [categoryResults, setCategoryResults] = useState<Array<{ id: string; name: string; internalName: string }>>([]);
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string | null>(null);
+  const [allCategoriesList, setAllCategoriesList] = useState<Array<{ id: string; name: string; internalName: string }>>([]);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
   const { data, loading: hookLoading, fetch } = useLocatedV1Paginated(page, limit, owned ? true : undefined, selectedUserId || undefined, termFilter || undefined, categoryFilter || undefined);
 
@@ -73,6 +80,17 @@ const LocatedTermTable = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close category dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setCategoryResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []); 
 
   // Part info hook
   const { partInfoList, loading: loadingPart, error: partError } = usePartInfo(partNumberFilter);
@@ -132,13 +150,16 @@ const LocatedTermTable = () => {
       try {
         const data = await getAllTermCategories();
         const categoryMap = new Map<string, string>();
+        const catList = data.map(cat => ({ id: cat.id, name: cat.category_name, internalName: cat.internal_category_name }));
         data.forEach((cat) => {
           categoryMap.set(cat.id, cat.category_name);
         });
         setCategories(categoryMap);
+        setAllCategoriesList(catList);
       } catch (err: any) {
         console.warn('Could not load categories:', err?.message);
         setCategories(new Map());
+        setAllCategoriesList([]);
       }
     };
     fetchCategories();
@@ -377,6 +398,13 @@ const LocatedTermTable = () => {
     }
   }, [pricing, pricingHookError, pricingLoading, selectedCustomer]);
 
+  const handleCopy = (partNumber: string, idx: number | string) => {
+    if (!partNumber) return;
+    navigator.clipboard.writeText(partNumber);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 1200);
+  };
+
   return (
     <section className="data-table-common rounded-sm border border-stroke bg-white py-4 shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="px-4 py-4 md:px-6 xl:px-7.5">
@@ -432,13 +460,44 @@ const LocatedTermTable = () => {
                     className="h-9 w-56 rounded border border-stroke bg-white px-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
                   />
                   
-                  <input
-                    type="text"
-                    value={categoryFilter}
-                    onChange={(e) => { setcategoryFilter(e.target.value); setPage(1); }}
-                    placeholder={t('terms.table.category') || 'Categoría'}
-                    className="h-9 w-48 rounded border border-stroke bg-white px-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
-                  />
+                  {/* Category searchable dropdown */}
+                  <div className="relative" ref={categoryDropdownRef}>
+                    {selectedCategoryName ? (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm dark:bg-boxdark-4 border border-stroke">
+                        <span className="text-black dark:text-white">{selectedCategoryName}</span>
+                        <button onClick={() => { setSelectedCategoryName(null); setcategoryFilter(''); setCategoryQuery(''); setPage(1); }} className="text-xs text-gray-500 ml-2">×</button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="11" cy="11" r="6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <input
+                          type="text"
+                          value={categoryQuery}
+                          onChange={(e) => {
+                            setCategoryQuery(e.target.value);
+                            const q = e.target.value.toLowerCase();
+                            setCategoryResults(allCategoriesList.filter(c => c.name.toLowerCase().includes(q) || c.internalName.toLowerCase().includes(q)));
+                          }}
+                          onFocus={() => setCategoryResults(allCategoriesList)}
+                          onClick={() => setCategoryResults(allCategoriesList)}
+                          placeholder={t('terms.table.category') || 'Categoría...'}
+                          className="h-9 w-48 rounded border border-stroke bg-white pl-9 pr-3 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
+                        />
+                        {categoryResults.length > 0 && (
+                          <ul className="absolute left-0 top-full z-50 mt-1 max-h-40 w-56 overflow-auto rounded border bg-white py-1 shadow-md dark:bg-boxdark">
+                            {categoryResults.map((c) => (
+                              <li key={c.id}>
+                                <button
+                                  onClick={() => { setSelectedCategoryName(c.name); setcategoryFilter(c.internalName); setCategoryResults([]); setCategoryQuery(''); setPage(1); }}
+                                  className="block w-full px-3 py-1 text-left text-sm hover:bg-gray-100 dark:hover:bg-boxdark-3"
+                                >{c.name}</button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -679,6 +738,23 @@ const LocatedTermTable = () => {
                             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
                               <span className="truncate text-primary dark:text-primary font-bold">{item.mfrId}</span>
                               <span className="truncate text-primary dark:text-primary font-bold">{item.partNumber}</span>
+                              <button
+                                type="button"
+                                className="rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4 flex-shrink-0"
+                                title={t('parts_accordion.copy_part_number')}
+                                onClick={() => handleCopy(item.partNumber, idx)}
+                              >
+                                {copiedIdx === idx ? (
+                                  <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                    <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                  </svg>
+                                )}
+                              </button>
                               <span className="truncate flex-1 text-gray-700 dark:text-gray-300">{general.DESCRIPTION || item.description || '-'}</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
@@ -792,7 +868,28 @@ const LocatedTermTable = () => {
                                     {relatedParts.map((part, pidx) => (
                                       <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-100 dark:hover:bg-boxdark-2">
                                         <td className="px-3 py-2 text-gray-900 dark:text-white">{part.MFRID}</td>
-                                        <td className="px-3 py-2 text-gray-900 dark:text-white font-semibold text-primary dark:text-primary">{part.PARTNUMBER}</td>
+                                        <td className="px-3 py-2 text-gray-900 dark:text-white font-semibold text-primary dark:text-primary">
+                                          <span className="flex items-center gap-1">
+                                            {part.PARTNUMBER}
+                                            <button
+                                              type="button"
+                                              className="rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4 flex-shrink-0"
+                                              title={t('parts_accordion.copy_part_number')}
+                                              onClick={() => handleCopy(part.PARTNUMBER, `related-${idx}-${pidx}`)}
+                                            >
+                                              {copiedIdx === `related-${idx}-${pidx}` ? (
+                                                <svg className="h-3.5 w-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                              ) : (
+                                                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                                  <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                                </svg>
+                                              )}
+                                            </button>
+                                          </span>
+                                        </td>
                                         <td className="px-3 py-2 text-gray-900 dark:text-white">{part.DESCRIPTION}</td>
                                         <td className="px-3 py-2 text-right text-gray-900 dark:text-white font-medium">{part.QUANTITYLOC}</td>
                                       </tr>

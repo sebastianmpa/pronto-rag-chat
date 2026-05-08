@@ -16,14 +16,14 @@ const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, noPadding = fal
         {/* <!-- ===== Sidebar End ===== --> */}
 
         {/* <!-- ===== Content Area Start ===== --> */}
-        <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+        <div className={`relative flex flex-1 flex-col ${noPadding ? 'overflow-hidden min-h-0' : 'overflow-y-auto overflow-x-hidden'}`}>
           {/* <!-- ===== Header Start ===== --> */}
           <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
           {/* <!-- ===== Header End ===== --> */}
 
           {/* <!-- ===== Main Content Start ===== --> */}
-          <main>
-            <div className={`mx-auto max-w-screen-2xl ${noPadding ? 'p-0' : 'p-4 md:p-6 2xl:p-10'}`}>
+          <main className={noPadding ? 'flex-1 min-h-0 overflow-hidden' : ''}>
+            <div className={`mx-auto max-w-screen-2xl ${noPadding ? 'h-full p-0' : 'p-4 md:p-6 2xl:p-10'}`}>
               {children}
             </div>
           </main>

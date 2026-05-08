@@ -71,3 +71,15 @@ export const updateTermCategory = async (
 export const deleteTermCategory = async (categoryId: string): Promise<void> => {
   await axiosInstance.delete(`/terms-categories/${API_VERSION_V0}/${categoryId}`);
 };
+
+/**
+ * Get terms by category internal name
+ * GET /terms/v0/by-category/?category=/filter
+ * @param category - internal_category_name incluyendo el "/" inicial, ej: "/filter", "/oil"
+ */
+export const getTermsByCategory = async (category: string): Promise<any[]> => {
+  const response = await axiosInstance.get(`/terms/${API_VERSION_V0}/by-category/`, {
+    params: { category }
+  });
+  return response.data || [];
+};

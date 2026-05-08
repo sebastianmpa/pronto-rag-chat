@@ -7,6 +7,7 @@ import { useCustomerSearch } from '../../../hooks/useCustomerSearch';
 import { PartInfo } from '../../../types/partInfo';
 import { Customer } from '../../../types/customers';
 import { getAllTermCategories, getTermsByCategory } from '../../../libs/TermCategoryService';
+import { ManufacturerService } from '../../../libs/ManufacturerService';
 import { TermCategory } from '../../../types/TermCategory';
 
 const PartsTable = () => {
@@ -164,6 +165,7 @@ const PartsTable = () => {
   const resetPricingModal = () => {
     setPricingModalIdx(null);
     setPricingRelatedIdx(null);
+    setCatPricingOpen(false);
     setPricingError(null);
     setPricingResult(null);
     setPricingStep('search');
@@ -321,8 +323,25 @@ const PartsTable = () => {
   // Category filter states
   const [allCategories, setAllCategories] = useState<TermCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<TermCategory | null>(null);
-  const [categoryTerms, setCategoryTerms] = useState<Array<{ id: string; term: string; definition: string; term_type?: string }> | null>(null);
-  const [loadingCategoryTerms, setLoadingCategoryTerms] = useState(false);
+  const [categoryQuery, setCategoryQuery] = useState('');
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [categoryDropdownResults, setCategoryDropdownResults] = useState<TermCategory[]>([]);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  // Parts grouped by term from selected category: { term, definition, parts, loading }
+  const [categoryTermParts, setCategoryTermParts] = useState<Array<{
+    id: string;
+    term: string;
+    definition: string;
+    parts: PartInfo[];
+    loading: boolean;
+    expanded: boolean;
+  }>>([]);
+  const [loadingCategory, setLoadingCategory] = useState(false);
+  // State for category parts accordions
+  const [catViewingLocation, setCatViewingLocation] = useState<{ [key: string]: 1 | 4 }>({});
+  const [catExpandedKey, setCatExpandedKey] = useState<string | null>(null);
+  const [catPricingOpen, setCatPricingOpen] = useState(false);
+  const [catTransferOpen, setCatTransferOpen] = useState(false);
 
   // Load categories on mount
   useEffect(() => {
@@ -331,19 +350,48 @@ const PartsTable = () => {
       .catch(() => setAllCategories([]));
   }, []);
 
-  // Fetch terms when category is selected
+  // Click-outside for category dropdown
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+        setCategoryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // When category selected: fetch terms then fetch parts for each term automatically
   useEffect(() => {
     if (!selectedCategory) {
-      setCategoryTerms(null);
+      setCategoryTermParts([]);
       return;
     }
-    // Pasar el internal_category_name completo incluyendo el "/" inicial
-    const internalName = selectedCategory.internal_category_name;
-    setLoadingCategoryTerms(true);
-    getTermsByCategory(internalName)
-      .then(data => setCategoryTerms(data))
-      .catch(() => setCategoryTerms([]))
-      .finally(() => setLoadingCategoryTerms(false));
+    setLoadingCategory(true);
+    setCategoryTermParts([]);
+    getTermsByCategory(selectedCategory.internal_category_name)
+      .then(terms => {
+        if (!terms || terms.length === 0) {
+          setLoadingCategory(false);
+          return;
+        }
+        // Initialize state with loading=true for each term
+        const initial = terms.map(t => ({ id: t.id, term: t.term, definition: t.definition, parts: [], loading: true, expanded: false }));
+        setCategoryTermParts(initial);
+        setLoadingCategory(false);
+        // Fetch parts for each term
+        terms.forEach((term, i) => {
+          ManufacturerService.fetchPartInfo(term.definition)
+            .then(res => {
+              const parts = res.partInfo || [];
+              setCategoryTermParts(prev => prev.map((tp, j) => j === i ? { ...tp, parts, loading: false } : tp));
+            })
+            .catch(() => {
+              setCategoryTermParts(prev => prev.map((tp, j) => j === i ? { ...tp, parts: [], loading: false } : tp));
+            });
+        });
+      })
+      .catch(() => setLoadingCategory(false));
   }, [selectedCategory]);
 
   return (
@@ -398,35 +446,56 @@ const PartsTable = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('terms.table.category') || 'Categoría'}
             </label>
-            {selectedCategory ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 px-4 py-2.5 text-sm">
-                <span className="text-blue-800 dark:text-blue-200 font-medium">{selectedCategory.category_name}</span>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedCategory(null); setCategoryTerms(null); }}
-                  className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 ml-1 text-base leading-none"
-                >×</button>
-              </div>
-            ) : (
-              <select
-                value=""
-                disabled={!!partNumberFilter.trim()}
-                onChange={(e) => {
-                  const cat = allCategories.find(c => c.id === e.target.value);
-                  if (cat) {
-                    setSelectedCategory(cat);
-                    setPartNumberFilter('');
-                    setShowTable(false);
-                  }
-                }}
-                className={`w-full rounded-md border border-stroke bg-gray-50 dark:bg-transparent px-4 py-3 text-sm text-black dark:text-white outline-none focus:border-primary dark:border-strokedark dark:focus:border-primary ${partNumberFilter.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <option value="">{t('terms.table.category') || 'Filtrar por categoría...'}</option>
-                {allCategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
-                ))}
-              </select>
-            )}
+            <div className="relative" ref={categoryDropdownRef}>
+              {selectedCategory ? (
+                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 px-4 py-2.5 text-sm">
+                  <span className="text-blue-800 dark:text-blue-200 font-medium">{selectedCategory.category_name}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedCategory(null); setCategoryQuery(''); setCategoryTermParts([]); }}
+                    className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 ml-1 text-base leading-none"
+                  >×</button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={categoryQuery}
+                    disabled={!!partNumberFilter.trim()}
+                    placeholder={t('terms.table.category') || 'Buscar categoría...'}
+                    onChange={e => {
+                      setCategoryQuery(e.target.value);
+                      const q = e.target.value.toLowerCase();
+                      setCategoryDropdownResults(q ? allCategories.filter(c => c.category_name.toLowerCase().includes(q)) : allCategories);
+                      setCategoryDropdownOpen(true);
+                    }}
+                    onFocus={() => {
+                      setCategoryDropdownResults(allCategories);
+                      setCategoryDropdownOpen(true);
+                    }}
+                    className={`w-full rounded-md border border-stroke bg-gray-50 dark:bg-transparent px-4 py-3 text-sm text-black dark:text-white outline-none focus:border-primary dark:border-strokedark dark:focus:border-primary ${partNumberFilter.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  />
+                  {categoryDropdownOpen && categoryDropdownResults.length > 0 && (
+                    <ul className="absolute left-0 top-full z-50 mt-1 max-h-52 w-full overflow-auto rounded border border-stroke bg-white shadow-md dark:border-strokedark dark:bg-boxdark">
+                      {categoryDropdownResults.map(cat => (
+                        <li key={cat.id}>
+                          <button
+                            type="button"
+                            className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-meta-4"
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setCategoryQuery(cat.category_name);
+                              setCategoryDropdownOpen(false);
+                              setPartNumberFilter('');
+                            }}
+                          >{cat.category_name}</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -438,7 +507,8 @@ const PartsTable = () => {
               onClick={() => {
                 setPartNumberFilter('');
                 setSelectedCategory(null);
-                setCategoryTerms(null);
+                setCategoryQuery('');
+                setCategoryTermParts([]);
                 setShowTable(false);
               }}
               className="inline-flex items-center gap-2 rounded-md border border-stroke bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:border-strokedark dark:bg-meta-4 dark:text-gray-300 dark:hover:bg-boxdark-2"
@@ -457,61 +527,202 @@ const PartsTable = () => {
         <div className="text-center text-red-500 py-6 px-8">{error}</div>
       )}
 
-      {/* Category terms results */}
+      {/* Category results: one accordion-group per term, each with full part accordions */}
       {selectedCategory && (
-        <div className="mt-6 px-8">
-          {loadingCategoryTerms && (
+        <div className="mt-6 px-8 space-y-6">
+          {loadingCategory && (
             <div className="flex justify-center py-8">
               <span className="text-gray-500 dark:text-gray-400">{t('common.loading')}</span>
             </div>
           )}
-          {!loadingCategoryTerms && categoryTerms !== null && categoryTerms.length === 0 && (
+          {!loadingCategory && categoryTermParts.length === 0 && (
             <div className="text-center text-gray-500 dark:text-gray-400 py-8">{t('common.no_results')}</div>
           )}
-          {!loadingCategoryTerms && categoryTerms && categoryTerms.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-stroke dark:border-strokedark">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-2 dark:bg-meta-4 text-left">
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('terms.table.term')}</th>
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('terms.table.definition')}</th>
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('terms.table.term_type')}</th>
-                    <th className="px-4 py-3 font-medium text-black dark:text-white">{t('parts_table.search')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categoryTerms.map((term) => (
-                    <tr key={term.id} className="border-t border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-meta-4">
-                      <td className="px-4 py-3 text-black dark:text-white font-medium">{term.term}</td>
-                      <td className="px-4 py-3 text-black dark:text-white">{term.definition}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-gray-100 dark:bg-meta-9 px-2 py-0.5 text-xs font-medium text-black dark:text-white">
-                          {term.term_type || '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedCategory(null);
-                            setCategoryTerms(null);
-                            setPartNumberFilter(term.definition);
-                            setShowTable(true);
-                          }}
-                          className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none"
-                          title={`Buscar ${term.definition}`}
-                        >
-                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {categoryTermParts.map((tp, tIdx) => {
+            // Group parts by mfrId|partNumber for loc1/loc4 handling
+            const catGrouped = new Map<string, { loc1?: PartInfo; loc4?: PartInfo }>();
+            tp.parts.forEach(p => {
+              const key = `${p.mfrId}|${p.partNumber}`;
+              if (!catGrouped.has(key)) catGrouped.set(key, {});
+              const g = catGrouped.get(key)!;
+              const loc = parseInt(String(p.location)) || 1;
+              if (loc === 1) g.loc1 = p; else if (loc === 4) g.loc4 = p;
+            });
+            const catGroupedList = Array.from(catGrouped.values());
+            return (
+              <div key={tp.id} className="border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm">
+                {/* Term header */}
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-2 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors"
+                  onClick={() => setCategoryTermParts(prev => prev.map((x, i) => i === tIdx ? { ...x, expanded: !x.expanded } : x))}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-sm text-black dark:text-white">{tp.term}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">({tp.definition})</span>
+                    {!tp.loading && (
+                      <span className="inline-flex rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
+                        {catGroupedList.length} {t('parts_table.parts') || 'partes'}
+                      </span>
+                    )}
+                    {tp.loading && <span className="text-xs text-gray-400 dark:text-gray-500">{t('common.loading')}...</span>}
+                  </div>
+                  <svg className={`w-4 h-4 text-gray-500 transition-transform ${tp.expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Parts as full-style accordions */}
+                {tp.expanded && (
+                  <div className="p-4 space-y-4 bg-white dark:bg-boxdark">
+                    {tp.loading && <div className="text-center text-gray-400 text-sm py-6">{t('common.loading')}...</div>}
+                    {!tp.loading && catGroupedList.length === 0 && <div className="text-center text-gray-400 text-sm py-6">{t('parts_table.no_parts_found')}</div>}
+                    {!tp.loading && catGroupedList.map((group, gIdx) => {
+                      const catKey = `${tIdx}-${gIdx}`;
+                      const defaultLoc = (group.loc1 ? 1 : 4) as 1 | 4;
+                      const currentLoc = catViewingLocation[catKey] || defaultLoc;
+                      let item = currentLoc === 1 ? group.loc1 : group.loc4;
+                      if (!item) item = currentLoc === 1 ? group.loc4 : group.loc1;
+                      if (!item) return null;
+                      const general = item.general_info || {};
+                      const relatedParts = item.related_parts || [];
+                      const hasAlternateLoc = currentLoc === 1 ? !!group.loc4 : !!group.loc1;
+                      const isPartExpanded = catExpandedKey === catKey;
+                      return (
+                        <div key={gIdx} className="border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark">
+                          <div className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-boxdark-2 hover:bg-gray-100 dark:hover:bg-meta-4 transition-colors border-b border-stroke dark:border-strokedark">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {item.productThumbnailImage && item.productThumbnailImage.startsWith('http') && (
+                                <img src={item.productThumbnailImage} alt="thumb" className="w-10 h-10 object-contain rounded border" />
+                              )}
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                  <span className="truncate">{item.mfrId}</span>
+                                  <span className="truncate font-bold text-blue-600 dark:text-blue-400">{item.partNumber}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => navigator.clipboard.writeText(item.partNumber)}
+                                    className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent flex-shrink-0"
+                                    title="Copiar número de parte"
+                                  >
+                                    <svg className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                      <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                    </svg>
+                                  </button>
+                                  <span className="truncate flex-1">{(general as any).DESCRIPTION || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  <span>{t('parts_accordion.location')}: {item.location}</span>
+                                  <span>{t('parts_accordion.superseded')}:{item.superseded && item.superseded !== '-' ? (
+                                    <span className="ml-1 text-blue-600 dark:text-blue-400 font-medium">{item.superseded}</span>
+                                  ) : <span className="ml-1">-</span>}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end justify-center gap-2 ml-3">
+                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                {t('parts_accordion.quantity')}: {item.qty_loc}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {hasAlternateLoc && (
+                                  <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark">
+                                    <button type="button"
+                                      onClick={() => setCatViewingLocation(prev => ({ ...prev, [catKey]: 1 }))}
+                                      className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLoc === 1 ? 'bg-primary text-black shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                                    >1</button>
+                                    <button type="button"
+                                      onClick={() => setCatViewingLocation(prev => ({ ...prev, [catKey]: 4 }))}
+                                      className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${currentLoc === 4 ? 'bg-primary text-black shadow' : 'text-gray-600 dark:text-gray-400'}`}
+                                    >4</button>
+                                  </div>
+                                )}
+                                <button type="button"
+                                  className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 border border-green-300 dark:border-green-600"
+                                  title={t('pricing.get_info') || 'Get pricing information'}
+                                  onClick={() => { clearPricing(); setPricingForm({ mfr: item.mfrId, partNumber: item.partNumber, customerName: '' }); setPricingRelatedIdx(null); setCatPricingOpen(true); setPricingError(null); setPricingResult(null); setPricingStep('search'); setSelectedCustomer(null); setIsCustomerReady(false); setShowCustomerDropdown(false); setPricingLoading(false); }}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </button>
+                                {currentLoc === 4 && (
+                                  <button type="button"
+                                    className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent"
+                                    title={t('stock_transfer.request') || 'Request transfer'}
+                                    onClick={() => { setTransferForm({ mfr: item.mfrId, sku: item.partNumber, quantity: '', order: '', orderCancelled: 'yes' }); setCatTransferOpen(true); setTransferError(null); setTransferSuccess(false); }}
+                                  >
+                                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                                  </button>
+                                )}
+                                <button type="button"
+                                  onClick={() => setCatExpandedKey(isPartExpanded ? null : catKey)}
+                                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-meta-4 border border-transparent"
+                                >
+                                  <svg className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${isPartExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {isPartExpanded && (
+                            <div className="p-4">
+                              {item.productStandarImage && item.productStandarImage.startsWith('http') && (
+                                <div className="mb-3 flex justify-center"><img src={item.productStandarImage} alt="main" className="max-h-40 object-contain rounded border" /></div>
+                              )}
+                              {relatedParts.length > 0 && (
+                                <div>
+                                  <div className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">{t('parts_accordion.related_products')}</div>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-xs border border-stroke dark:border-strokedark">
+                                      <thead className="bg-white dark:bg-boxdark">
+                                        <tr>
+                                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.mfr_id')}</th>
+                                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.part_number')}</th>
+                                          <th className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.description')}</th>
+                                          <th className="px-2 py-1 text-right font-medium text-gray-700 dark:text-gray-300 border-b border-stroke dark:border-strokedark">{t('parts_accordion.qty')}</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="bg-white dark:bg-boxdark">
+                                        {relatedParts.map((rp, rpIdx) => (
+                                          <tr key={rpIdx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-50 dark:hover:bg-boxdark-2">
+                                            <td className="px-2 py-1 text-gray-900 dark:text-white">{rp.MFRID}</td>
+                                            <td className="px-2 py-1">
+                                              <div className="flex items-center gap-1">
+                                                <span className="font-bold text-blue-600 dark:text-blue-400">{rp.PARTNUMBER}</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => navigator.clipboard.writeText(rp.PARTNUMBER)}
+                                                  className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent flex-shrink-0"
+                                                  title="Copiar número de parte"
+                                                >
+                                                  <svg className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                                    <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                                                  </svg>
+                                                </button>
+                                              </div>
+                                            </td>
+                                            <td className="px-2 py-1 text-gray-900 dark:text-white">{rp.DESCRIPTION}</td>
+                                            <td className="px-2 py-1 text-right text-gray-900 dark:text-white">{rp.QUANTITYLOC}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )}
+                              {relatedParts.length === 0 && <div className="text-xs text-gray-500 mt-2">{t('parts_accordion.no_related_parts')}</div>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -537,10 +748,8 @@ const PartsTable = () => {
 
               const general = item.general_info || {};
               const relatedParts = item.related_parts || [];
-              const pricing = item.pricing || {};
-              const netPrice = pricing.net_price ?? null;
+              const netPrice = null;
               const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
-              const alternateLocation = currentLocation === 1 ? 4 : 1;
 
               return (
                 <div key={idx} className="mb-4 border border-stroke dark:border-strokedark rounded-lg overflow-hidden shadow-sm bg-white dark:bg-boxdark">
@@ -565,7 +774,18 @@ const PartsTable = () => {
                           >
                             {item.partNumber}
                           </button>
-                          <span className="truncate flex-1">{general.DESCRIPTION || item.description || '-'}</span>
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(item.partNumber)}
+                            className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent flex-shrink-0"
+                            title="Copiar número de parte"
+                          >
+                            <svg className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                              <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
+                            </svg>
+                          </button>
+                          <span className="truncate flex-1">{(general as any).DESCRIPTION || '-'}</span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                           <span>{t('parts_accordion.location')}: {item.location}</span>
@@ -750,12 +970,8 @@ const PartsTable = () => {
                                         <button
                                           type="button"
                                           className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-transparent focus:outline-none flex-shrink-0"
-                                          onClick={async () => {
-                                            handleCopyRelated(part.PARTNUMBER, idx, pidx);
-                                            setPartNumberFilter(part.PARTNUMBER);
-                                            setShowTable(true);
-                                            await fetchPartInfo();
-                                          }}
+                                          onClick={() => handleCopyRelated(part.PARTNUMBER, idx, pidx)}
+                                          title="Copiar número de parte"
                                         >
                                           <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
@@ -817,12 +1033,12 @@ const PartsTable = () => {
       )}
 
       {/* Stock Transfer Modal */}
-      {transferModalIdx !== null && (
+      {(transferModalIdx !== null || catTransferOpen) && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => {
-            // Close modal when clicking overlay and reset form/state
             setTransferModalIdx(null);
+            setCatTransferOpen(false);
             setTransferError(null);
             setTransferSuccess(false);
             setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
@@ -852,6 +1068,7 @@ const PartsTable = () => {
                   className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md transition-all duration-150"
                   onClick={() => {
                     setTransferModalIdx(null);
+                    setCatTransferOpen(false);
                     setTransferSuccess(false);
                     setTransferForm({ mfr: '', sku: '', quantity: '', order: '', orderCancelled: 'yes' });
                   }}
@@ -997,7 +1214,7 @@ const PartsTable = () => {
       )}
 
       {/* Pricing Modal */}
-      {(pricingModalIdx !== null || pricingRelatedIdx !== null) && (
+      {(pricingModalIdx !== null || pricingRelatedIdx !== null || catPricingOpen) && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={resetPricingModal}

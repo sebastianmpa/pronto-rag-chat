@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import DropdownMessage from './DropdownMessage';
 import DropdownNotification from './DropdownNotification';
 import DropdownUser from './DropdownUser';
-import LogoIcon from '../../images/logo/logo-icon.svg';
+
 import DarkModeSwitcher from './DarkModeSwitcher';
 
 const brands = [
@@ -98,7 +98,7 @@ const Header = (props: {
           {/* <!-- Hamburger Toggle BTN --> */}
 
           <Link className="block flex-shrink-0 lg:hidden" to="/">
-            <img src={LogoIcon} alt="Logo" />
+            <img src="/images/Favicon.jpg" alt="Logo" className="h-9 w-auto object-contain" />
           </Link>
         </div>
 

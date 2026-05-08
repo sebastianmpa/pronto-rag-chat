@@ -586,6 +586,8 @@ const PartsTable = () => {
                       if (!item) return null;
                       const general = item.general_info || {};
                       const relatedParts = item.related_parts || [];
+                      const catPricing = item.pricing || {};
+                      const catNetPrice = catPricing.net_price ?? null;
                       const hasAlternateLoc = currentLoc === 1 ? !!group.loc4 : !!group.loc1;
                       const isPartExpanded = catExpandedKey === catKey;
                       return (
@@ -622,9 +624,16 @@ const PartsTable = () => {
                               </div>
                             </div>
                             <div className="flex flex-col items-end justify-center gap-2 ml-3">
-                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                {t('parts_accordion.quantity')}: {item.qty_loc}
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                  {t('parts_accordion.quantity')}: {item.qty_loc}
+                                </span>
+                                {catNetPrice !== null && catNetPrice !== undefined && (
+                                  <span className="whitespace-nowrap text-sm font-bold text-green-600 dark:text-green-400">
+                                    ${Number(catNetPrice).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2">
                                 {hasAlternateLoc && (
                                   <div className="inline-flex items-center bg-gray-100 dark:bg-boxdark-2 rounded-full p-1 gap-1 border-2 border-stroke dark:border-strokedark">
@@ -748,7 +757,8 @@ const PartsTable = () => {
 
               const general = item.general_info || {};
               const relatedParts = item.related_parts || [];
-              const netPrice = null;
+              const pricing = item.pricing || {};
+              const netPrice = pricing.net_price ?? null;
               const hasAlternateLocation = currentLocation === 1 ? !!group.loc4 : !!group.loc1;
 
               return (

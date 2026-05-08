@@ -25,6 +25,7 @@ export interface PartInfo {
   general_info: GeneralPartInfo;
   related_parts: RelatedPart[];
   related_count: number;
+  pricing?: { net_price?: number; [key: string]: any };
 }
 
 export interface PartInfoResponse {

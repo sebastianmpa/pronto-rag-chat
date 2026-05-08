@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import LogoPronto from '../../images/logo/logo-PROTO-PRO.svg';
-import LogoProntoDark from '../../images/logo/logo-PROTO-PRO.svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -85,8 +83,7 @@ const SignIn: React.FC = () => {
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="py-17.5 px-26 text-center">
               <Link className="mb-5.5 inline-block" to="/">
-                <img className="hidden dark:block h-56 w-auto" src={LogoPronto} alt="Logo Pronto Pro" />
-                <img className="dark:hidden h-56 w-auto" src={LogoProntoDark} alt="Logo Pronto Pro" />
+                <img src="/images/PRONTO-PRODESK-ORIGIN.png" alt="Pronto ProDesk" className="max-w-xs w-auto h-auto" />
               </Link>
             </div>
           </div>

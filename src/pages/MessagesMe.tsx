@@ -185,7 +185,7 @@ const renderMessageContent = (
               href={mdMatch[2]}
               target="_blank"
               rel="noopener noreferrer"
-              className="break-all text-primary underline hover:opacity-80"
+              className="break-all text-blue-600 underline hover:opacity-80 dark:text-blue-400"
             >
               {mdMatch[1]}
             </a>
@@ -223,7 +223,7 @@ const renderMessageContent = (
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="break-all text-primary underline hover:opacity-80"
+                className="break-all text-blue-600 underline hover:opacity-80 dark:text-blue-400"
               >
                 {isPdf ? 'Download file' : 'Open link'}
               </a>
@@ -787,7 +787,7 @@ const PartsAccordion: React.FC<{
                           <button
                             type="button"
                             onClick={() => handleSupersededClick(superseded)}
-                            className="ml-1 cursor-pointer font-medium text-primary hover:underline"
+                            className="ml-1 cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400"
                             title={`Click to search for stock ${superseded}`}
                           >
                             {superseded}
@@ -808,7 +808,7 @@ const PartsAccordion: React.FC<{
                             }
                           >
                             <svg
-                              className="h-3.5 w-3.5 text-primary"
+                              className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -949,7 +949,7 @@ const PartsAccordion: React.FC<{
                     }}
                   >
                     <svg
-                      className="h-5 w-5 text-primary"
+                      className="h-5 w-5 text-blue-600 dark:text-blue-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -971,7 +971,7 @@ const PartsAccordion: React.FC<{
                   onClick={() => handleCopy(partNumber, idx)}
                 >
                   <svg
-                    className="h-5 w-5 text-primary"
+                    className="h-5 w-5 text-blue-600 dark:text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1099,7 +1099,7 @@ const PartsAccordion: React.FC<{
                                     onSupersededClick &&
                                     onSupersededClick(part.PARTNUMBER)
                                   }
-                                  className="cursor-pointer font-medium text-primary hover:underline"
+                                  className="cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400"
                                   title={`Click to check stock for ${part.PARTNUMBER}`}
                                 >
                                   {part.PARTNUMBER || '-'}
@@ -1121,7 +1121,7 @@ const PartsAccordion: React.FC<{
                                       }
                                     >
                                       <svg
-                                        className="h-3.5 w-3.5 text-primary"
+                                        className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"

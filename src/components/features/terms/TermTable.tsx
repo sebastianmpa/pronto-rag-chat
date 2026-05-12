@@ -694,8 +694,8 @@ const TermTable = () => {
             className="rounded-2xl border border-primary bg-white dark:bg-boxdark text-black dark:text-white py-5 px-7 shadow-xl w-full max-w-5xl max-h-[88vh] overflow-y-auto relative flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 pb-4 border-b border-primary/20 dark:border-primary/30">
-              <h2 className="text-lg font-bold text-primary dark:text-primary">
+            <div className="mb-4 pb-4 border-b border-blue-200 dark:border-blue-800">
+              <h2 className="text-lg font-bold text-blue-600 dark:text-blue-400">
                 {t('parts.related_parts_information') || 'Información de Partes Relacionadas'}
               </h2>
             </div>
@@ -756,8 +756,8 @@ const TermTable = () => {
                           )}
                           <div className="flex flex-col min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                              <span className="truncate text-primary dark:text-primary font-bold">{item.mfrId}</span>
-                              <span className="truncate text-primary dark:text-primary font-bold">{item.partNumber}</span>
+                              <span className="truncate text-blue-600 dark:text-blue-400 font-bold">{item.mfrId}</span>
+                              <span className="truncate text-blue-600 dark:text-blue-400 font-bold">{item.partNumber}</span>
                               <button
                                 type="button"
                                 className="rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4 flex-shrink-0"
@@ -769,7 +769,7 @@ const TermTable = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                   </svg>
                                 ) : (
-                                  <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
                                     <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
                                   </svg>
@@ -888,7 +888,7 @@ const TermTable = () => {
                                     {relatedParts.map((part, pidx) => (
                                       <tr key={pidx} className="border-b border-stroke dark:border-strokedark hover:bg-gray-100 dark:hover:bg-boxdark-2">
                                         <td className="px-3 py-2 text-gray-900 dark:text-white">{part.MFRID}</td>
-                                        <td className="px-3 py-2 text-gray-900 dark:text-white font-semibold text-primary dark:text-primary">
+                                        <td className="px-3 py-2 font-semibold text-blue-600 dark:text-blue-400">
                                           <span className="flex items-center gap-1">
                                             {part.PARTNUMBER}
                                             <button
@@ -902,7 +902,7 @@ const TermTable = () => {
                                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                 </svg>
                                               ) : (
-                                                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                   <rect x="9" y="9" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
                                                   <rect x="3" y="3" width="13" height="13" rx="2" strokeWidth="2" stroke="currentColor" fill="none" />
                                                 </svg>

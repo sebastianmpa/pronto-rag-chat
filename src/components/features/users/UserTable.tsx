@@ -263,7 +263,7 @@ const UserTable = () => {
             <button
               ref={createButtonRef}
               onClick={handleCreate}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-center font-medium text-white hover:bg-opacity-90"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-center font-medium text-black hover:bg-opacity-90"
             >
               <svg
                 className="fill-current"

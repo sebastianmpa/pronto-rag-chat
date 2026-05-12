@@ -301,7 +301,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                             }
                           >
                             <svg
-                              className="h-3.5 w-3.5 text-primary"
+                              className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -388,7 +388,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                   onClick={() => handleCopy(partNumber, idx)}
                 >
                   <svg
-                    className="h-5 w-5 text-primary"
+                    className="h-5 w-5 text-blue-600 dark:text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -528,7 +528,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                                     }
                                   >
                                     <svg
-                                      className="h-3.5 w-3.5 text-primary"
+                                      className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -671,7 +671,7 @@ const TableCollapsible: React.FC<{
                       {generalInfo.DESCRIPTION || '-'}
                     </td>
                     {generalInfo.SUPERCEDETO && (
-                      <td className="text-gray-900 px-2 py-2 font-medium text-primary dark:text-white">
+                      <td className="text-blue-600 px-2 py-2 font-medium dark:text-blue-400">
                         {generalInfo.SUPERCEDETO}
                       </td>
                     )}

@@ -379,7 +379,9 @@
     "next": "Siguiente",
     "no_results": "No se encontraron resultados",
     "searching_for": "Buscando",
-    "clear_filters": "Limpiar filtros"
+    "clear_filters": "Limpiar filtros",
+    "select": "Seleccionar",
+    "select_category": "Seleccionar categoría"
   },
   "pricing": {
     "title": "Información de Precios",

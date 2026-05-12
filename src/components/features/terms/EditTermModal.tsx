@@ -168,7 +168,7 @@ const EditTermModal = ({ isOpen, onClose, onSuccess, term }: EditTermModalProps)
               disabled={loadingCategories}
               className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white disabled:opacity-50"
             >
-              <option value="">{loadingCategories ? t('common.loading') : (t('terms.create_modal.select_category') || 'Seleccionar categoría (obligatoria)')}</option>
+              <option value="">{loadingCategories ? t('common.loading') : (t('common.select_category') || 'Seleccionar categoría')}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.category_name}

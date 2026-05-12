@@ -109,7 +109,7 @@ const CreateLocatedTermModal = ({ isOpen, onClose, onSuccess }: CreateLocatedTer
           <div>
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">{t('terms.table.category') || 'Categoría'}</label>
             <select value={(formData as any).term_category_id} onChange={(e) => setFormData({ ...formData, term_category_id: e.target.value })} className="w-full rounded border border-stroke bg-gray-2 px-4 py-2 text-black outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white">
-              <option value="">{t('common.select')} {t('terms.table.category')}</option>
+              <option value="">{t('common.select_category') || 'Seleccionar categoría'}</option>
               {Array.from(categories).map(([id, name]) => (
                 <option key={id} value={id}>{name}</option>
               ))}

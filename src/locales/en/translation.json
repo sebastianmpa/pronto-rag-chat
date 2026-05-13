@@ -20,7 +20,17 @@
     "errorNetwork": "Could not connect to the server. Check your internet connection.",
     "errorGeneric": "Error signing in. Please try again later.",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "forgotPassword": "Forgot your password?",
+    "forgotPasswordTitle": "Forgot Password",
+    "forgotPasswordSubtitle": "Enter your email and we'll send you a reset link",
+    "sendResetLink": "Send Reset Link",
+    "backToLogin": "Back to Login",
+    "resetPasswordTitle": "Reset Password",
+    "resetPasswordSubtitle": "Enter your new password below",
+    "resetPasswordButton": "Reset Password",
+    "resetTokenMissing": "Invalid or missing reset token. Please request a new reset link.",
+    "redirectingToLogin": "Redirecting to login in 3 seconds..."
   },
   "brand": {
     "tagline": "MISSION, VISION AND VALUES – PRONTO MOWERS",
@@ -292,6 +302,7 @@
     "terms": "Admin Terms",
     "termCategories": "Categories",
     "locatedTerms": "Terms",
+    "profile": "My Profile",
     "loading": "Loading..."
   },
   "questionsAnswers": {
@@ -312,6 +323,7 @@
   },
   "header": {
     "logout": "Log Out",
+    "my_profile": "My Profile",
     "profile": "Profile",
     "loading": "Loading..."
   },
@@ -387,7 +399,34 @@
     "searching_for": "Searching for",
     "clear_filters": "Clear filters",
     "select": "Select",
-    "select_category": "Select category"
+    "select_category": "Select category",
+    "email": "Email",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "role": "Role",
+    "created_at": "Created At",
+    "updated_at": "Updated At",
+    "back": "Back",
+    "additional_info": "Additional Information",
+    "user_id": "User ID",
+    "role_id": "Role ID",
+    "account_status": "Account Status",
+    "active": "Active",
+    "required_fields": "All required fields must be filled"
+  },
+  "profile": {
+    "change_password": "Change Password",
+    "current_password": "Current Password",
+    "current_password_placeholder": "Enter your current password",
+    "new_password": "New Password",
+    "new_password_placeholder": "Enter your new password",
+    "confirm_password": "Confirm Password",
+    "confirm_password_placeholder": "Confirm your new password",
+    "update_password": "Update Password",
+    "password_changed": "Password changed successfully",
+    "password_mismatch": "New passwords do not match",
+    "password_min_length": "Password must be at least 6 characters",
+    "password_error": "Error changing password"
   },
   "pricing": {
     "title": "Pricing Information",

@@ -5,6 +5,7 @@ import ECommerce from './pages/Dashboard/ECommerce';
 import Messages from './pages/Messages';
 import MessagesMe from './pages/MessagesMe';
 import Profile from './pages/Profile';
+import MyProfile from './pages/MyProfile';
 import Roles from './pages/Pages/Roles';
 import Permissions from './pages/Pages/Permissions';
 import UsersPage from './pages/Pages/UsersPage';
@@ -17,6 +18,8 @@ import PageTitle from './components/PageTitle';
 import PrivateRoute from './components/PrivateRoute';
 import { useUserProfile } from './hooks/useUser';
 import SignIn from './pages/Authentication/SignIn';
+import ForgotPassword from './pages/Authentication/ForgotPassword';
+import ResetPassword from './pages/Authentication/ResetPassword';
 import PartsPage from './pages/Pages/PartsPage';
 import ProductParts from './pages/Pages/ProductParts';
 import QuestionsAnswersPage from './pages/Pages/QuestionsAnswersPage';
@@ -24,7 +27,7 @@ import QuestionsAnswersPage from './pages/Pages/QuestionsAnswersPage';
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const { pathname } = useLocation();
-  const isAuthRoute = pathname.startsWith('/auth');
+  const isAuthRoute = pathname.startsWith('/auth') || pathname.startsWith('/reset-password');
   const {
     roleInternalName,
     fetchProfile,
@@ -69,6 +72,34 @@ function App() {
   return (
     <>
       <Routes>
+        {/* Rutas públicas — deben ir ANTES del layout PrivateRoute */}
+        <Route
+          path="/auth/signin"
+          element={
+            <>
+              <PageTitle title="Signin | Pronto Pro" />
+              <SignIn />
+            </>
+          }
+        />
+        <Route
+          path="/auth/forgot-password"
+          element={
+            <>
+              <PageTitle title="Forgot Password | Pronto Pro" />
+              <ForgotPassword />
+            </>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <>
+              <PageTitle title="Reset Password | Pronto Pro" />
+              <ResetPassword />
+            </>
+          }
+        />
         <Route element={<PrivateRoute />}>
           {/* Ruta principal: dashboard/estadísticas solo para admin y supervisor */}
           <Route
@@ -85,6 +116,16 @@ function App() {
               ) : (
                 <Navigate to="/messages/me" replace />
               )
+            }
+          />
+          {/* Ruta para mi perfil - accesible para TODOS los roles autenticados */}
+          <Route
+            path="/my-profile"
+            element={
+              <>
+                <PageTitle title="Mi Perfil | Pronto Pro" />
+                <MyProfile />
+              </>
             }
           />
           {/* Ruta para mis mensajes - accesible para TODOS los roles */}
@@ -207,16 +248,6 @@ function App() {
           {/* Redirección por defecto según rol */}
           {!isAuthRoute && <Route path="*" element={defaultRoute} />}
         </Route>
-        {/* Ruta pública de autenticación */}
-        <Route
-          path="/auth/signin"
-          element={
-            <>
-              <PageTitle title="Signin | Pronto Pro" />
-              <SignIn />
-            </>
-          }
-        />
       </Routes>
     </>
   );

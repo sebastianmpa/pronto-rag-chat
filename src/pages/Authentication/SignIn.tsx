@@ -240,12 +240,9 @@ const SignIn: React.FC = () => {
                 </button>
                 
                 <div className="mt-6 text-center">
-                  <p className="text-sm text-body dark:text-bodydark">
-                    {t('auth.noAccount')}{' '}
-                    <Link to="/auth/signup" className="text-primary hover:underline font-medium">
-                      {t('auth.signUp')}
-                    </Link>
-                  </p>
+                  <Link to="/auth/forgot-password" className="text-primary hover:underline text-sm font-medium">
+                    {t('auth.forgotPassword')}
+                  </Link>
                 </div>
               </form>
             </div>

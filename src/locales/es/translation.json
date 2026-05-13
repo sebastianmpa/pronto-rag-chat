@@ -20,7 +20,17 @@
     "errorNetwork": "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
     "errorGeneric": "Error al iniciar sesión. Por favor, intenta de nuevo más tarde.",
     "showPassword": "Mostrar contraseña",
-    "hidePassword": "Ocultar contraseña"
+    "hidePassword": "Ocultar contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "forgotPasswordTitle": "Olvidé mi contraseña",
+    "forgotPasswordSubtitle": "Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña",
+    "sendResetLink": "Enviar enlace",
+    "backToLogin": "Volver al inicio de sesión",
+    "resetPasswordTitle": "Restablecer contraseña",
+    "resetPasswordSubtitle": "Ingresa tu nueva contraseña",
+    "resetPasswordButton": "Restablecer contraseña",
+    "resetTokenMissing": "Token inválido o faltante. Por favor solicita un nuevo enlace.",
+    "redirectingToLogin": "Redirigiendo al inicio de sesión en 3 segundos..."
   },
   "brand": {
     "tagline": "MISIÓN, VISIÓN Y VALORES – PRONTO MOWERS",
@@ -285,8 +295,7 @@
     "productParts": "Modelos por Marca",
     "terms": "Términos Admin",
     "termCategories": "Categorías",
-    "locatedTerms": "Términos",
-    "loading": "Cargando..."
+    "locatedTerms": "Términos",    "profile": "Mi Perfil",    "loading": "Cargando..."
   },
   "questionsAnswers": {
     "form": {
@@ -306,6 +315,7 @@
   },
   "header": {
     "logout": "Cerrar sesión",
+    "my_profile": "Mi Perfil",
     "profile": "Perfil",
     "loading": "Cargando..."
   },
@@ -381,7 +391,34 @@
     "searching_for": "Buscando",
     "clear_filters": "Limpiar filtros",
     "select": "Seleccionar",
-    "select_category": "Seleccionar categoría"
+    "select_category": "Seleccionar categoría",
+    "email": "Correo electrónico",
+    "first_name": "Nombre",
+    "last_name": "Apellido",
+    "role": "Rol",
+    "created_at": "Creado el",
+    "updated_at": "Actualizado el",
+    "back": "Atrás",
+    "additional_info": "Información adicional",
+    "user_id": "ID del usuario",
+    "role_id": "ID del rol",
+    "account_status": "Estado de la cuenta",
+    "active": "Activo",
+    "required_fields": "Todos los campos requeridos deben ser completados"
+  },
+  "profile": {
+    "change_password": "Cambiar Contraseña",
+    "current_password": "Contraseña Actual",
+    "current_password_placeholder": "Ingresa tu contraseña actual",
+    "new_password": "Nueva Contraseña",
+    "new_password_placeholder": "Ingresa tu nueva contraseña",
+    "confirm_password": "Confirmar Contraseña",
+    "confirm_password_placeholder": "Confirma tu nueva contraseña",
+    "update_password": "Actualizar Contraseña",
+    "password_changed": "Contraseña cambiada exitosamente",
+    "password_mismatch": "Las nuevas contraseñas no coinciden",
+    "password_min_length": "La contraseña debe tener al menos 6 caracteres",
+    "password_error": "Error al cambiar la contraseña"
   },
   "pricing": {
     "title": "Información de Precios",

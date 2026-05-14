@@ -77,7 +77,7 @@ function App() {
           path="/auth/signin"
           element={
             <>
-              <PageTitle title="Signin | Pronto Pro" />
+              <PageTitle title="Signin | Pronto ProDesk" />
               <SignIn />
             </>
           }
@@ -86,7 +86,7 @@ function App() {
           path="/auth/forgot-password"
           element={
             <>
-              <PageTitle title="Forgot Password | Pronto Pro" />
+              <PageTitle title="Forgot Password | Pronto ProDesk" />
               <ForgotPassword />
             </>
           }
@@ -95,7 +95,7 @@ function App() {
           path="/reset-password"
           element={
             <>
-              <PageTitle title="Reset Password | Pronto Pro" />
+              <PageTitle title="Reset Password | Pronto ProDesk" />
               <ResetPassword />
             </>
           }
@@ -110,7 +110,7 @@ function App() {
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1') ? (
                 <>
-                  <PageTitle title="eCommerce Dashboard | Pronto Pro" />
+                  <PageTitle title="eCommerce Dashboard | Pronto ProDesk" />
                   <ECommerce />
                 </>
               ) : (
@@ -123,7 +123,7 @@ function App() {
             path="/my-profile"
             element={
               <>
-                <PageTitle title="Mi Perfil | Pronto Pro" />
+                <PageTitle title="Mi Perfil | Pronto ProDesk" />
                 <MyProfile />
               </>
             }
@@ -133,7 +133,7 @@ function App() {
             path="/messages/me"
             element={
               <>
-                <PageTitle title="Mis Mensajes | Pronto Pro" />
+                <PageTitle title="Mis Mensajes | Pronto ProDesk" />
                 <MessagesMe />
               </>
             }
@@ -146,7 +146,7 @@ function App() {
               path="/questions-answers"
               element={
                 <>
-                  <PageTitle title="Preguntas y respuestas | Pronto Pro" />
+                  <PageTitle title="Preguntas y respuestas | Pronto ProDesk" />
                   <QuestionsAnswersPage />
                 </>
               }
@@ -162,7 +162,7 @@ function App() {
               path="/messages"
               element={
                 <>
-                  <PageTitle title="Todos los Mensajes | Pronto Pro" />
+                  <PageTitle title="Todos los Mensajes | Pronto ProDesk" />
                   <Messages />
                 </>
               }
@@ -184,7 +184,7 @@ function App() {
               path="/product-parts"
               element={
                 <>
-                  <PageTitle title="Product Parts | Pronto Pro" />
+                  <PageTitle title="Product Parts | Pronto ProDesk" />
                   <ProductParts />
                 </>
               }
@@ -210,7 +210,7 @@ function App() {
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1' ? (
                 <>
-                  <PageTitle title="Categorías de Términos | Pronto Pro" />
+                  <PageTitle title="Categorías de Términos | Pronto ProDesk" />
                   <TermCategoriesPage />
                 </>
               ) : (
@@ -227,7 +227,7 @@ function App() {
               roleInternalName === 'supervisorL4' ||
               roleInternalName === 'supervisorL1' ? (
                 <>
-                  <PageTitle title="Located Terms | Pronto Pro" />
+                  <PageTitle title="Located Terms | Pronto ProDesk" />
                   <LocatedTermsPage />
                 </>
               ) : (

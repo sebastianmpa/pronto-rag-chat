@@ -1,6 +1,6 @@
 {
   "auth": {
-    "title": "Iniciar sesión en Pronto Pro",
+    "title": "Iniciar sesión en Pronto ProDesk",
     "email": "Email",
     "emailPlaceholder": "Ingresa tu email",
     "password": "Contraseña",
@@ -83,7 +83,8 @@
     "no_parts_found": "No se encontraron partes para los filtros dados.",
     "loading": "Cargando...",
     "error_occurred": "Ocurrió un error. Por favor, inténtelo de nuevo.",
-    "related_parts": "Partes Relacionadas"
+    "related_parts": "Partes Relacionadas",
+    "parts": "Partes"
   },
   "parts": {
     "related_parts_information": "Información de Partes Relacionadas"

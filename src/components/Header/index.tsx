@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import DropdownMessage from './DropdownMessage';
 import DropdownNotification from './DropdownNotification';
 import DropdownUser from './DropdownUser';
-
 import DarkModeSwitcher from './DarkModeSwitcher';
+import CartModal from './CartModal';
+import { useCart } from '../../context/CartContext';
 
 const brands = [
   { name: 'Echo', logo: '/images/echo.png' },
@@ -34,6 +35,8 @@ const Header = (props: {
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const { totalItems } = useCart();
 
   useEffect(() => {
     if (paused) return;
@@ -159,6 +162,25 @@ const Header = (props: {
                   <path d="M9 18l6-6-6-6" />
                 </svg>
               </button>
+
+              {/* Carrito de compras */}
+              <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className="relative flex-shrink-0 ml-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-boxdark-2 dark:hover:bg-meta-4 text-gray-600 dark:text-gray-300 transition-colors"
+                title="Carrito de compras"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-black leading-none">
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
+                )}
+              </button>
             </div>
             {/* <!-- Dark Mode Toggler --> */}
             <DarkModeSwitcher />
@@ -170,6 +192,8 @@ const Header = (props: {
           {/* <!-- User Area --> */}
         </div>
       </div>
+
+      <CartModal isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </header>
   );
 };

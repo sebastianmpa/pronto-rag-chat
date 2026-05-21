@@ -11,13 +11,16 @@ import 'flatpickr/dist/flatpickr.min.css';
 import 'nouislider/dist/nouislider.css';
 import 'dropzone/dist/dropzone.css';
 import { AuthProvider } from './hooks/useAuth';
+import { CartProvider } from './context/CartContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <AuthProvider>
-      <Router>
-        <App />
-      </Router>
+      <CartProvider>
+        <Router>
+          <App />
+        </Router>
+      </CartProvider>
     </AuthProvider>
   </React.StrictMode>
 );

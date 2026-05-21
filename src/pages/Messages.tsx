@@ -10,6 +10,7 @@ import { getConversationsPaginated } from '../libs/ConversationService';
 import { useCustomerById } from '../hooks/useCustomer';
 import { format } from 'date-fns';
 import QuestionsAnswersModal from '../components/features/questions-answers/QuestionsAnswersModal';
+import { useCart } from '../context/CartContext';
 
 // Helper para extraer texto y tabla del content
 const parseMessageContent = (
@@ -149,6 +150,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
   data,
 }) => {
   const { t } = useTranslation();
+  const { addItem } = useCart();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
   const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{
@@ -420,6 +422,26 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                     {t('parts_accordion.copied')}
                   </span>
                 )}
+                {/* Add to Cart Button */}
+                <button
+                  type="button"
+                  className="rounded-full border border-yellow-400 bg-primary p-1.5 text-black transition-colors hover:bg-opacity-80 dark:border-yellow-500"
+                  title="Agregar al carrito"
+                  onClick={() =>
+                    addItem({
+                      mfrId,
+                      partNumber,
+                      description,
+                      netPrice: item.pricing?.net_price,
+                    })
+                  }
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                </button>
                 {/* Expand/collapse button */}
                 <button
                   type="button"

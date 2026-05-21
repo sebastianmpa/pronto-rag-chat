@@ -17,6 +17,7 @@ import { usePricing } from '../hooks/usePricing';
 import { useCustomerSearch } from '../hooks/useCustomerSearch';
 import { useCommands } from '../hooks/useCommands';
 import QuestionsAnswersModal from '../components/features/questions-answers/QuestionsAnswersModal';
+import { useCart } from '../context/CartContext';
 
 // Helper functions
 const formatDate = (date: string) => {
@@ -396,6 +397,7 @@ const PartsAccordion: React.FC<{
   onSupersededClick?: (superseded: string) => void;
 }> = ({ data, messageId: _messageId, onSupersededClick }) => {
   const { t } = useTranslation();
+  const { addItem } = useCart();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | string | null>(null);
   const [copiedRelatedIdx, setCopiedRelatedIdx] = useState<{
@@ -924,6 +926,27 @@ const PartsAccordion: React.FC<{
                         strokeWidth={2}
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
+                    </svg>
+                  </button>
+
+                  {/* Add to Cart Button */}
+                  <button
+                    type="button"
+                    className="rounded-full border border-yellow-400 bg-primary p-1.5 text-black transition-colors hover:bg-opacity-80 dark:border-yellow-500"
+                    title="Agregar al carrito"
+                    onClick={() =>
+                      addItem({
+                        mfrId,
+                        partNumber,
+                        description,
+                        netPrice: item.pricing?.net_price,
+                      })
+                    }
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="9" cy="21" r="1" />
+                      <circle cx="20" cy="21" r="1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                     </svg>
                   </button>
                 </div>

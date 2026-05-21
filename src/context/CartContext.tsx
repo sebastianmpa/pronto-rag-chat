@@ -1,4 +1,10 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from 'react';
 import { getPricing } from '../libs/PricingService';
 import { Customer } from '../types/customers';
 
@@ -36,9 +42,13 @@ const loadLastCustomer = (): Customer | null => {
   }
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [lastCustomer, setLastCustomerState] = useState<Customer | null>(loadLastCustomer);
+  const [lastCustomer, setLastCustomerState] = useState<Customer | null>(
+    loadLastCustomer
+  );
   const [pricingLoading, setPricingLoading] = useState(false);
   const itemsRef = useRef<CartItem[]>([]);
   itemsRef.current = items;
@@ -77,21 +87,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const addItem = useCallback((item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
-    setItems((prev) => {
-      const existing = prev.find(
-        (i) => i.mfrId === item.mfrId && i.partNumber === item.partNumber
-      );
-      if (existing) {
-        return prev.map((i) =>
-          i.mfrId === item.mfrId && i.partNumber === item.partNumber
-            ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
-            : i
+  const addItem = useCallback(
+    (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
+      setItems((prev) => {
+        const existing = prev.find(
+          (i) => i.mfrId === item.mfrId && i.partNumber === item.partNumber
         );
-      }
-      return [...prev, { ...item, quantity: item.quantity ?? 1 }];
-    });
-  }, []);
+        if (existing) {
+          return prev.map((i) =>
+            i.mfrId === item.mfrId && i.partNumber === item.partNumber
+              ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
+              : i
+          );
+        }
+        return [...prev, { ...item, quantity: item.quantity ?? 1 }];
+      });
+    },
+    []
+  );
 
   const removeItem = useCallback((mfrId: string, partNumber: string) => {
     setItems((prev) =>
@@ -103,13 +116,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (mfrId: string, partNumber: string, quantity: number) => {
       if (quantity <= 0) {
         setItems((prev) =>
-          prev.filter((i) => !(i.mfrId === mfrId && i.partNumber === partNumber))
+          prev.filter(
+            (i) => !(i.mfrId === mfrId && i.partNumber === partNumber)
+          )
         );
         return;
       }
       setItems((prev) =>
         prev.map((i) =>
-          i.mfrId === mfrId && i.partNumber === partNumber ? { ...i, quantity } : i
+          i.mfrId === mfrId && i.partNumber === partNumber
+            ? { ...i, quantity }
+            : i
         )
       );
     },

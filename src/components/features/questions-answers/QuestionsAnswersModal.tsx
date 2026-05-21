@@ -19,7 +19,7 @@ const QuestionsAnswersModal = ({
 
   return (
     <div className="fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <QuestionsAnswersForm
           initialQuestion={initialQuestion}
           initialAnswer={initialAnswer}

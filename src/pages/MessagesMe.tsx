@@ -138,11 +138,11 @@ const renderMessageContent = (
       // Then, process TERM tags <b class='pronto-term'>text</b>
       parts = parts.flatMap((part, i) => {
         if (typeof part !== 'string') return [part];
-        
+
         let subParts: (string | JSX.Element)[] = [];
         let subLastIdx = 0;
         let termMatch;
-        
+
         termTagRegex.lastIndex = 0;
         while ((termMatch = termTagRegex.exec(part)) !== null) {
           if (termMatch.index > subLastIdx) {
@@ -164,7 +164,7 @@ const renderMessageContent = (
         if (subLastIdx < part.length) {
           subParts.push(part.slice(subLastIdx));
         }
-        
+
         return subParts;
       });
 
@@ -258,8 +258,6 @@ const renderMessageContent = (
   return displayContent;
 };
 
-
-
 const CategoriesAccordion: React.FC<{
   data: any[];
   messageId: string;
@@ -272,8 +270,14 @@ const CategoriesAccordion: React.FC<{
   }
 
   // Helper para extraer el texto limpio de un HTML tag pronto-term o pronto-sku
-  const extractText = (htmlString: string, tagClass: 'pronto-term' | 'pronto-sku'): string => {
-    const regex = new RegExp(`<b\\s+class=['"]${tagClass}['"]\\s*>([^<]+)<\\/b>`, 'i');
+  const extractText = (
+    htmlString: string,
+    tagClass: 'pronto-term' | 'pronto-sku'
+  ): string => {
+    const regex = new RegExp(
+      `<b\\s+class=['"]${tagClass}['"]\\s*>([^<]+)<\\/b>`,
+      'i'
+    );
     const match = htmlString.match(regex);
     return match ? match[1] : htmlString;
   };
@@ -319,14 +323,17 @@ const CategoriesAccordion: React.FC<{
     <div className="mx-auto mt-3 w-full space-y-3">
       {data.map((categoryObj, idx) => {
         const category = categoryObj.category || `Category ${idx}`;
-        
+
         // Detectar formato: array de array (nested) vs array directo
         let isNestedFormat = false;
         let items: string[] = [];
 
         if (categoryObj.items && Array.isArray(categoryObj.items)) {
           // Verificar si primer elemento es un array (nested format con pronto-term)
-          if (categoryObj.items.length > 0 && Array.isArray(categoryObj.items[0])) {
+          if (
+            categoryObj.items.length > 0 &&
+            Array.isArray(categoryObj.items[0])
+          ) {
             isNestedFormat = true;
             items = categoryObj.items[0]; // Extraer array anidado
           } else {
@@ -344,7 +351,11 @@ const CategoriesAccordion: React.FC<{
             </p>
 
             {/* Render según formato */}
-            <div className={isNestedFormat ? "flex flex-wrap gap-2" : "flex flex-col gap-2"}>
+            <div
+              className={
+                isNestedFormat ? 'flex flex-wrap gap-2' : 'flex flex-col gap-2'
+              }
+            >
               {items && items.length > 0 ? (
                 items.map((item: string, itemIdx: number) => {
                   if (isNestedFormat) {
@@ -370,7 +381,7 @@ const CategoriesAccordion: React.FC<{
                     return (
                       <div
                         key={itemIdx}
-                        className="rounded-md bg-gray-50 px-3 py-2 text-sm text-black dark:bg-meta-4 dark:text-white"
+                        className="bg-gray-50 rounded-md px-3 py-2 text-sm text-black dark:bg-meta-4 dark:text-white"
                       >
                         {renderItemWithSku(item)}
                       </div>
@@ -378,7 +389,7 @@ const CategoriesAccordion: React.FC<{
                   }
                 })
               ) : (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   {t('common.no_results') || 'No hay términos'}
                 </p>
               )}
@@ -803,7 +814,7 @@ const PartsAccordion: React.FC<{
                         superseded !== '-' && (
                           <button
                             type="button"
-                            className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                            className="hover:bg-gray-100 flex-shrink-0 rounded border border-transparent p-0.5 focus:outline-none dark:hover:bg-meta-4"
                             title={t('parts_accordion.copy_part_number')}
                             onClick={() =>
                               handleCopy(superseded, `superseded-${idx}`)
@@ -943,10 +954,20 @@ const PartsAccordion: React.FC<{
                       })
                     }
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <circle cx="9" cy="21" r="1" />
                       <circle cx="20" cy="21" r="1" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -956,7 +977,7 @@ const PartsAccordion: React.FC<{
                 {currentLocation === 4 && (
                   <button
                     type="button"
-                    className="rounded border border-transparent p-1 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                    className="hover:bg-gray-100 rounded border border-transparent p-1 focus:outline-none dark:hover:bg-meta-4"
                     title={t('stock_transfer.request') || 'Request transfer'}
                     onClick={() => {
                       setTransferForm({
@@ -989,7 +1010,7 @@ const PartsAccordion: React.FC<{
                 {/* Copy button */}
                 <button
                   type="button"
-                  className="rounded border border-transparent p-1 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                  className="hover:bg-gray-100 rounded border border-transparent p-1 focus:outline-none dark:hover:bg-meta-4"
                   title={t('parts_accordion.copy_part_number')}
                   onClick={() => handleCopy(partNumber, idx)}
                 >
@@ -1131,7 +1152,7 @@ const PartsAccordion: React.FC<{
                                   <>
                                     <button
                                       type="button"
-                                      className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                                      className="hover:bg-gray-100 flex-shrink-0 rounded border border-transparent p-0.5 focus:outline-none dark:hover:bg-meta-4"
                                       title={t(
                                         'parts_accordion.copy_part_number'
                                       )}
@@ -1851,16 +1872,16 @@ const MessagesMe: React.FC = () => {
     }
   `;
   const { profile: userProfile } = useUserProfile();
-  
+
   // Commands from API
   const { commands: apiCommands, filterCommands } = useCommands();
-  
+
   // Commands dropdown state
   const [showCommandsDropdown, setShowCommandsDropdown] = useState(false);
   const [filteredApiCommands, setFilteredApiCommands] = useState<any[]>([]);
   const [selectedCommandIdx, setSelectedCommandIdx] = useState(0);
   const commandsDropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Commands available in the chat UI (like ChatGPT slash commands) - LEGACY
   const commands = [
     {
@@ -2036,14 +2057,14 @@ const MessagesMe: React.FC = () => {
     if (showCommandsDropdown && filteredApiCommands.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedCommandIdx((prev) => 
+        setSelectedCommandIdx((prev) =>
           prev < filteredApiCommands.length - 1 ? prev + 1 : 0
         );
         return;
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedCommandIdx((prev) => 
+        setSelectedCommandIdx((prev) =>
           prev > 0 ? prev - 1 : filteredApiCommands.length - 1
         );
         return;
@@ -2063,7 +2084,7 @@ const MessagesMe: React.FC = () => {
         return;
       }
     }
-    
+
     // Handle message sending
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -2077,7 +2098,7 @@ const MessagesMe: React.FC = () => {
   // Handle input change and detect commands
   const handleInputChange = (value: string) => {
     setInputValue(value);
-    
+
     // Detect if user is typing a command
     if (value.startsWith('/')) {
       const searchTerm = value.slice(1); // Remove the leading /
@@ -2301,9 +2322,16 @@ const MessagesMe: React.FC = () => {
 
       // Mostrar el mensaje del assistant si hay answer o table_data o category_data o conversation_context
       // Validar que category_data tenga contenido real (no vacío) - ahora es un array
-      const hasCategoryData = apiResponse.category_data && Array.isArray(apiResponse.category_data) && apiResponse.category_data.length > 0;
-      const hasContent = apiResponse.answer || apiResponse.table_data || hasCategoryData || apiResponse.conversation_context;
-      
+      const hasCategoryData =
+        apiResponse.category_data &&
+        Array.isArray(apiResponse.category_data) &&
+        apiResponse.category_data.length > 0;
+      const hasContent =
+        apiResponse.answer ||
+        apiResponse.table_data ||
+        hasCategoryData ||
+        apiResponse.conversation_context;
+
       if (apiResponse && hasContent) {
         setLocalMessages((prev) => [
           ...prev,
@@ -2434,12 +2462,14 @@ const MessagesMe: React.FC = () => {
           {error}
         </div>
       )}
-      <div className="min-h-0 h-full">
-        <div
-          className="flex h-full w-full flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex-row"
-        >
+      <div className="h-full min-h-0">
+        <div className="flex h-full w-full flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex-row">
           {/* Chat List */}
-          <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} xl:flex h-full w-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:w-72`}>
+          <div
+            className={`${
+              mobileView === 'list' ? 'flex' : 'hidden'
+            } h-full w-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:flex xl:w-72`}
+          >
             {/* Header */}
             <div className="border-b border-stroke px-4 py-4 dark:border-strokedark sm:px-6">
               <div className="flex items-center justify-between gap-2">
@@ -2558,7 +2588,10 @@ const MessagesMe: React.FC = () => {
                           ? 'bg-gray-2 dark:bg-boxdark-2'
                           : ''
                       }`}
-                      onClick={() => { setSelectedChat(chat); setMobileView('chat'); }}
+                      onClick={() => {
+                        setSelectedChat(chat);
+                        setMobileView('chat');
+                      }}
                     >
                       <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 relative mr-3.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border">
                         <span className="text-sm font-medium text-black dark:text-white">
@@ -2581,7 +2614,11 @@ const MessagesMe: React.FC = () => {
             </div>
           </div>
           {/* Chat Box */}
-          <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} xl:flex h-full min-h-0 w-full flex-1 flex-col border-l border-stroke bg-white dark:border-strokedark dark:bg-boxdark`}>
+          <div
+            className={`${
+              mobileView === 'chat' ? 'flex' : 'hidden'
+            } h-full min-h-0 w-full flex-1 flex-col border-l border-stroke bg-white dark:border-strokedark dark:bg-boxdark xl:flex`}
+          >
             {selectedChat?.id ? (
               <>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stroke bg-white px-6 py-3 text-black dark:border-strokedark dark:bg-boxdark dark:text-white">
@@ -2592,8 +2629,18 @@ const MessagesMe: React.FC = () => {
                       onClick={() => setMobileView('list')}
                       aria-label="Back to chats"
                     >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </button>
                     <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 mr-3.5 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border">
@@ -2715,12 +2762,21 @@ const MessagesMe: React.FC = () => {
                           .filter((msg) => {
                             // Si es un mensaje del assistant, verificar que tenga contenido real
                             if (msg.role === 'assistant') {
-                              const hasContent = msg.content && msg.content.trim().length > 0;
+                              const hasContent =
+                                msg.content && msg.content.trim().length > 0;
                               const hasTable = msg.table_data || msg.table;
-                              const hasCategoryData = msg.category_data && Array.isArray(msg.category_data) && msg.category_data.length > 0;
+                              const hasCategoryData =
+                                msg.category_data &&
+                                Array.isArray(msg.category_data) &&
+                                msg.category_data.length > 0;
                               const hasContext = msg.conversation_context;
                               // Solo mostrar si tiene al menos uno de estos
-                              return hasContent || hasTable || hasCategoryData || hasContext;
+                              return (
+                                hasContent ||
+                                hasTable ||
+                                hasCategoryData ||
+                                hasContext
+                              );
                             }
                             // Siempre mostrar mensajes del usuario
                             return true;
@@ -2815,7 +2871,7 @@ const MessagesMe: React.FC = () => {
                                   !text.trim().startsWith('{'));
 
                               // console.log('[Render] hasTable:', hasTable, '| tableData type:', Array.isArray(tableData) ? `Array[${tableData.length}]` : typeof tableData, '| shouldRenderText:', shouldRenderText);
-                              
+
                               const previousUserMessage = (() => {
                                 for (let i = msgIndex - 1; i >= 0; i -= 1) {
                                   if (filteredMessages[i]?.role === 'user') {
@@ -2857,7 +2913,7 @@ const MessagesMe: React.FC = () => {
                                             <button
                                               type="button"
                                               title="Guardar"
-                                              className="rounded p-1 text-black dark:text-white transition hover:bg-gray-100 dark:hover:bg-boxdark"
+                                              className="hover:bg-gray-100 rounded p-1 text-black transition dark:text-white dark:hover:bg-boxdark"
                                               onClick={() => {
                                                 setQaInitialAnswer(text || '');
                                                 setQaInitialQuestion(
@@ -2924,7 +2980,9 @@ const MessagesMe: React.FC = () => {
                                             <CategoriesAccordion
                                               data={msg.category_data}
                                               messageId={msg.id}
-                                              onTermClick={handleCategoryTermClicked}
+                                              onTermClick={
+                                                handleCategoryTermClicked
+                                              }
                                             />
                                           )}
                                         {/* Mostrar acordeón si tableData es array */}
@@ -3140,7 +3198,9 @@ const MessagesMe: React.FC = () => {
                               ref={inputRef}
                               type="text"
                               value={inputValue}
-                              onChange={(e) => handleInputChange(e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange(e.target.value)
+                              }
                               placeholder={t('type_message')}
                               disabled={assistantTyping}
                               className="placeholder-gray-500 dark:placeholder-gray-400 h-12 w-full rounded-md border border-stroke bg-gray-2 pl-4 pr-12 text-sm text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:bg-boxdark-2 dark:text-white"
@@ -3148,51 +3208,62 @@ const MessagesMe: React.FC = () => {
                             />
 
                             {/* Commands autocomplete dropdown */}
-                            {showCommandsDropdown && filteredApiCommands.length > 0 && (
-                              <div
-                                ref={commandsDropdownRef}
-                                className="absolute bottom-full left-0 z-50 mb-2 max-h-60 w-80 overflow-y-auto rounded-lg border border-stroke bg-white shadow-xl dark:border-strokedark dark:bg-boxdark"
-                              >
-                                <div className="p-2">
-                                  <div className="mb-2 px-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
-                                    {t('commands.available') || 'Comandos disponibles'}
-                                  </div>
-                                  <ul className="space-y-1">
-                                    {filteredApiCommands.map((cmd, idx) => (
-                                      <li key={cmd.command}>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            handleCommandSelection(cmd);
-                                          }}
-                                          className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors ${
-                                            idx === selectedCommandIdx
-                                              ? 'bg-primary/10 dark:bg-primary/20'
-                                              : 'hover:bg-gray-100 dark:hover:bg-boxdark-2'
-                                          }`}
-                                        >
-                                          <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                            {cmd.command}
-                                          </span>
-                                          <span className={`rounded-full px-2 py-0.5 text-xs ${
-                                            cmd.type === 'system'
-                                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-                                              : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                                          }`}>
-                                            {cmd.type === 'system' ? 'Sistema' : 'Categoría'}
-                                          </span>
-                                        </button>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                  <div className="mt-2 border-t border-gray-200 px-2 pt-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                                    <span className="font-semibold">↑↓</span> Navegar{' '}
-                                    <span className="font-semibold">Enter</span> Seleccionar{' '}
-                                    <span className="font-semibold">Esc</span> Cerrar
+                            {showCommandsDropdown &&
+                              filteredApiCommands.length > 0 && (
+                                <div
+                                  ref={commandsDropdownRef}
+                                  className="absolute bottom-full left-0 z-50 mb-2 max-h-60 w-80 overflow-y-auto rounded-lg border border-stroke bg-white shadow-xl dark:border-strokedark dark:bg-boxdark"
+                                >
+                                  <div className="p-2">
+                                    <div className="text-gray-600 dark:text-gray-400 mb-2 px-2 text-xs font-semibold">
+                                      {t('commands.available') ||
+                                        'Comandos disponibles'}
+                                    </div>
+                                    <ul className="space-y-1">
+                                      {filteredApiCommands.map((cmd, idx) => (
+                                        <li key={cmd.command}>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              handleCommandSelection(cmd);
+                                            }}
+                                            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors ${
+                                              idx === selectedCommandIdx
+                                                ? 'bg-primary/10 dark:bg-primary/20'
+                                                : 'hover:bg-gray-100 dark:hover:bg-boxdark-2'
+                                            }`}
+                                          >
+                                            <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                              {cmd.command}
+                                            </span>
+                                            <span
+                                              className={`rounded-full px-2 py-0.5 text-xs ${
+                                                cmd.type === 'system'
+                                                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                                                  : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                              }`}
+                                            >
+                                              {cmd.type === 'system'
+                                                ? 'Sistema'
+                                                : 'Categoría'}
+                                            </span>
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    <div className="border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400 mt-2 border-t px-2 pt-2 text-xs">
+                                      <span className="font-semibold">↑↓</span>{' '}
+                                      Navegar{' '}
+                                      <span className="font-semibold">
+                                        Enter
+                                      </span>{' '}
+                                      Seleccionar{' '}
+                                      <span className="font-semibold">Esc</span>{' '}
+                                      Cerrar
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
                           </div>
                         </div>
                         {/* Voice input button */}
@@ -3318,7 +3389,6 @@ const MessagesMe: React.FC = () => {
         initialAnswer={qaInitialAnswer}
         onClose={() => setQaModalOpen(false)}
       />
-
     </DefaultLayout>
   );
 };

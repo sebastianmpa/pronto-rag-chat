@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import DropdownMessage from './DropdownMessage';
@@ -24,7 +23,7 @@ const brands = [
   { name: 'Murray', logo: '/images/murray.png' },
   { name: 'Snapper', logo: '/images/snapper.png' },
   { name: 'YBravo', logo: '/images/ybravo.png' },
-  {name: 'Exmark', logo: '/images/exmark.png' },
+  { name: 'Exmark', logo: '/images/exmark.png' },
 ];
 
 const ITEMS_PER_PAGE = 7;
@@ -46,11 +45,13 @@ const Header = (props: {
     return () => clearInterval(interval);
   }, [paused]);
 
-  const goPrev = () => setCurrentIndex((prev) => (prev - 1 + brands.length) % brands.length);
+  const goPrev = () =>
+    setCurrentIndex((prev) => (prev - 1 + brands.length) % brands.length);
   const goNext = () => setCurrentIndex((prev) => (prev + 1) % brands.length);
 
-  const visibleBrands = Array.from({ length: ITEMS_PER_PAGE }, (_, i) =>
-    brands[(currentIndex + i) % brands.length]
+  const visibleBrands = Array.from(
+    { length: ITEMS_PER_PAGE },
+    (_, i) => brands[(currentIndex + i) % brands.length]
   );
 
   return (
@@ -101,18 +102,18 @@ const Header = (props: {
           {/* <!-- Hamburger Toggle BTN --> */}
 
           <Link className="block flex-shrink-0 lg:hidden" to="/">
-            <img src="/images/Favicon.jpg" alt="Logo" className="h-9 w-auto object-contain" />
+            <img
+              src="/images/Favicon.jpg"
+              alt="Logo"
+              className="h-9 w-auto object-contain"
+            />
           </Link>
         </div>
 
         <div className="hidden sm:block">
           <form action="https://formbold.com/s/unique_form_id" method="POST">
             <div className="relative">
-              <button className="absolute left-0 top-1/2 -translate-y-1/2">
-                
-              </button>
-
-             
+              <button className="absolute left-0 top-1/2 -translate-y-1/2"></button>
             </div>
           </form>
         </div>
@@ -129,10 +130,19 @@ const Header = (props: {
               <button
                 type="button"
                 onClick={goPrev}
-                className="flex-shrink-0 p-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-boxdark-2 dark:hover:bg-meta-4 text-gray-600 dark:text-gray-300 transition-colors"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:text-gray-300 flex-shrink-0 rounded-full p-1 transition-colors dark:bg-boxdark-2 dark:hover:bg-meta-4"
                 title="Anterior"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
@@ -155,10 +165,19 @@ const Header = (props: {
               <button
                 type="button"
                 onClick={goNext}
-                className="flex-shrink-0 p-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-boxdark-2 dark:hover:bg-meta-4 text-gray-600 dark:text-gray-300 transition-colors"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:text-gray-300 flex-shrink-0 rounded-full p-1 transition-colors dark:bg-boxdark-2 dark:hover:bg-meta-4"
                 title="Siguiente"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M9 18l6-6-6-6" />
                 </svg>
               </button>
@@ -167,16 +186,25 @@ const Header = (props: {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                className="relative flex-shrink-0 ml-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-boxdark-2 dark:hover:bg-meta-4 text-gray-600 dark:text-gray-300 transition-colors"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-600 dark:text-gray-300 relative ml-2 flex-shrink-0 rounded-full p-2 transition-colors dark:bg-boxdark-2 dark:hover:bg-meta-4"
                 title="Carrito de compras"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="9" cy="21" r="1" />
                   <circle cx="20" cy="21" r="1" />
                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                 </svg>
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-black leading-none">
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-black">
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
                 )}

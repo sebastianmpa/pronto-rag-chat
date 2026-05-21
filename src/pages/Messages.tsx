@@ -44,8 +44,14 @@ const CategoriesAccordion: React.FC<{
   }
 
   // Helper para extraer el texto limpio de un HTML tag pronto-term o pronto-sku
-  const extractText = (htmlString: string, tagClass: 'pronto-term' | 'pronto-sku'): string => {
-    const regex = new RegExp(`<b\\s+class=['"]${tagClass}['"]\\s*>([^<]+)<\\/b>`, 'i');
+  const extractText = (
+    htmlString: string,
+    tagClass: 'pronto-term' | 'pronto-sku'
+  ): string => {
+    const regex = new RegExp(
+      `<b\\s+class=['"]${tagClass}['"]\\s*>([^<]+)<\\/b>`,
+      'i'
+    );
     const match = htmlString.match(regex);
     return match ? match[1] : htmlString;
   };
@@ -91,7 +97,10 @@ const CategoriesAccordion: React.FC<{
         let items: string[] = [];
 
         if (categoryObj.items && Array.isArray(categoryObj.items)) {
-          if (categoryObj.items.length > 0 && Array.isArray(categoryObj.items[0])) {
+          if (
+            categoryObj.items.length > 0 &&
+            Array.isArray(categoryObj.items[0])
+          ) {
             isNestedFormat = true;
             items = categoryObj.items[0];
           } else {
@@ -108,7 +117,11 @@ const CategoriesAccordion: React.FC<{
             </p>
 
             {/* Render según formato */}
-            <div className={isNestedFormat ? 'flex flex-wrap gap-2' : 'flex flex-col gap-2'}>
+            <div
+              className={
+                isNestedFormat ? 'flex flex-wrap gap-2' : 'flex flex-col gap-2'
+              }
+            >
               {items && items.length > 0 ? (
                 items.map((item: string, itemIdx: number) => {
                   if (isNestedFormat) {
@@ -125,7 +138,7 @@ const CategoriesAccordion: React.FC<{
                     return (
                       <div
                         key={itemIdx}
-                        className="rounded-md bg-gray-50 px-3 py-2 text-sm text-black dark:bg-meta-4 dark:text-white"
+                        className="bg-gray-50 rounded-md px-3 py-2 text-sm text-black dark:bg-meta-4 dark:text-white"
                       >
                         {renderItemWithSku(item)}
                       </div>
@@ -133,7 +146,7 @@ const CategoriesAccordion: React.FC<{
                   }
                 })
               ) : (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   {t('common.no_results') || 'No hay términos'}
                 </p>
               )}
@@ -296,7 +309,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                         superseded !== '-' && (
                           <button
                             type="button"
-                            className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                            className="hover:bg-gray-100 flex-shrink-0 rounded border border-transparent p-0.5 focus:outline-none dark:hover:bg-meta-4"
                             title={t('parts_accordion.copy_part_number')}
                             onClick={() =>
                               handleCopy(superseded, `superseded-${idx}`)
@@ -385,7 +398,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                 {/* Copy button */}
                 <button
                   type="button"
-                  className="rounded border border-transparent p-1 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                  className="hover:bg-gray-100 rounded border border-transparent p-1 focus:outline-none dark:hover:bg-meta-4"
                   title={t('parts_accordion.copy_part_number')}
                   onClick={() => handleCopy(partNumber, idx)}
                 >
@@ -436,10 +449,20 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                     })
                   }
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <circle cx="9" cy="21" r="1" />
                     <circle cx="20" cy="21" r="1" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                    />
                   </svg>
                 </button>
                 {/* Expand/collapse button */}
@@ -537,7 +560,7 @@ const PartsAccordion: React.FC<{ data: any[]; messageId: string }> = ({
                                 {part.PARTNUMBER && (
                                   <button
                                     type="button"
-                                    className="flex-shrink-0 rounded border border-transparent p-0.5 hover:bg-gray-100 focus:outline-none dark:hover:bg-meta-4"
+                                    className="hover:bg-gray-100 flex-shrink-0 rounded border border-transparent p-0.5 focus:outline-none dark:hover:bg-meta-4"
                                     title={t(
                                       'parts_accordion.copy_part_number'
                                     )}
@@ -693,7 +716,7 @@ const TableCollapsible: React.FC<{
                       {generalInfo.DESCRIPTION || '-'}
                     </td>
                     {generalInfo.SUPERCEDETO && (
-                      <td className="text-blue-600 px-2 py-2 font-medium dark:text-blue-400">
+                      <td className="px-2 py-2 font-medium text-blue-600 dark:text-blue-400">
                         {generalInfo.SUPERCEDETO}
                       </td>
                     )}
@@ -1055,7 +1078,11 @@ const Messages: React.FC = () => {
       >
         <div className="h-full min-h-0 rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark xl:flex">
           {/* Chat List */}
-          <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} xl:flex h-full min-h-0 w-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:w-72`}>
+          <div
+            className={`${
+              mobileView === 'list' ? 'flex' : 'hidden'
+            } h-full min-h-0 w-full flex-col border-r-2 border-stroke bg-white dark:bg-boxdark xl:flex xl:w-72`}
+          >
             {/* Header */}
             <div className="border-b border-stroke px-6 py-4 dark:border-strokedark">
               <div className="flex items-center justify-between gap-2">
@@ -1168,7 +1195,10 @@ const Messages: React.FC = () => {
                           ? 'bg-gray-2 dark:bg-boxdark-2'
                           : ''
                       }`}
-                      onClick={() => { setSelectedChat(chat); setMobileView('chat'); }}
+                      onClick={() => {
+                        setSelectedChat(chat);
+                        setMobileView('chat');
+                      }}
                     >
                       <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 relative mr-3.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border">
                         <span className="text-sm font-medium text-black dark:text-white">
@@ -1192,7 +1222,11 @@ const Messages: React.FC = () => {
           </div>
 
           {/* Chat Box */}
-          <div className={`${mobileView === 'chat' ? 'flex' : 'hidden'} xl:flex h-full min-h-0 w-full flex-1 flex-col border-l border-stroke dark:border-strokedark`}>
+          <div
+            className={`${
+              mobileView === 'chat' ? 'flex' : 'hidden'
+            } h-full min-h-0 w-full flex-1 flex-col border-l border-stroke dark:border-strokedark xl:flex`}
+          >
             {selectedChat?.id && chatDetail ? (
               <>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stroke bg-white px-6 py-3 text-black dark:border-strokedark dark:bg-boxdark dark:text-white">
@@ -1203,8 +1237,18 @@ const Messages: React.FC = () => {
                       onClick={() => setMobileView('list')}
                       aria-label="Back to chats"
                     >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </button>
                     <div className="bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-800 mr-3.5 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border">
@@ -1417,7 +1461,7 @@ const Messages: React.FC = () => {
                                           <button
                                             type="button"
                                             title="Guardar"
-                                            className="rounded p-1 text-black dark:text-white transition hover:bg-gray-100 dark:hover:bg-boxdark"
+                                            className="hover:bg-gray-100 rounded p-1 text-black transition dark:text-white dark:hover:bg-boxdark"
                                             onClick={() => {
                                               setQaInitialAnswer(
                                                 content || text || ''

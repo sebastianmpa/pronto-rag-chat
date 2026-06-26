@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`, 
+  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -12,7 +12,8 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     // No agregar token si es endpoint de crear conversación
-    const isCreateConversation = config.url?.includes('/conversations/v0') && config.method === 'post';
+    const isCreateConversation =
+      config.url?.includes('/conversations/v0') && config.method === 'post';
     if (isCreateConversation) {
       // No modificar headers
       return config;

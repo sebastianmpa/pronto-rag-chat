@@ -3,7 +3,9 @@ import { useCart } from '../../context/CartContext';
 import { useCustomerSearch } from '../../hooks/useCustomerSearch';
 import { useSalesRepSearch } from '../../hooks/useSalesRepSearch';
 import { useUserProfile } from '../../hooks/useUser';
+import { createOrder } from '../../libs/OrderService';
 import { Customer } from '../../types/customers';
+import { CreateOrderResponse } from '../../types/orders';
 import { SalesRep } from '../../types/salesRep';
 
 interface CartModalProps {
@@ -27,6 +29,12 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderResult, setOrderResult] = useState<CreateOrderResponse | null>(
+    null
+  );
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const SALES_REP_KEY = 'cart_selected_sales_rep';
 
@@ -176,14 +184,67 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     clearSalesRepSearch();
   };
 
-  const handleGenerateOrder = () => {
-    const orderLines = items
-      .map(
-        (item) =>
-          `${item.mfrId} | ${item.partNumber} | ${item.description} | Qty: ${item.quantity}`
-      )
-      .join('\n');
-    alert(`Orden generada:\n\n${orderLines}`);
+  const handleGenerateOrder = async () => {
+    if (items.length === 0) return;
+    setOrderLoading(true);
+    setOrderResult(null);
+    setOrderError(null);
+
+    const parts = items.map((item) => ({
+      MfrID: item.mfrId,
+      PartNumber: item.partNumber,
+      Description: item.description,
+      Quantity: String(item.quantity),
+      Amount: item.netPrice != null ? String(item.netPrice) : '0',
+    }));
+
+    const salesOrder: Record<string, unknown> = {
+      Parts: parts,
+    };
+
+    if (lastCustomer) {
+      salesOrder.CustomerID = lastCustomer.CUSTOMERID;
+      if (lastCustomer.EMAIL) salesOrder.EmailAddress = lastCustomer.EMAIL;
+      if (lastCustomer.NAME) salesOrder.CustomerName = lastCustomer.NAME;
+      if (lastCustomer.FIRSTNAME) salesOrder.FirstName = lastCustomer.FIRSTNAME;
+      if (lastCustomer.LASTNAME) salesOrder.LastName = lastCustomer.LASTNAME;
+      if (lastCustomer.ADDRESS1)
+        salesOrder.BillToAddressLine1 = lastCustomer.ADDRESS1;
+      if (lastCustomer.CITY) salesOrder.BillToCity = lastCustomer.CITY;
+      if (lastCustomer.STATE) salesOrder.BillToState = lastCustomer.STATE;
+      if (lastCustomer.ZIP) salesOrder.BillToZipcode = lastCustomer.ZIP;
+    }
+
+    if (effectiveSalesRepId) {
+      salesOrder.SalesRep = effectiveSalesRepId;
+    }
+
+    try {
+      const result = await createOrder({
+        System: 'IdealAPI',
+        SalesOrders: [salesOrder as any],
+      });
+      setOrderResult(result);
+      if (result.ErrorCount === 0) {
+        clearCart();
+      }
+    } catch (err: any) {
+      setOrderError(
+        err.response?.data?.message ||
+          err.message ||
+          'Error al generar la orden'
+      );
+    } finally {
+      setOrderLoading(false);
+    }
+  };
+
+  const handleCloseResult = () => {
+    setOrderResult(null);
+    setOrderError(null);
+    if (orderResult && orderResult.ErrorCount === 0) {
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -605,14 +666,128 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={handleGenerateOrder}
-                disabled={items.length === 0}
-                className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-black transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={items.length === 0 || orderLoading}
+                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-black transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Generar orden
+                {orderLoading && (
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                )}
+                {orderLoading ? 'Generando...' : 'Generar orden'}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Resultado de la orden */}
+        {(orderResult || orderError) && (
+          <div
+            className="fixed inset-0 z-[9999999] flex items-center justify-center bg-black/60 px-4"
+            onClick={handleCloseResult}
+          >
+            <div
+              className="w-full max-w-sm rounded-lg bg-white p-6 shadow-2xl dark:bg-boxdark"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {orderError ? (
+                <>
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="bg-red-100 dark:bg-red-900/30 flex h-10 w-10 items-center justify-center rounded-full">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-red-600"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
+                    </span>
+                    <h4 className="text-base font-bold text-black dark:text-white">
+                      Error al generar la orden
+                    </h4>
+                  </div>
+                  <p className="text-red-600 dark:text-red-400 text-sm">
+                    {orderError}
+                  </p>
+                </>
+              ) : orderResult && orderResult.ErrorCount === 0 ? (
+                <>
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-green-600"
+                      >
+                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                    </span>
+                    <h4 className="text-base font-bold text-black dark:text-white">
+                      Orden generada
+                    </h4>
+                  </div>
+                  <p className="text-sm text-black dark:text-white">
+                    {orderResult.SuccessCount} orden(es) importada(s) con éxito.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-yellow-600"
+                      >
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    </span>
+                    <h4 className="text-base font-bold text-black dark:text-white">
+                      Orden con errores
+                    </h4>
+                  </div>
+                  <p className="text-sm text-black dark:text-white">
+                    {orderResult?.SuccessCount ?? 0} éxito(s),{' '}
+                    {orderResult?.ErrorCount ?? 0} error(es).
+                  </p>
+                  {orderResult?.ErrorList?.map((e) => (
+                    <p key={e.Reference} className="text-red-500 text-xs">
+                      Referencia {e.Reference} — Error ID: {e.ErrorID}
+                    </p>
+                  ))}
+                </>
+              )}
+              <button
+                type="button"
+                onClick={handleCloseResult}
+                className="mt-5 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-black transition hover:bg-opacity-90"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
